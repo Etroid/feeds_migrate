@@ -16,7 +16,7 @@ function feeds_migrate_ui_entity_type_alter(array &$entity_types) {
   $migration->setFormClass('edit', 'Drupal\feeds_migrate_ui\Form\MigrationForm');
   $migration->setFormClass('delete', 'Drupal\feeds_migrate_ui\Form\MigrationDeleteForm');
 
-  $migration->setHandlerClass('list_builder', 'Drupal\feeds_migrate_ui\MigrationListBuilder');
+  $migration->setHandlerClass('list_builder', 'Drupal\feeds_migrate_ui\FeedsMigrationListBuilder');
 
   $migration->setLinkTemplate('canonical', '/admin/structure/feeds-migrate/sources/{migration}');
   $migration->setLinkTemplate('edit-form', '/admin/structure/feeds-migrate/sources/{migration}');
