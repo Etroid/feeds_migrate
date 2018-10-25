@@ -6,3 +6,4 @@ package: 'Migration'
 dependencies:
   - drupal:migrate (>=8.3)
   - migrate_plus:migrate_plus
+  - migrate_tools:migrate_tools
