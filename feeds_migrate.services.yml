@@ -8,3 +8,7 @@ services:
   plugin.manager.feeds_migrate.data_parser_form:
     class: Drupal\feeds_migrate\DataParserPluginManager
     parent: default_plugin_manager
+
+  feeds_migrate.plugin_form_factory:
+    class: Drupal\feeds_migrate\Plugin\PluginFormFactory
+    arguments: ['@class_resolver']

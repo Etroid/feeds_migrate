@@ -1,3 +1,12 @@
+# Add migration button on migration list provided by Migrate Tools.
+entity.feeds_migrate.add_form:
+  route_name: 'entity.migration.add_form'
+  title: 'Add migration'
+  appears_on:
+    - entity.migration.list
+
+# Button for '/admin/structure/feeds-migrate/sources'.
+# @todo remove?
 entity.feeds_migrate_source.add:
   route_name: 'entity.migration.add_form'
   title: 'Add Migration Mapper'
