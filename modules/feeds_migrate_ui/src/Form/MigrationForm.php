@@ -189,6 +189,9 @@ class MigrationForm extends EntityForm {
    * {@inheritdoc}
    */
   public function form(array $form, FormStateInterface $form_state) {
+    $form['#tree'] = TRUE;
+    $values = $form_state->getValues();
+
     $form['basics'] = [
       '#title' => $this->t('Basic settings'),
       '#type' => 'details',
@@ -282,7 +285,6 @@ class MigrationForm extends EntityForm {
           '#ajax' => [
             'callback' => '::ajaxCallback',
             'wrapper' => 'feeds-ajax-form-wrapper',
-            'progress' => 'none',
           ],
           '#plugin_type' => $type,
           '#parents' => [$type],
@@ -332,18 +334,18 @@ class MigrationForm extends EntityForm {
     }
     $values =& $form_state->getValues();
 
-    // Moved advanced settings to regular settings.
-    foreach (array_keys($this->getPlugins()) as $type) {
-      if (isset($values[$type . '_wrapper']['advanced'])) {
-        if (!isset($values[$type . '_configuration'])) {
-          $values[$type . '_configuration'] = [];
-        }
-        $values[$type . '_configuration'] += $values[$type . '_wrapper']['advanced'];
+    // Validate option form for each plugin.
+    foreach ($this->getPlugins() as $type => $plugin) {
+      $plugin_state = $this->createSubFormState($type . '_configuration', $form_state);
+      if ($plugin && isset($form[$type . '_configuration']) && $this->formFactory->hasForm($plugin, 'option')) {
+        $option_form = $this->formFactory->createInstance($plugin, 'option');
+        $option_form->validateConfigurationForm($form[$type . '_configuration'], $plugin_state);
+        $form_state->setValue($type . '_configuration', $plugin_state->getValues());
       }
-      unset($values[$type . '_wrapper']);
     }
 
-    foreach ($this->getPluginForms() as $type => $plugin) {
+    // Validate settings form for each plugin.
+    foreach ($this->getPluginForms() as $type => $plugin_form) {
       if (!isset($form[$type . '_configuration'])) {
         // When switching from a non-configurable plugin to a configurable
         // plugin, no form is yet available. So skip validating it to avoid
@@ -352,7 +354,7 @@ class MigrationForm extends EntityForm {
       }
 
       $plugin_state = $this->createSubFormState($type . '_configuration', $form_state);
-      $plugin->validateConfigurationForm($form[$type . '_configuration'], $plugin_state);
+      $plugin_form->validateConfigurationForm($form[$type . '_configuration'], $plugin_state);
       $form_state->setValue($type . '_configuration', $plugin_state->getValues());
 
       $this->moveFormStateErrors($plugin_state, $form_state);
@@ -365,6 +367,9 @@ class MigrationForm extends EntityForm {
   /**
    * Returns a list of plugins on the migration, listed per type.
    *
+   * Would be nice to instantiate data parser plugin here but this will cause
+   * issues with us needing a real readable source.
+   *
    * @return array
    *   A list of plugins, listed per type.
    *
@@ -372,17 +377,38 @@ class MigrationForm extends EntityForm {
    */
   protected function getPlugins() {
     $plugins = array_fill_keys(['fetcher', 'parser', 'destination'], NULL);
-    if ($this->entity->isNew()) {
-      return $plugins;
+
+    // Convert migration entity to array in order to create a dummy migration
+    // plugin instance. This dummy is needed in order to instantiate a
+    // destination plugin. We cannot call toArray() on the migration entity,
+    // because that may only be called on saved entities. And we really need an
+    // array representation for unsaved entities too.
+    $keys = [
+      'source',
+      'process',
+      'destination',
+      'migration_tags',
+      'migration_dependencies',
+    ];
+    $migration_data = [];
+    foreach ($keys as $key) {
+      $migration_data[$key] = $this->entity->get($key);
     }
 
-    $migration_plugin = $this->migrationPluginManager->createInstance($this->entity->id(), $this->entity->toArray());
+    // And instantiate the migration plugin.
+    $migration_plugin = $this->migrationPluginManager->createStubMigration($migration_data);
 
-    // Would be nice to instantiate data parser plugin here but this will cause
-    // issues with us needing a real readable source.
+    // Fetcher.
     $source = $this->entity->get('source');
-    $plugins['fetcher'] = $this->fetcherPlugins->createInstance($source['data_fetcher_plugin']);
-    $plugins['destination'] = $migration_plugin->getDestinationPlugin();
+    if (isset($source['data_fetcher_plugin'])) {
+      $plugins['fetcher'] = $this->fetcherPlugins->createInstance($source['data_fetcher_plugin']);
+    }
+
+    // Destination.
+    $destination = $this->entity->get('destination');
+    if (isset($destination['plugin'])) {
+      $plugins['destination'] = $migration_plugin->getDestinationPlugin();
+    }
 
     return $plugins;
   }
@@ -804,7 +830,18 @@ class MigrationForm extends EntityForm {
    * {@inheritdoc}
    */
   protected function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
-    $values = $form_state->getValues();
+    $values =& $form_state->getValues();
+
+    // Moved advanced settings to regular settings.
+    foreach ($this->getPlugins() as $type => $plugin) {
+      if (isset($values[$type . '_wrapper']['advanced'])) {
+        if (!isset($values[$type . '_configuration'])) {
+          $values[$type . '_configuration'] = [];
+        }
+        $values[$type . '_configuration'] += $values[$type . '_wrapper']['advanced'];
+      }
+      unset($values[$type . '_wrapper']);
+    }
 
     // Set ID and label.
     $entity->set('id', $values['id']);
@@ -826,22 +863,11 @@ class MigrationForm extends EntityForm {
     $id_selector = '//';
     $source['item_selector'] = '//';
     $source['ids'] = ['guid' => ['type' => 'string']];
-    $source['fields'][] = [
+    $source['fields']['guid'] = [
       'name' => 'guid',
       'label' => 'guid',
       'selector' => $id_selector,
     ];
-
-    // Set bundle on source and process.
-    // @todo Make it so entity_bundle is not hard coded to article.
-    if ($entity_bundle = 'article') {
-      $source['constants']['bundle'] = $entity_bundle;
-
-      $process = $this->entity->get('process');
-      $bundle_key = $this->getBundleKey();
-      $process[$bundle_key] = 'constants/bundle';
-      $this->entity->set('process', $process);
-    }
 
     // Write source back to entity.
     $entity->set('source', $source);
@@ -851,6 +877,17 @@ class MigrationForm extends EntityForm {
 
     // Set migration group.
     $entity->set('migration_group', $values['migration_group']);
+
+    // Allow option forms to set values.
+    foreach ($this->getPlugins() as $type => $plugin) {
+      $plugin_state = $this->createSubFormState($type . '_configuration', $form_state);
+      if ($plugin && isset($form[$type . '_wrapper']['advanced']) && $this->formFactory->hasForm($plugin, 'option')) {
+        $option_form = $this->formFactory->createInstance($plugin, 'option');
+        $option_form->copyFormValuesToEntity($entity, $form[$type . '_wrapper']['advanced'], $plugin_state);
+      }
+    }
+
+    // @todo allow configuration forms to set values.
   }
 
   /**
