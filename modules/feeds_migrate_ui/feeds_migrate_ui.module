@@ -14,6 +14,12 @@ function feeds_migrate_ui_entity_type_alter(array &$entity_types) {
 
   $migration->setFormClass('add', 'Drupal\feeds_migrate_ui\Form\MigrationForm');
   $migration->setFormClass('edit', 'Drupal\feeds_migrate_ui\Form\MigrationForm');
+  // TODO consider moving mapping UX and logic to migrate_tools module
+  $migration->setFormClass('mapping', 'Drupal\feeds_migrate_ui\Form\MigrationMappingForm');
+  $migration->setFormClass('mapping-list', 'Drupal\feeds_migrate_ui\Form\MigrationMappingForm');
+  $migration->setFormClass('mapping-add', 'Drupal\feeds_migrate_ui\Form\MigrationMappingAddForm');
+  $migration->setFormClass('mapping-edit', 'Drupal\feeds_migrate_ui\Form\MigrationMappingEditForm');
+  $migration->setFormClass('mapping-delete', 'Drupal\feeds_migrate_ui\Form\MigrationMappingDeleteForm');
   $migration->setFormClass('delete', 'Drupal\feeds_migrate_ui\Form\MigrationDeleteForm');
 
   $migration->setHandlerClass('list_builder', 'Drupal\feeds_migrate_ui\FeedsMigrationListBuilder');
@@ -21,5 +27,7 @@ function feeds_migrate_ui_entity_type_alter(array &$entity_types) {
   $migration->setLinkTemplate('canonical', '/admin/structure/feeds-migrate/sources/{migration}');
   $migration->setLinkTemplate('edit-form', '/admin/structure/feeds-migrate/sources/{migration}');
   $migration->setLinkTemplate('delete-form', '/admin/structure/feeds-migrate/sources/{migration}/delete');
+  $migration->setLinkTemplate('mapping-edit-form', '/admin/structure/feeds-migrate/source/{migration}/mapping/edit/{key}');
+
   $migration->set('admin_permission', 'administer feeds migrate importers');
 }
