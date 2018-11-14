@@ -73,7 +73,7 @@ class DefaultProcessor extends FeedsMigrateUiFieldBase {
     $element = [
       '#type' => 'textfield',
       '#title' => $field->getLabel(),
-      '#title_display' => 'invisible',
+      '#description' => $this->t('Select a source'),
       '#default_value' => $this->getFieldSelector($field->getName()),
     ];
     return $element;
@@ -101,7 +101,7 @@ class DefaultProcessor extends FeedsMigrateUiFieldBase {
       $element = [
         '#type' => 'textfield',
         '#title' => $field->getLabel(),
-        '#title_display' => 'invisible',
+        '#description' => $this->t('Select a source'),
         '#default_value' => $this->getFieldSelector($field->getName()),
       ];
       return $element;
@@ -112,6 +112,7 @@ class DefaultProcessor extends FeedsMigrateUiFieldBase {
       $element[$column_name] = [
         '#type' => 'textfield',
         '#title' => $this->getColumnName($column_name),
+        '#description' => $this->t('Select a source'),
         '#default_value' => $this->getFieldSelector($field->getName() . '/' . $column_name),
       ];
     }
