@@ -1,4 +1,4 @@
-# AssetInjectorCsss routing definition
+  # AssetInjectorCsss routing definition
 entity.migration.collection:
   path: '/admin/structure/feeds-migrate/sources'
   defaults:
@@ -23,13 +23,40 @@ entity.migration.edit_form:
   requirements:
     _permission: 'administer feeds migrate importers'
 
-entity.migration.mapping_form:
+entity.migration.mapping.list:
   path: '/admin/structure/feeds-migrate/sources/{migration}/mapping'
   defaults:
-    _entity_form: 'migration.mapping'
+    _entity_form: 'migration.mapping-list'
     _title: 'Mapping Configuration'
   requirements:
     _permission: 'administer feeds migrate importers'
+
+entity.migration.mapping.add_form:
+  path: '/admin/structure/feeds-migrate/sources/{migration}/mapping/add'
+  defaults:
+    _entity_form: 'migration.mapping-add'
+    _title: 'Add Mapping'
+  requirements:
+    _permission: 'administer feeds migrate importers'
+
+entity.migration.mapping.edit_form:
+  path: '/admin/structure/feeds-migrate/sources/{migration}/mapping/{key}'
+  defaults:
+    _entity_form: 'migration.mapping-edit'
+    _title: 'Edit Mapping'
+  requirements:
+    _permission: 'administer feeds migrate importers'
+
+entity.migration.mapping.delete_form:
+  path: '/admin/structure/feeds-migrate/sources/{migration}/mapping/{key}/delete'
+  defaults:
+    _entity_form: 'migration.mapping-delete'
+    _title: 'Delete Mapping'
+  requirements:
+    _permission: 'administer feeds migrate importers'
+
+entity.migration.mapping.process:
+  path: '/admin/structure/feeds-migrate/sources/{migration}/mapping/'
 
 entity.migration.canonical:
   path: '/admin/structure/feeds-migrate/sources/{migration}'
