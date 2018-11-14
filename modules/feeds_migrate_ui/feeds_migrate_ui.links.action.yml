@@ -12,3 +12,9 @@ entity.feeds_migrate_source.add:
   title: 'Add Migration Mapper'
   appears_on:
     - entity.migration.collection
+
+entity.migration.mapping.add_form:
+  route_name: 'entity.migration.mapping.add_form'
+  title: 'Add mapping'
+  appears_on:
+    - entity.migration.mapping.list
