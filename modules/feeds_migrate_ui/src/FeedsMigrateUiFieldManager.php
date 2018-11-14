@@ -9,7 +9,7 @@ use Drupal\Core\Plugin\DefaultPluginManager;
 use Drupal\migrate_plus\Entity\MigrationInterface;
 
 /**
- * Class FeedsMigrateUiFieldFormManager.
+ * Class FeedsMigrateUiFieldManager.
  *
  * @package Drupal\feeds_migrate_ui
  */
