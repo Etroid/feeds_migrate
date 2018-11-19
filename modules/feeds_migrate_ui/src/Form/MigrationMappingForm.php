@@ -2,10 +2,14 @@
 
 namespace Drupal\feeds_migrate_ui\Form;
 
+use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\Xss;
 use Drupal\Core\Entity\EntityFieldManager;
 use Drupal\Core\Entity\EntityForm;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\feeds_migrate_ui\FeedsMigrateUIEntityTrait;
 use Drupal\feeds_migrate_ui\FeedsMigrateUiFieldManager;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -20,6 +24,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class MigrationMappingForm extends EntityForm {
 
+  // Temporarily use a trait for easier development.
+  use FeedsMigrateUIEntityTrait;
+  
   /**
    * Plugin manager for migration plugins.
    *
@@ -76,7 +83,7 @@ class MigrationMappingForm extends EntityForm {
     $rows = [];
     $mappings = $this->getSortableMappings();
     foreach ($mappings as $target => $mapping) {
-      $rows[$target] = $this->buildFormRow($mapping, $form, $form_state);
+      $rows[$target] = $this->buildTableRow($mapping, $form, $form_state);
     }
 
     $form['mappings'] = [
@@ -106,12 +113,12 @@ class MigrationMappingForm extends EntityForm {
   protected function getTableHeader() {
     $header = [];
 
-    $header['source'] = [
-      'data' => $this->t('Source'),
-    ];
-
     $header['destination'] = [
       'data' => $this->t('Destination'),
+    ];
+
+    $header['source'] = [
+      'data' => $this->t('Source'),
     ];
 
     $header['summary'] = [
@@ -146,33 +153,30 @@ class MigrationMappingForm extends EntityForm {
    * @return array
    *   The built field row.
    */
-  protected function buildFormRow(array $mapping, array $form, FormStateInterface $form_state) {
-    /** @var \Drupal\migrate_plus\Entity\Migration $migration */
+  protected function buildTableRow(array $mapping, array $form, FormStateInterface $form_state) {
     $migration = $this->entity;
-    $target_field = $this->getMappingTarget($mapping['#target']);
-    $target_field_name = $target_field->getName();
-    $target_field_label = $target_field->getLabel();
-
     $row['#attributes']['class'][] = 'draggable';
 
-    $row['source'] = [
-      '#markup' => $mapping['#source'],
+    $destination_label = isset($mapping['#destination']) ?
+      $mapping['#destination']->getLabel() : Html::escape($mapping['#destination_key']);
+    $row['destination'] = [
+      '#markup' => $destination_label,
     ];
 
-    $row['target'] = [
-      '#markup' => $target_field_label,
+    $row['source'] = [
+      '#markup' => Xss::filterAdmin($mapping['#source']),
     ];
 
     $row['summary'] = [
-      '#markup' => $target_field_label,
+      '#markup' => '@todo',
     ];
 
-    // TODO add conditional logic around this checkbox
     $row['unique'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Unique'),
       '#title_display' => 'invisible',
       '#default_value' => FALSE,
+      '#disabled' => TRUE,
     ];
 
     $row['weight'] = [
@@ -191,7 +195,7 @@ class MigrationMappingForm extends EntityForm {
         'entity.migration.mapping.edit_form',
         [
           'migration' => $migration->id(),
-          'key' => $target_field_name,
+          'key' => $mapping['#destination_key'],
         ]
       ),
     ];
@@ -201,7 +205,7 @@ class MigrationMappingForm extends EntityForm {
         'entity.migration.mapping.delete_form',
         [
           'migration' => $migration->id(),
-          'key' => $target_field_name,
+          'key' => $mapping['#destination_key'],
         ]
       ),
     ];
@@ -214,118 +218,51 @@ class MigrationMappingForm extends EntityForm {
   }
 
   /**
-   * Find the entity type the migration is importing into.
-   *
-   * @return string
-   *   Machine name of the entity type eg 'node'.
+   * {@inheritdoc}
    */
-  protected function getEntityTypeFromMigration() {
-    if (isset($this->entity->destination['plugin'])) {
-      $destination = $this->entity->destination['plugin'];
-      if (strpos($destination, ':') !== FALSE) {
-        list(, $entity_type) = explode(':', $destination);
-        return $entity_type;
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    $mappings_original = $this->getMappings();
+
+    // Get the sorted mappings and sort them by weight.
+    $mappings = $form_state->getValue('mappings') ?: [];
+    uasort($mappings, ['Drupal\Component\Utility\SortArray', 'sortByWeightElement']);
+
+    // Make sure the reordered mapping keys match the existing mapping keys.
+    if (array_diff_key($mappings, $mappings_original)) {
+      $form_state->setError($form['mappings'], $this->t('The mappings have been altered. Please try again'));
+    }
+
+    if ($form_state->hasAnyErrors()) {
+      return;
+    }
+
+    // Rebuild migration process to reflect new order.
+    $process_sorted = [];
+    foreach ($mappings as $destination_key => $table_mapping) {
+      // Validate missing mapping.
+      if (!isset($mappings_original[$destination_key])) {
+        $form_state->setError($form['mapping'][$destination_key],
+          $this->t('Mapping %destination_key does not exist.', ['%destination_key' => $destination_key]));
+        continue;
       }
+
+      $process_sorted[$destination_key] = $mappings_original[$destination_key]['#process_lines'];
     }
+    // Set the process value so it can be used to update the migration entity
+    //@see copyFormValuesToEntity.
+    $form_state->setValue('mapping_process', $process_sorted);
+
+    parent::validateForm($form, $form_state);
   }
 
   /**
-   * The bundle the migration is importing into.
-   *
-   * @return string
-   *   Entity type bundle eg 'article'.
+   * {@inheritdoc}
    */
-  protected function getEntityBundleFromMigration() {
-    if (!empty($this->entity->source['constants']['bundle'])) {
-      return $this->entity->source['constants']['bundle'];
-    }
-  }
+  protected function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
+    $values =& $form_state->getValues();
 
-  /****************************************************************************/
-  // Mapping handling. @todo move to migration entity
-  /****************************************************************************/
-
-  /**
-   * Gets the initialized mapping plubin
-   *
-   * @return \Drupal\feeds_migrate_ui\FeedsMigrateUiFieldInterface
-   *
-   * @throws \Drupal\Component\Plugin\Exception\PluginException
-   */
-  protected function getMappingPlugin() {
-    $field = $this->getMappingTarget($this->mappingKey);
-
-    /** @var \Drupal\feeds_migrate_ui\FeedsMigrateUiFieldInterface $plugin */
-    $plugin = $this->fieldProcessorManager->getFieldPlugin($field, $this->migration);
-
-    return $plugin;
-  }
-
-  /**
-   * Get all mapping destinations.
-   *
-   * @return FieldDefinitionInterface[]
-   *  A list of mapping destination objects.
-   */
-  protected function getMappingTargets() {
-    /** @var \Drupal\Core\Entity\Sql\SqlContentEntityStorage $entity_storage */
-    $entity_storage = $this->entityTypeManager->getStorage($this->getEntityTypeFromMigration());
-    /** @var \Drupal\Core\Entity\ContentEntityType $entity_type */
-    $entity_type = $entity_storage->getEntityType();
-
-    return $this->fieldManager->getFieldDefinitions($entity_type->id(), $this->getEntityBundleFromMigration());
-  }
-
-  /**
-   * Get a single mapping target identified by its name.
-   *
-   * @param $name
-   *  The machine name of the mapping target to return.
-   * @return string|FieldDefinitionInterface
-   */
-  protected function getMappingTarget($name) {
-    $mapping_targets = $this->getMappingTargets();
-
-    return $mapping_targets[$name];
-  }
-
-  /**
-   * Returns a list of all mapping target options, keyed by field name.
-   */
-  protected function getMappingTargetOptions() {
-    $mapping_target_options = [];
-
-    /** @var FieldDefinitionInterface[] $fields */
-    $mapping_targets = $this->getMappingTargets();
-    foreach ($mapping_targets as $field_name => $field) {
-      $mapping_target_options[$field->getName()] = $field->getLabel();
-    }
-
-    return $mapping_target_options;
-  }
-
-  /**
-   * Get migration mappings as an associative array of sortable elements.
-   *
-   * @todo parse yaml into usable mapping array
-   * This should be on the migration entity itself
-   *
-   * @return array
-   *   An associative array of sortable elements.
-   */
-  protected function getSortableMappings() {
-    $mappings = $this->entity->process;
-
-    // TODO iterate over mappings and decorate each mapping with
-    // #source, #target, #weight, #unique...
-
-    return [
-      'title' => [
-        '#source' => 'title',
-        '#target' => 'title',
-        '#weight' => 0,
-      ]
-    ];
+    // Write process back to migration entity.
+    $entity->set('process', $values['process']);
   }
 
 }
