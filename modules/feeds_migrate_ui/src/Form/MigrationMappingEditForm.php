@@ -18,9 +18,9 @@ class MigrationMappingEditForm extends MigrationMappingFormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, EntityInterface $migration = NULL, string $key = NULL) {
-    $this->mappingKey = $key;
-    $form = parent::buildForm($form, $form_state, $migration, $key);
+  public function buildForm(array $form, FormStateInterface $form_state, EntityInterface $migration = NULL, string $destination_key = NULL) {
+    $this->destinationKey = $destination_key;
+    $form = parent::buildForm($form, $form_state, $migration, $destination_key);
 
     return $form;
   }

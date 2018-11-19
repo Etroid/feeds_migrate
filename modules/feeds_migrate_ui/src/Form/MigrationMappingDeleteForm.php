@@ -22,14 +22,14 @@ class MigrationMappingDeleteForm extends EntityConfirmFormBase {
   /**
    * @var string
    */
-  protected $target;
+  protected $destinationKey;
 
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, MigrationInterface $migration = NULL, $target = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, MigrationInterface $migration = NULL, $destination_key = NULL) {
     $this->migration = $migration;
-    $this->target = $target;
+    $this->destinationKey = $destination_key;
 
     $form = parent::buildForm($form, $form_state);
     return $form;
@@ -41,7 +41,7 @@ class MigrationMappingDeleteForm extends EntityConfirmFormBase {
    */
   public function getQuestion() {
     return $this->t('Are you sure you want to delete the mapping for %name?', [
-      '%name' => $this->target,
+      '%name' => $this->destinationKey,
     ]);
   }
 
@@ -66,11 +66,11 @@ class MigrationMappingDeleteForm extends EntityConfirmFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // Remove mapping from migration entity
-    // TODO move this deletion logic into the migration entity?
-    unset($this->migration->process[$this->target]);
+    // TODO move this deletion logic.
+    unset($this->migration->process[$this->destinationKey]);
 
     drupal_set_message($this->t('@target deleted.', [
-      '@target' => $this->target,
+      '@target' => $this->destinationKey,
     ]));
 
     $form_state->setRedirectUrl($this->getCancelUrl());

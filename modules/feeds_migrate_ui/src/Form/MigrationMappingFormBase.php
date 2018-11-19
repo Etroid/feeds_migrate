@@ -2,29 +2,16 @@
 
 namespace Drupal\feeds_migrate_ui\Form;
 
-use Drupal\Component\Plugin\PluginInspectionInterface;
-use Drupal\Component\Utility\NestedArray;
-use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Ajax\HtmlCommand;
-use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Entity\EntityFieldManager;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
-use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\feeds_migrate\AuthenticationFormPluginManager;
-use Drupal\feeds_migrate\DataFetcherFormPluginManager;
-use Drupal\feeds_migrate\DataParserPluginManager;
 use Drupal\feeds_migrate\Plugin\PluginFormFactory;
+use Drupal\feeds_migrate_ui\FeedsMigrateUIEntityTrait;
 use Drupal\feeds_migrate_ui\FeedsMigrateUiFieldManager;
-use Drupal\feeds_migrate_ui\FeedsMigrateUiParserSuggestion;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
-use Drupal\migrate_plus\Entity\MigrationGroup;
-use Drupal\node\Entity\Node;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -36,6 +23,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * to create simple migrations directly from the admin interface
  */
 class MigrationMappingFormBase extends EntityForm {
+
+  // Temporarily use a trait for easier development.
+  use FeedsMigrateUIEntityTrait;
 
   /**
    * Plugin manager for migration plugins.
@@ -54,7 +44,7 @@ class MigrationMappingFormBase extends EntityForm {
   /**
    * Fill This.
    *
-   * @var \Drupal\feeds_migrate_ui\FeedsMigrateUiFieldProcessorManager
+   * @var \Drupal\feeds_migrate_ui\FeedsMigrateUiFieldManager
    */
   protected $fieldProcessorManager;
 
@@ -80,18 +70,11 @@ class MigrationMappingFormBase extends EntityForm {
   protected $bundleManager;
 
   /**
-   * The migration mapping.
-   *
-   * @var array
-   */
-  protected $mapping = [];
-
-  /**
    * The migration mapping destination.
    *
    * @var string
    */
-  protected $mappingKey;
+  protected $destinationKey;
 
   /**
    * {@inheritdoc}
@@ -118,16 +101,15 @@ class MigrationMappingFormBase extends EntityForm {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, EntityInterface $migration = NULL, string $key = NULL) {
-    $this->migration = $migration;
-    $this->mappingKey = $key;
+  public function buildForm(array $form, FormStateInterface $form_state, EntityInterface $migration = NULL, string $destination_key = NULL) {
+    $this->destinationKey = $destination_key;
 
-    $options = $this->getMappingTargetOptions();
+    $options = $this->getDestinationOptions();
     asort($options);
 
     // General mapping settings
     $form['general'] = [
-      '#title' => $this->t('Mapping settings'),
+      '#title' => $this->t('General Mapping Settings'),
       '#type' => 'details',
       '#open' => TRUE,
       '#tree' => FALSE,
@@ -135,24 +117,24 @@ class MigrationMappingFormBase extends EntityForm {
 
     $form['general']['destination'] = [
       '#type' => 'select',
-      '#title' => $this->t('Mapping destination'),
+      '#title' => $this->t('Destination'),
       '#options' => $options,
       '#empty_option' => $this->t('- Select a destination -'),
-      '#default_value' => $this->mappingKey,
-      '#disabled' => isset($this->mappingKey),
+      '#default_value' => $this->destinationKey,
+      '#disabled' => isset($this->destinationKey),
       '#required' => TRUE,
     ];
 
     // Plugin settings
-    if ($this->mappingKey) {
+    if (isset($this->destinationKey)) {
       $plugin = $this->getMappingPlugin();
-      $plugin_state = $this->createSubFormState($this->mappingKey . '_configuration', $form_state);
+      $plugin_state = $this->createSubFormState($this->destinationKey . '_configuration', $form_state);
 
       if ($plugin) {
         $plugin_form = $plugin->buildConfigurationForm([], $plugin_state);
 
         $form['plugin'] = [
-          '#title' => $this->t('Field plugin settings'),
+          '#title' => $this->t('Field settings'),
           '#type' => 'details',
           '#group' => 'plugin_settings',
           '#open' => TRUE,
@@ -203,95 +185,34 @@ class MigrationMappingFormBase extends EntityForm {
   }
 
   /**
-   * Find the entity type the migration is importing into.
-   *
-   * @return string
-   *   Machine name of the entity type eg 'node'.
-   */
-  protected function getEntityTypeFromMigration() {
-    $destination = $this->entity->destination['plugin'];
-    if (strpos($destination, ':') !== FALSE) {
-      list(, $entity_type) = explode(':', $destination);
-      return $entity_type;
-    }
-  }
-
-  /**
-   * The bundle the migration is importing into.
-   *
-   * @return string
-   *   Entity type bundle eg 'article'.
-   */
-  protected function getEntityBundleFromMigration() {
-    if (!empty($this->entity->destination['default_bundle'])) {
-      return $this->entity->destination['default_bundle'];
-    }
-    elseif (!empty($this->entity->source['constants']['bundle'])) {
-      return $this->entity->source['constants']['bundle'];
-    }
-  }
-
-  /****************************************************************************/
-  // Mapping handling. @todo move to migration entity
-  /****************************************************************************/
-
-  /**
-   * Gets the initialized mapping plubin
+   * Gets the initialized mapping plugin
    *
    * @return \Drupal\feeds_migrate_ui\FeedsMigrateUiFieldInterface
    *
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
   protected function getMappingPlugin() {
-    $field = $this->getMappingTarget($this->mappingKey);
+    $field = $this->getDestinationField($this->destinationKey);
 
     /** @var \Drupal\feeds_migrate_ui\FeedsMigrateUiFieldInterface $plugin */
-    $plugin = $this->fieldProcessorManager->getFieldPlugin($field, $this->migration);
+    $plugin = $this->fieldProcessorManager->getFieldPlugin($field, $this->entity);
 
     return $plugin;
   }
 
   /**
-   * Get all mapping destinations.
-   *
-   * @return FieldDefinitionInterface[]
-   *  A list of mapping destination objects.
+   * Returns a list of all mapping destination options, keyed by field name.
    */
-  protected function getMappingTargets() {
-    /** @var \Drupal\Core\Entity\Sql\SqlContentEntityStorage $entity_storage */
-    $entity_storage = $this->entityTypeManager->getStorage($this->getEntityTypeFromMigration());
-    /** @var \Drupal\Core\Entity\ContentEntityType $entity_type */
-    $entity_type = $entity_storage->getEntityType();
-
-    return $this->fieldManager->getFieldDefinitions($entity_type->id(), $this->getEntityBundleFromMigration());
-  }
-
-  /**
-   * Get a single mapping target identified by its name.
-   *
-   * @param $name
-   *  The machine name of the mapping target to return.
-   * @return string|FieldDefinitionInterface
-   */
-  protected function getMappingTarget($name) {
-    $mapping_targets = $this->getMappingTargets();
-
-    return $mapping_targets[$name];
-  }
-
-  /**
-   * Returns a list of all mapping target options, keyed by field name.
-   */
-  protected function getMappingTargetOptions() {
-    $mapping_target_options = [];
+  protected function getDestinationOptions() {
+    $options = [];
 
     /** @var FieldDefinitionInterface[] $fields */
-    $mapping_targets = $this->getMappingTargets();
-    foreach ($mapping_targets as $field_name => $field) {
-      $mapping_target_options[$field->getName()] = $field->getLabel();
+    $fields =  $this->fieldManager->getFieldDefinitions($this->getEntityTypeIdFromMigration(), $this->getEntityBundleFromMigration());
+    foreach ($fields as $field_name => $field) {
+      $options[$field->getName()] = $field->getLabel();
     }
 
-    return $mapping_target_options;
+    return $options;
   }
 
   /**
