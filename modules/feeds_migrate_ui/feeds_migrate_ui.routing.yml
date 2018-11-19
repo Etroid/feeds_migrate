@@ -58,6 +58,14 @@ entity.migration.mapping.delete_form:
 entity.migration.mapping.process:
   path: '/admin/structure/feeds-migrate/sources/{migration}/mapping/'
 
+entity.migration.export_form:
+  path: '/admin/structure/feeds-migrate/sources/{migration}/export'
+  defaults:
+    _entity_form: 'migration.export'
+    _title: 'Export Migration'
+  requirements:
+    _permission: 'administer feeds migrate importers'
+
 entity.migration.canonical:
   path: '/admin/structure/feeds-migrate/sources/{migration}'
   defaults:
