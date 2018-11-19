@@ -223,7 +223,10 @@ class MigrationMappingFormBase extends EntityForm {
    *   Entity type bundle eg 'article'.
    */
   protected function getEntityBundleFromMigration() {
-    if (!empty($this->entity->source['constants']['bundle'])) {
+    if (!empty($this->entity->destination['default_bundle'])) {
+      return $this->entity->destination['default_bundle'];
+    }
+    elseif (!empty($this->entity->source['constants']['bundle'])) {
       return $this->entity->source['constants']['bundle'];
     }
   }
