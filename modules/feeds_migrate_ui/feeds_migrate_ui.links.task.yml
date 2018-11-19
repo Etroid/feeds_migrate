@@ -10,14 +10,15 @@ entity.migration.list:
   base_route: entity.feeds_migrate_importer.collection
   weight: 100
 
-entity.feeds_migrate_importer.mapping.list:
+entity.migration.mapping.list:
+  title: 'Mapping'
   route_name: entity.migration.mapping.list
   base_route: entity.migration.overview
-  title: Mapping
   weight: 10
 
-entity.feeds_migrate_importer.mapping.process:
-  route_name: entity.migration.mapping.process
-  base_route: entity.migration.mapping.edit_form
-  title: Mapping
-  weight: 10
+# Export migration
+entity.migration.export:
+  title: 'Export'
+  route_name: entity.migration.export_form
+  base_route: entity.migration.overview
+  weight: 15
