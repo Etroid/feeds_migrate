@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\feeds_migrate_ui\Plugin\feeds_migrate\field;
+namespace Drupal\feeds_migrate_ui\Plugin\Field;
 
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\Entity\BaseFieldOverride;
@@ -73,7 +73,7 @@ class DefaultProcessor extends FeedsMigrateUiFieldBase {
     $element = [
       '#type' => 'textfield',
       '#title' => $field->getLabel(),
-      '#description' => $this->t('Select a source'),
+      '#title_display' => 'invisible',
       '#default_value' => $this->getFieldSelector($field->getName()),
     ];
     return $element;
@@ -101,7 +101,7 @@ class DefaultProcessor extends FeedsMigrateUiFieldBase {
       $element = [
         '#type' => 'textfield',
         '#title' => $field->getLabel(),
-        '#description' => $this->t('Select a source'),
+        '#title_display' => 'invisible',
         '#default_value' => $this->getFieldSelector($field->getName()),
       ];
       return $element;
@@ -112,7 +112,6 @@ class DefaultProcessor extends FeedsMigrateUiFieldBase {
       $element[$column_name] = [
         '#type' => 'textfield',
         '#title' => $this->getColumnName($column_name),
-        '#description' => $this->t('Select a source'),
         '#default_value' => $this->getFieldSelector($field->getName() . '/' . $column_name),
       ];
     }
