@@ -3,6 +3,7 @@
 namespace Drupal\feeds_migrate_ui;
 
 use Drupal\Core\Cache\CacheBackendInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
@@ -27,7 +28,7 @@ class FeedsMigrateUiFieldManager extends DefaultPluginManager {
    *   The module handler to invoke the alter hook with.
    */
   public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
-    parent::__construct('Plugin/feeds_migrate/field',
+    parent::__construct('Plugin/Field',
       $namespaces,
       $module_handler,
       'Drupal\feeds_migrate_ui\FeedsMigrateUiFieldInterface',
@@ -42,13 +43,15 @@ class FeedsMigrateUiFieldManager extends DefaultPluginManager {
    *
    * @param FieldDefinitionInterface $field
    *   The field definition.
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The migration entity
    *
    * @return bool|object
    *   The plugin if a form plugin is defined, false if none.
    *
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
-  public function getFieldPlugin(FieldDefinitionInterface $field, MigrationInterface $entity) {
+  public function getFieldPlugin(FieldDefinitionInterface $field, EntityInterface $entity) {
     $config = [
       'field' => $field,
       'entity' => $entity,
