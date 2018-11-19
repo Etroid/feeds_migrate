@@ -5,11 +5,11 @@ namespace Drupal\feeds_migrate_ui\Annotation;
 use Drupal\Component\Annotation\Plugin;
 
 /**
- * Defines an authentication annotation object.
+ * Defines a migration field mapping annotation object.
  *
- * @see \Drupal\migrate_plus\AuthenticationPluginBase
- * @see \Drupal\migrate_plus\AuthenticationPluginInterface
- * @see \Drupal\migrate_plus\AuthenticationPluginManager
+ * @see \Drupal\feeds_migrate_ui\FeedsMigrateUIFieldBase
+ * @see \Drupal\feeds_migrate_ui\FeedsMigrateUiFieldInterface
+ * @see \Drupal\feeds_migrate_ui\FeedsMigrateUiFieldManager
  * @see plugin_api
  *
  * @Annotation
