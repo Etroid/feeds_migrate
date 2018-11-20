@@ -248,21 +248,11 @@ class MigrationMappingForm extends EntityForm {
 
       $process_sorted[$destination_key] = $mappings_original[$destination_key]['#process_lines'];
     }
-    // Set the process value so it can be used to update the migration entity
-    //@see copyFormValuesToEntity.
-    $form_state->setValue('mapping_process', $process_sorted);
-
-    parent::validateForm($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
-    $values =& $form_state->getValues();
 
     // Write process back to migration entity.
-    $entity->set('process', $values['process']);
+    //$this->entity->set('process', $process_sorted);
+
+    parent::validateForm($form, $form_state);
   }
 
 }
