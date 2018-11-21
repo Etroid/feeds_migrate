@@ -10,5 +10,8 @@
   "license": "GPL-2.0+",
   "require": {
     "drupal/migrate_plus": "~4.0"
+  },
+  "require-dev": {
+    "drupal/migrate_plus": "4.x-dev"
   }
 }
