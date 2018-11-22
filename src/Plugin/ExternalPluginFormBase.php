@@ -78,4 +78,41 @@ abstract class ExternalPluginFormBase implements PluginFormInterface, PluginAwar
     }
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function defaultConfiguration() {
+    return [];
+  }
+
+  /**
+   * Get a particular configuration value.
+   *
+   * @param string $key
+   *   Key of the configuration.
+   *
+   * @return mixed|null
+   *   Setting value if found.
+   */
+  protected function getSetting($key) {
+    if (!empty($this->plugin)) {
+      // Get configuration from plugin. We need to use reflection here as there
+      // are no public methods to retrieve the plugin's configuration.
+      $class = new ReflectionClass(get_class($this->plugin));
+      $property = $class->getProperty('configuration');
+      $property->setAccessible(TRUE);
+      $configuration = $property->getValue($this->plugin);
+
+      if (isset($configuration[$key])) {
+        return $configuration[$key];
+      }
+    }
+
+    // Try default configuration.
+    $default_configuration = $this->defaultConfiguration();
+    if (isset($default_configuration[$key])) {
+      return $default_configuration[$key];
+    }
+  }
+
 }

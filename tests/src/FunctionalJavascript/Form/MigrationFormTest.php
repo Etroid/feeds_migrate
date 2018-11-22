@@ -39,7 +39,7 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $edit = [
       'fetcher' => 'http',
       'parser' => 'json',
-      'destination_wrapper[advanced][bundle]' => $content_type->id(),
+      'destination_wrapper[advanced][default_bundle]' => $content_type->id(),
     ];
 
     // Select 'entity:node' for destination, so a selector for bundle appears.
@@ -62,13 +62,10 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $this->assertEquals('http', $migration->get('source')['data_fetcher_plugin']);
     $this->assertEquals('json', $migration->get('source')['data_parser_plugin']);
     $this->assertEquals('entity:node', $migration->get('destination')['plugin']);
-    $this->assertEquals($content_type->id(), $migration->get('source')['constants']['bundle']);
+    $this->assertEquals($content_type->id(), $migration->get('destination')['default_bundle']);
 
-    // Bundle.
-    $expected_processes = [
-      'type' => 'constants/bundle',
-    ];
-    $this->assertEquals($expected_processes, $migration->get('process'));
+    // Process.
+    $this->assertEquals([], $migration->get('process'));
   }
 
   /**
@@ -82,7 +79,7 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $edit = [
       'fetcher' => 'file',
       'parser' => 'simple_xml',
-      'destination_wrapper[advanced][bundle]' => $vocabulary->id(),
+      'destination_wrapper[advanced][default_bundle]' => $vocabulary->id(),
     ];
 
     // Select 'entity:taxonomy_term' for destination, so a selector for bundle appears.
@@ -105,13 +102,10 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $this->assertEquals('file', $migration->get('source')['data_fetcher_plugin']);
     $this->assertEquals('simple_xml', $migration->get('source')['data_parser_plugin']);
     $this->assertEquals('entity:taxonomy_term', $migration->get('destination')['plugin']);
-    $this->assertEquals($vocabulary->id(), $migration->get('source')['constants']['bundle']);
+    $this->assertEquals($vocabulary->id(), $migration->get('destination')['default_bundle']);
 
-    // Bundle.
-    $expected_processes = [
-      'vid' => 'constants/bundle',
-    ];
-    $this->assertEquals($expected_processes, $migration->get('process'));
+    // Process.
+    $this->assertEquals([], $migration->get('process'));
   }
 
   /**
@@ -131,13 +125,10 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
         'plugin' => 'null',
         'data_fetcher_plugin' => 'http',
         'data_parser_plugin' => 'simple_xml',
-        'constants' => ['bundle' => $vocabulary2->id()],
-      ],
-      'process' => [
-        'vid' => 'constants/bundle',
       ],
       'destination' => [
         'plugin' => 'entity:taxonomy_term',
+        'default_bundle' => $vocabulary2->id(),
       ],
       'migration_tags' => [],
       'migration_dependencies' => [],
@@ -151,7 +142,7 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $session->fieldValueEquals('fetcher', 'http');
     $session->fieldValueEquals('parser', 'simple_xml');
     $session->fieldValueEquals('destination', 'entity:taxonomy_term');
-    $session->fieldValueEquals('destination_wrapper[advanced][bundle]', $vocabulary2->id());
+    $session->fieldValueEquals('destination_wrapper[advanced][default_bundle]', $vocabulary2->id());
 
     // Change destination to 'user'.
     $this->getSession()->getPage()->selectFieldOption('destination', 'entity:user');
@@ -167,10 +158,8 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $this->assertEquals('simple_xml', $migration->get('source')['data_parser_plugin']);
     $this->assertEquals('entity:user', $migration->get('destination')['plugin']);
 
-    // @todo check if bundle information was destroyed.
-    $this->markTestIncomplete('Bundle information is not thrown away yet when editing a migration.');
-    $this->assertArrayNotHasKey('constants', $migration->get('source'));
-    $this->assertEquals([], $migration->get('process'));
+    // Check if bundle information was destroyed.
+    $this->assertArrayNotHasKey('default_bundle', $migration->get('destination'));
   }
 
 }

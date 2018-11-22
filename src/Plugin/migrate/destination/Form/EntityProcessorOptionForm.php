@@ -17,12 +17,12 @@ class EntityProcessorOptionForm extends ExternalPluginFormBase {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $entity_type = $this->getEntityType();
     if ($entity_type && $bundle_key = $entity_type->getKey('bundle')) {
-      $form['bundle'] = [
+      $form['default_bundle'] = [
         '#type' => 'select',
         '#options' => $this->bundleOptions($entity_type),
         '#title' => $entity_type->getBundleLabel(),
         '#required' => TRUE,
-        '#default_value' => $this->getBundle(),
+        '#default_value' => $this->getSetting('default_bundle'),
         //'#disabled' => $this->plugin->isLocked(),
       ];
     }
@@ -45,32 +45,15 @@ class EntityProcessorOptionForm extends ExternalPluginFormBase {
   }
 
   /**
-   * Returns bundle from migration if configured.
-   *
-   * @return string
-   *   The selected bundle.
-   */
-  protected function getBundle() {
-    $migration = $this->getMigration();
-    if ($migration) {
-      $source_config = $migration->getSourceConfiguration();
-      if (isset($source_config['constants']['bundle'])) {
-        return $source_config['constants']['bundle'];
-      }
-    }
-  }
-
-  /**
    * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
     $entity_type = $this->getEntityType();
     if ($entity_type && $bundle_key = $entity_type->getKey('bundle')) {
-      $entity->source['constants']['bundle'] = $form_state->getValue('bundle');
-      $entity->process[$bundle_key] = 'constants/bundle';
+      $entity->destination['default_bundle'] = $form_state->getValue('default_bundle');
     }
     else {
-      unset($entity->source['constants']['bundle']);
+      unset($entity->destination['default_bundle']);
     }
   }
 
