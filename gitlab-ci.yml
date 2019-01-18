@@ -1,0 +1,55 @@
+stages:
+  - build
+  - test
+
+## Build the testing environment.
+build:
+  stage: build
+  image: andrewberry/drupal_tests:0.4.0
+  services:
+    - mariadb:10.3
+    - selenium/standalone-chrome-debug:3.7.1-beryllium
+  variables:
+    MYSQL_ALLOW_EMPTY_PASSWORD: 1
+  script:
+    - composer install
+    - robo install:dependencies
+  artifacts:
+    paths:
+      - vendor
+      - web
+  except:
+    - master
+
+## Job to run Functional tests.
+test:functional_tests:
+  stage: test
+  dependencies:
+    - build
+  script:
+    - ./test-functional.sh feeds_migrate
+  artifacts:
+    paths:
+      - artifacts/phpunit
+
+## Job to check coding standards.
+test:code_sniffer:
+  stage: test
+  dependencies:
+    - build
+  script:
+    - ./code-sniffer.sh feeds_migrate
+  artifacts:
+    paths:
+      - artifacts/phpcs
+
+## Job to check test coverage.
+test:code_coverage:
+stage: test
+  dependencies:
+    - build
+  script:
+    - ./code-coverage-stats.sh feeds_migrate
+  artifacts:
+    paths:
+      - artifacts
