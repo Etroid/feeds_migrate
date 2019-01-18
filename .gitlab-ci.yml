@@ -26,6 +26,7 @@ test:functional_tests:
   dependencies:
     - build
   script:
+    - cd /var/www/html
     - ./test-functional.sh feeds_migrate
   artifacts:
     paths:
@@ -37,6 +38,8 @@ test:code_sniffer:
   dependencies:
     - build
   script:
+    - cd /var/www/html
+    - ls -al
     - ./code-sniffer.sh feeds_migrate
   artifacts:
     paths:
@@ -48,6 +51,7 @@ test:code_coverage:
   dependencies:
     - build
   script:
+    - cd /var/www/html
     - ./code-coverage-stats.sh feeds_migrate
   artifacts:
     paths:
