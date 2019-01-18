@@ -13,7 +13,6 @@ build:
     MYSQL_ALLOW_EMPTY_PASSWORD: 1
   script:
     - composer install
-    - robo install:dependencies
   artifacts:
     paths:
       - vendor
