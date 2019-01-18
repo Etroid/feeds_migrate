@@ -45,7 +45,7 @@ test:code_sniffer:
 
 ## Job to check test coverage.
 test:code_coverage:
-stage: test
+  stage: test
   dependencies:
     - build
   script:
