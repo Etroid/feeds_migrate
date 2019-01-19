@@ -15,10 +15,15 @@ cache:
   paths:
     - vendor/
 
+before_script:
+  # Install and run Composer
+  - composer install
+
 ## Build the testing environment.
 build:
   stage: build
   script:
+    - cd /var/www/html
     - ./update-dependencies.sh feeds_migrate
   artifacts:
     paths:
