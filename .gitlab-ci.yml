@@ -1,18 +1,25 @@
+image: andrewberry/drupal_tests:0.4.0
+services:
+  - mariadb:10.3
+  - selenium/standalone-chrome-debug:3.7.1-beryllium
+variables:
+  MYSQL_ALLOW_EMPTY_PASSWORD: 1
+
 stages:
   - build
   - test
 
+# Cache libraries in between jobs
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - vendor/
+
 ## Build the testing environment.
 build:
   stage: build
-  image: andrewberry/drupal_tests:0.4.0
-  services:
-    - mariadb:10.3
-    - selenium/standalone-chrome-debug:3.7.1-beryllium
-  variables:
-    MYSQL_ALLOW_EMPTY_PASSWORD: 1
   script:
-    - composer install
+    - ./update-dependencies.sh feeds_migrate
   artifacts:
     paths:
       - vendor
@@ -23,18 +30,19 @@ build:
 ## Job to run Functional tests.
 test:functional_tests:
   stage: test
-  #dependencies:
-  #  - build
-  image: andrewberry/drupal_tests:0.4.0
-  services:
-    - mariadb:10.3
-    - selenium/standalone-chrome-debug:3.7.1-beryllium
-  variables:
-    MYSQL_ALLOW_EMPTY_PASSWORD: 1
   script:
-    - composer install
     - cd /var/www/html
     - ./test-functional.sh feeds_migrate
+  artifacts:
+    paths:
+      - artifacts/phpunit
+
+## Job to run Functional tests.
+test:functional_js_tests:
+  stage: test
+  script:
+    - cd /var/www/html
+    - ./test-functional-js.sh feeds_migrate
   artifacts:
     paths:
       - artifacts/phpunit
@@ -42,11 +50,8 @@ test:functional_tests:
 ## Job to check coding standards.
 test:code_sniffer:
   stage: test
-  dependencies:
-    - build
   script:
     - cd /var/www/html
-    - ls -al
     - ./code-sniffer.sh feeds_migrate
   artifacts:
     paths:
@@ -55,8 +60,6 @@ test:code_sniffer:
 ## Job to check test coverage.
 test:code_coverage:
   stage: test
-  dependencies:
-    - build
   script:
     - cd /var/www/html
     - ./code-coverage-stats.sh feeds_migrate
