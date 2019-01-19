@@ -23,9 +23,16 @@ build:
 ## Job to run Functional tests.
 test:functional_tests:
   stage: test
-  dependencies:
-    - build
+  #dependencies:
+  #  - build
+  image: andrewberry/drupal_tests:0.4.0
+  services:
+    - mariadb:10.3
+    - selenium/standalone-chrome-debug:3.7.1-beryllium
+  variables:
+    MYSQL_ALLOW_EMPTY_PASSWORD: 1
   script:
+    - composer install
     - cd /var/www/html
     - ./test-functional.sh feeds_migrate
   artifacts:
