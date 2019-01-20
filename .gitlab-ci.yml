@@ -14,7 +14,7 @@ build:
   stage: build
   script:
     - cd /var/www/html
-    - ./update-dependencies.sh feeds_migrate
+    - composer install
   artifacts:
     paths:
       - vendor
