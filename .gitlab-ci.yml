@@ -32,7 +32,8 @@ test:tests:
   stage: test
   script:
     - cd /var/www/html
-    - ./tests.sh feeds_migrate
+    - ./update-dependencies.sh feeds_migrate
+    - ./test.sh feeds_migrate
     - ./test-functional.sh feeds_migrate
     - ./test-functional-js.sh feeds_migrate
   artifacts:
@@ -44,6 +45,7 @@ test:code_sniffer:
   stage: test
   script:
     - cd /var/www/html
+    - ./update-dependencies.sh feeds_migrate
     - ./code-sniffer.sh feeds_migrate
   artifacts:
     paths:
@@ -54,6 +56,7 @@ test:code_coverage:
   stage: test
   script:
     - cd /var/www/html
+    - ./update-dependencies.sh feeds_migrate
     - ./code-coverage-stats.sh feeds_migrate
   artifacts:
     paths:
