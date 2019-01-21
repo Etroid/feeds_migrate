@@ -17,12 +17,7 @@ build:
   stage: build
   script:
     - cd /var/www/html
-    - ls -al modules/feeds_migrate/
     - ./update-dependencies.sh feeds_migrate
-  artifacts:
-    paths:
-      - vendor
-      - web
   except:
     - master
   # Cache libraries in between jobs
@@ -36,9 +31,9 @@ test:tests:
   stage: test
   script:
     - cd /var/www/html
-    - ./update-dependencies.sh feeds_migrate
-    - ./test.sh feeds_migrate
-    - ./test-functional.sh feeds_migrate
+    #- ./update-dependencies.sh feeds_migrate
+    #- ./test.sh feeds_migrate
+    #- ./test-functional.sh feeds_migrate
     - ./test-functional-js.sh feeds_migrate
   artifacts:
     paths:
