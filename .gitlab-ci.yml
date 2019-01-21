@@ -33,6 +33,8 @@ test:tests:
   script:
     - cd /var/www/html
     - ./update-dependencies.sh feeds_migrate
+    - ls -al modules
+    - ls -al modules/feeds_migrate
     - ./test.sh feeds_migrate
     - ./test-functional.sh feeds_migrate
     - ./test-functional-js.sh feeds_migrate
