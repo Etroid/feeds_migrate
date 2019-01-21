@@ -5,16 +5,21 @@ services:
 variables:
   MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
+before_script:
+  - ln -s /builds /var/www/html/modules
+
 stages:
   - build
-  - test
+  #- test
 
 ## Build the testing environment.
 build:
   stage: build
   script:
     - cd /var/www/html
-    - composer install
+    - ls -al modules
+    - ls -al modules/feeds_migrate
+    - ./update-dependencies.sh feeds_migrate
   artifacts:
     paths:
       - vendor
@@ -33,8 +38,6 @@ test:tests:
   script:
     - cd /var/www/html
     - ./update-dependencies.sh feeds_migrate
-    - ls -al modules
-    - ls -al modules/feeds_migrate
     - ./test.sh feeds_migrate
     - ./test-functional.sh feeds_migrate
     - ./test-functional-js.sh feeds_migrate
