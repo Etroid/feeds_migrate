@@ -6,9 +6,7 @@ variables:
   #MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
 before_script:
-  - ls -al ${CI_PROJECT_DIR}/
-  - ls -al ${CI_PROJECT_DIR}/feeds_migrate/
-  - ln -sf ${CI_PROJECT_DIR}/feeds_migrate /var/www/html/modules/feeds_migrate
+  - ln -sf ${CI_PROJECT_DIR} /var/www/html/modules/feeds_migrate
 
 stages:
   - build
