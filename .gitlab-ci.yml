@@ -10,7 +10,7 @@ before_script:
 
 stages:
   - build
-  #- test
+  - test
 
 ## Build the testing environment.
 build:
