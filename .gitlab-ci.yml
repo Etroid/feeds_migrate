@@ -6,7 +6,9 @@ variables:
   MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
 before_script:
-  - ln -sf /build/feeds_migrate/feeds_migrate /var/www/html/modules/feeds_migrate
+  - ln -sf /builds/feeds_migrate/feeds_migrate /var/www/html/modules/feeds_migrate
+  - ls -al /builds
+  - ls -al /builds/feeds_migrate/feeds_migrate/
 
 stages:
   - build
@@ -17,8 +19,7 @@ build:
   stage: build
   script:
     - cd /var/www/html
-    - ls -al modules/feeds_migrate
-    - ls -al modules/feeds_migrate/tests
+    - ls -al modules/feeds_migrate/
     - ./update-dependencies.sh feeds_migrate
   artifacts:
     paths:
