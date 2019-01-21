@@ -6,7 +6,7 @@ variables:
   MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
 before_script:
-  - ln -s /builds /var/www/html/modules
+  - ln -s /builds/feeds_migrate /var/www/html/modules/feeds_migrate
 
 stages:
   - build
