@@ -3,12 +3,12 @@ services:
   - mariadb:10.3
   - selenium/standalone-chrome-debug:3.7.1-beryllium
 variables:
-  MYSQL_ALLOW_EMPTY_PASSWORD: 1
+  #MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
 before_script:
-  - ln -sf /builds/feeds_migrate/feeds_migrate /var/www/html/modules/feeds_migrate
-  - ls -al /builds
-  - ls -al /builds/feeds_migrate/feeds_migrate/
+  - ls -al ${CI_PROJECT_DIR}/
+  - ls -al ${CI_PROJECT_DIR}/feeds_migrate/
+  - ln -sf ${CI_PROJECT_DIR}/feeds_migrate /var/www/html/modules/feeds_migrate
 
 stages:
   - build
