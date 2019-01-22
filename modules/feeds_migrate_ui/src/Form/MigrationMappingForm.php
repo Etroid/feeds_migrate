@@ -2,15 +2,13 @@
 
 namespace Drupal\feeds_migrate_ui\Form;
 
-use Drupal\Component\Utility\Html;
-use Drupal\Component\Utility\Xss;
 use Drupal\Core\Entity\EntityFieldManager;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\feeds_migrate_ui\FeedsMigrateUIEntityTrait;
-use Drupal\feeds_migrate_ui\FeedsMigrateUiFieldManager;
+use Drupal\feeds_migrate\MappingFieldFormManager;
+use Drupal\feeds_migrate\MigrationEntityHelperManager;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -24,15 +22,24 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class MigrationMappingForm extends EntityForm {
 
-  // Temporarily use a trait for easier development.
-  use FeedsMigrateUIEntityTrait;
-  
+  /**
+   * @var \Drupal\feeds_migrate\MigrationEntityHelperManager
+   */
+  protected $migrationEntityHelperManager;
+
   /**
    * Plugin manager for migration plugins.
    *
    * @var \Drupal\migrate\Plugin\MigrationPluginManagerInterface
    */
   protected $migrationPluginManager;
+
+  /**
+   * Plugin manager for migration mapping plugins.
+   *
+   * @var \Drupal\feeds_migrate\MappingFieldFormManager
+   */
+  protected $mappingFieldManager;
 
   /**
    * Fill This.
@@ -42,21 +49,15 @@ class MigrationMappingForm extends EntityForm {
   protected $fieldManager;
 
   /**
-   * Fill This.
-   *
-   * @var \Drupal\feeds_migrate_ui\FeedsMigrateUiFieldManager
-   */
-  protected $fieldProcessorManager;
-
-  /**
    * {@inheritdoc}
    * TODO clean up dependencies
    */
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('plugin.manager.migration'),
-      $container->get('plugin.manager.feeds_migrate_ui.field'),
-      $container->get('entity_field.manager')
+      $container->get('plugin.manager.feeds_migrate.mapping_field_form'),
+      $container->get('entity_field.manager'),
+      $container->get('feeds_migrate.migration_entity_helper')
     );
   }
 
@@ -64,13 +65,36 @@ class MigrationMappingForm extends EntityForm {
    * @todo: clean up dependencies.
    *
    * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_plugin_manager
-   * @param \Drupal\feeds_migrate_ui\FeedsMigrateUiFieldManager $field_processor
-   * @param \Drupal\feeds_migrate_ui\Form\EntityFieldManager $field_manager
+   * @param \Drupal\feeds_migrate\MappingFieldFormManager $mapping_field_manager
+   * @param \Drupal\Core\Entity\EntityFieldManager $field_manager
+   * @param \Drupal\feeds_migrate\MigrationEntityHelperManager $migration_entity_helper_manager
    */
-  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, FeedsMigrateUiFieldManager $field_processor, EntityFieldManager $field_manager) {
+  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, MappingFieldFormManager $mapping_field_manager, EntityFieldManager $field_manager, MigrationEntityHelperManager $migration_entity_helper_manager) {
     $this->migrationPluginManager = $migration_plugin_manager;
-    $this->fieldProcessorManager = $field_processor;
+    $this->mappingFieldManager = $mapping_field_manager;
     $this->fieldManager = $field_manager;
+    $this->migrationEntityHelperManager = $migration_entity_helper_manager;
+  }
+
+  /**
+   * Returns the helper for a migration entity.
+   */
+  protected function migrationEntityHelper() {
+    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
+    $migration = $this->entity;
+
+    return $this->migrationEntityHelperManager->get($migration);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function afterBuild(array $element, FormStateInterface $form_state) {
+    // Overriding \Drupal\Core\Entity\EntityForm::afterBuild because
+    // it calls ::buildEntity(), which calls ::copyFormValuesToEntity, which
+    // attempts to populate the entity even though nothing has been validated.
+    // @see \Drupal\Core\Entity\EntityForm::afterBuild
+    return $element;
   }
 
   /**
@@ -81,9 +105,19 @@ class MigrationMappingForm extends EntityForm {
 
     // Build table rows for mappings.
     $rows = [];
-    $mappings = $this->getSortableMappings();
+    $mappings = $this->migrationEntityHelper()->getSortableMappings();
     foreach ($mappings as $target => $mapping) {
-      $rows[$target] = $this->buildTableRow($mapping, $form, $form_state);
+      $rows[$target] = $this->buildTableRow($mapping);
+
+      if (isset($mapping['#properties'])) {
+        foreach ($mapping['#properties'] as $property => $info) {
+          $id = $target . '.' . $property;
+          $rows[$id] = $this->buildTableRow($mapping, $property);
+
+          // Exclude these rows from the form_state
+          $rows[$id]['#parents'] = ['mapping', $target];
+        }
+      }
     }
 
     $form['mappings'] = [
@@ -92,12 +126,23 @@ class MigrationMappingForm extends EntityForm {
       '#empty' => $this->t('Please add mappings to this migration.'),
       '#tabledrag' => [
         [
+          'action' => 'match',
+          'relationship' => 'parent',
+          'group' => 'row-pid',
+          'source' => 'row-id',
+          'hidden' => TRUE, /* hides the WEIGHT & PARENT tree columns below */
+          'limit' => 0,
+        ],
+        [
           'action' => 'order',
           'relationship' => 'sibling',
-          'group' => 'table-sort-weight',
+          'group' => 'row-weight',
         ]
       ],
     ] + $rows;
+
+    // Add custom CSS.
+    $form['#attached']['library'][] = 'feeds_migrate_ui/feeds_migrate_ui';
 
     $form = parent::buildForm($form, $form_state);
 
@@ -133,8 +178,10 @@ class MigrationMappingForm extends EntityForm {
       'data' => $this->t('Weight'),
     ];
 
+    // We hide the parent column since we have no actual use for it in the UI.
     $header['operations'] = [
       'data' => $this->t('Operations'),
+      'colspan' => 2,
     ];
 
     return $header;
@@ -145,70 +192,144 @@ class MigrationMappingForm extends EntityForm {
    *
    * @param $mapping
    *   The raw mapping array.
-   * @param array $form
-   *   Current form.
-   * @param FormStateInterface $form_state
-   *   Current form state.
+   * @param $property
+   *   The field property to generate the nested table row for.
    *
    * @return array
    *   The built field row.
    */
-  protected function buildTableRow(array $mapping, array $form, FormStateInterface $form_state) {
+  protected function buildTableRow(array $mapping, $property = NULL) {
+    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
     $migration = $this->entity;
-    $row['#attributes']['class'][] = 'draggable';
+    /** @var \Drupal\feeds_migrate\MappingFieldFormInterface  $plugin */
+    $plugin = $this->mappingFieldManager->getMappingFieldInstance($mapping, $migration);
+    $parent_id = $row_id = $destination = $mapping['#destination']['key'];
+    $source = $mapping['source'] ?? [];
+    $operations = [];
 
-    $destination_label = isset($mapping['#destination']) ?
-      $mapping['#destination']->getLabel() : Html::escape($mapping['#destination_key']);
-    $row['destination'] = [
-      '#markup' => $destination_label,
-    ];
-
-    $row['source'] = [
-      '#markup' => Xss::filterAdmin($mapping['#source']),
-    ];
-
-    $row['summary'] = [
-      '#markup' => '@todo',
-    ];
-
-    $row['unique'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Unique'),
-      '#title_display' => 'invisible',
-      '#default_value' => FALSE,
-      '#disabled' => TRUE,
-    ];
-
-    $row['weight'] = [
-      '#type' => 'weight',
-      '#title' => $this->t('Weight'),
-      '#title_display' => 'invisible',
-      '#default_value' => $mapping['#weight'],
+    // Initialize our row.
+    $row = [
       '#attributes' => [
-        'class' => ['table-sort-weight'],
+        'class' => ['draggable'],
       ],
+      'destination' => [],
+      'source' => [],
+      'summary' => [],
+      'unique' => [],
+      'weight' => [],
+      'parent' => [
+        'id' => [
+          '#parents' => ['mappings', $row_id, 'id'],
+          '#type' => 'hidden',
+          '#value' => $row_id,
+          '#attributes' => [
+            'class' => ['row-id'],
+          ],
+        ],
+        'pid' => [
+          '#parents' => ['mappings', $row_id, 'pid'],
+          '#type' => 'hidden',
+          '#title' => $this->t('Parent ID'),
+          '#value' => $parent_id,
+          '#attributes' => [
+            'class' => ['row-pid'],
+          ],
+        ],
+      ],
+      'operations' => [],
     ];
 
-    $operations['edit'] = [
-      'title' => $this->t('Edit'),
-      'url' => new Url(
-        'entity.migration.mapping.edit_form',
-        [
-          'migration' => $migration->id(),
-          'key' => $mapping['#destination_key'],
-        ]
-      ),
+    // Whenever applicable, use the field label as our destination value.
+    if (isset($mapping['#destination']['#field'])) {
+      $destination = $mapping['#destination']['#field']->getLabel() . '(' . $destination . ')';
+    }
+
+    // If we are handling a field property, adjust the table values.
+    if ($property) {
+      $row['#attributes']['class'][] = 'tabledrag-leaf';
+      // Add custom class to prevent dragging from properties.
+      $row['#attributes']['class'][] = 'tabledrag-locked';
+      $destination = $property;
+      $source = $mapping['#properties'][$property]['source'];
+    }
+    else {
+      $row['#attributes']['class'][] = 'tabledrag-root';
+
+      // Only add the weight column for the root mapping fields.
+      $row['weight'] = [
+        '#type' => 'weight',
+        '#title' => $this->t('Weight'),
+        '#title_display' => 'invisible',
+        '#default_value' => $mapping['#weight'],
+        '#delta' => 30,
+        '#attributes' => [
+          'class' => ['row-weight'],
+        ],
+      ];
+    }
+
+    // Destination
+    $row['destination'] = [
+      [
+        '#theme' => 'indentation',
+        // Adjust indentation if we are handling a nested field property.
+        '#size' => ($property) ? 1 : 0,
+      ],
+      [
+        '#markup' => $destination,
+      ]
     ];
-    $operations['delete'] = [
-      'title' => $this->t('Delete'),
-      'url' => new Url(
-        'entity.migration.mapping.delete_form',
-        [
-          'migration' => $migration->id(),
-          'key' => $mapping['#destination_key'],
-        ]
-      ),
+
+    // Source
+    $row['source'] = [
+      '#markup' => is_array($source) ? implode('<br>', $source) : $source,
     ];
+
+    // Summary of process plugins
+    $summary = $plugin->getSummary($mapping, $property);
+    if ($summary) {
+      $row['summary'] = [
+        '#type' => 'textarea',
+        '#rows' => 5,
+        '#disabled' => TRUE,
+        '#default_value' => $summary,
+      ];
+    }
+
+    // Unique
+    if (!$property) {
+      $row['unique'] = [
+        '#type' => 'checkbox',
+        '#title' => $this->t('Unique'),
+        '#title_display' => 'invisible',
+        '#default_value' => FALSE,
+        '#disabled' => TRUE,
+      ];
+    }
+
+    // Operations
+    if (!$property) {
+      $operations['edit'] = [
+        'title' => $this->t('Edit'),
+        'url' => new Url(
+          'entity.migration.mapping.edit_form',
+          [
+            'migration' => $migration->id(),
+            'key' => rawurlencode($mapping['#destination']['key']),
+          ]
+        ),
+      ];
+      $operations['delete'] = [
+        'title' => $this->t('Delete'),
+        'url' => new Url(
+          'entity.migration.mapping.delete_form',
+          [
+            'migration' => $migration->id(),
+            'key' =>  rawurlencode($mapping['#destination']['key']),
+          ]
+        ),
+      ];
+    }
     $row['operations'] = [
       '#type' => 'operations',
       '#links' => $operations,
@@ -221,38 +342,65 @@ class MigrationMappingForm extends EntityForm {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    $mappings_original = $this->getMappings();
+    $mappings_original = $this->migrationEntityHelper()->getMappings();
 
     // Get the sorted mappings and sort them by weight.
-    $mappings = $form_state->getValue('mappings') ?: [];
+    $mappings = $form_state->cleanValues()->getValue('mappings') ?: [];
     uasort($mappings, ['Drupal\Component\Utility\SortArray', 'sortByWeightElement']);
 
     // Make sure the reordered mapping keys match the existing mapping keys.
     if (array_diff_key($mappings, $mappings_original)) {
-      $form_state->setError($form['mappings'], $this->t('The mappings have been altered. Please try again'));
+      $form_state->setError($form['mappings'],
+        $this->t('The mapping properties have been altered. Please try again'));
+    }
+
+    $mappings_sorted = [];
+    foreach ($mappings as $key => $process_lines) {
+      // Validate missing mappings.
+      if (!isset($mappings_original[$key])) {
+        $form_state->setError($form['mappings'][$key],
+          $this->t('A mapping for field %destination_field does not exist.', [
+            '%destination_field' => $key]));
+        continue;
+      }
+
+      $mappings_sorted[$key] = $mappings_original[$key];
     }
 
     if ($form_state->hasAnyErrors()) {
       return;
     }
 
-    // Rebuild migration process to reflect new order.
-    $process_sorted = [];
-    foreach ($mappings as $destination_key => $table_mapping) {
-      // Validate missing mapping.
-      if (!isset($mappings_original[$destination_key])) {
-        $form_state->setError($form['mapping'][$destination_key],
-          $this->t('Mapping %destination_key does not exist.', ['%destination_key' => $destination_key]));
-        continue;
-      }
-
-      $process_sorted[$destination_key] = $mappings_original[$destination_key]['#process_lines'];
-    }
-
-    // Write process back to migration entity.
-    //$this->entity->set('process', $process_sorted);
+    // Set the new mappings
+    $this->migrationEntityHelper()->setMappings($mappings_sorted);
 
     parent::validateForm($form, $form_state);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
+    // Write process back to migration entity.
+    $mappings = $this->migrationEntityHelper()->getMappings();
+    $process = $this->migrationEntityHelper()->processMappings($mappings);
+
+    $entity->set('process', $process);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function save(array $form, FormStateInterface $form_state) {
+    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
+    $migration = $this->getEntity();
+    $status = parent::save($form, $form_state);
+
+    // If we edited an existing mapping.
+    $this->messenger()->AddMessage($this->t('Migration mapping for migration 
+        @migration has been updated.', [
+          '@migration' => $migration->label(),
+    ]));
   }
 
 }

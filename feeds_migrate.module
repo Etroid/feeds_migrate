@@ -44,3 +44,14 @@ function feeds_migrate_migrate_destination_info_alter(array &$plugins) {
     // @todo other destination types may also have settings.
   }
 }
+
+/**
+ * Implements hook_migrate_process_info_alter().
+ *
+ * Defines form classes for process plugins.
+ */
+function feeds_migrate_migrate_process_info_alter(array &$plugins) {
+  // @todo don't hardcode these, but use a way to dynamically enhance the
+  //       plugin definition of "each" process plugins with a form.
+  $plugins['default_value']['feeds']['form']['configuration'] = \Drupal\feeds_migrate\Plugin\migrate\process\Form\DefaultValueForm::class;
+}

@@ -29,6 +29,7 @@ function feeds_migrate_ui_entity_type_alter(array &$entity_types) {
   $migration->setLinkTemplate('edit-form', '/admin/structure/feeds-migrate/sources/{migration}');
   $migration->setLinkTemplate('delete-form', '/admin/structure/feeds-migrate/sources/{migration}/delete');
   $migration->setLinkTemplate('mapping-edit-form', '/admin/structure/feeds-migrate/source/{migration}/mapping/edit/{key}');
+  $migration->setLinkTemplate('mapping-delete-form', '/admin/structure/feeds-migrate/source/{migration}/mapping/delete/{key}');
 
   $migration->set('admin_permission', 'administer feeds migrate importers');
 }

@@ -8,6 +8,13 @@ services:
   plugin.manager.feeds_migrate.data_parser_form:
     class: Drupal\feeds_migrate\DataParserPluginManager
     parent: default_plugin_manager
+  plugin.manager.feeds_migrate.mapping_field_form:
+    class: Drupal\feeds_migrate\MappingFieldFormManager
+    parent: default_plugin_manager
+
+  feeds_migrate.migration_entity_helper:
+    class: Drupal\feeds_migrate\MigrationEntityHelperManager
+    parent: container.trait
 
   feeds_migrate.plugin_form_factory:
     class: Drupal\feeds_migrate\Plugin\PluginFormFactory

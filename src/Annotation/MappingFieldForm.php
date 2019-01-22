@@ -1,20 +1,20 @@
 <?php
 
-namespace Drupal\feeds_migrate_ui\Annotation;
+namespace Drupal\feeds_migrate\Annotation;
 
 use Drupal\Component\Annotation\Plugin;
 
 /**
  * Defines a migration field mapping annotation object.
  *
- * @see \Drupal\feeds_migrate_ui\FeedsMigrateUIFieldBase
- * @see \Drupal\feeds_migrate_ui\FeedsMigrateUiFieldInterface
- * @see \Drupal\feeds_migrate_ui\FeedsMigrateUiFieldManager
+ * @see \Drupal\feeds_migrate\MappingFieldFormBase
+ * @see \Drupal\feeds_migrate\MappingFieldFormInterface
+ * @see \Drupal\feeds_migrate\MappingFieldFormManager
  * @see plugin_api
  *
  * @Annotation
  */
-class FeedsMigrateUiField extends Plugin {
+class MappingFieldForm extends Plugin {
 
   /**
    * The plugin ID.

@@ -34,7 +34,7 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     // Create another content type.
     $content_type = $this->drupalCreateContentType();
 
-    $this->drupalGet('/admin/structure/feeds-migrate/sources/add');
+    $this->drupalGet('/admin/structure/migrate/sources/add');
 
     $edit = [
       'fetcher' => 'http',
@@ -75,7 +75,7 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     // Create a vocabulary.
     $vocabulary = $this->createVocabulary();
 
-    $this->drupalGet('/admin/structure/feeds-migrate/sources/add');
+    $this->drupalGet('/admin/structure/migrate/sources/add');
     $edit = [
       'fetcher' => 'file',
       'parser' => 'simple_xml',

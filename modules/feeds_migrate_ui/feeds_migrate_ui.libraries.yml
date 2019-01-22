@@ -1,0 +1,8 @@
+feeds_migrate_ui:
+  version: VERSION
+  css:
+    theme:
+      css/feeds_migrate_ui.module.css: {}
+  dependencies:
+    - core/drupal.form
+    - core/drupal.ajax
