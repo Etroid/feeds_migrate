@@ -50,8 +50,7 @@
      <directory>../modules/feeds_migrate/modules/*/tests/src/Functional</directory>
     </testsuite>
     <testsuite name="functional-javascript">
-     <directory>../modules/feeds_migrate/tests/src/FunctionalJavaScript</directory>
-     <directory>../modules/feeds_migrate/modules/*/tests/src/FunctionalJavaScript</directory>
+     <file>./tests/TestSuites/FunctionalJavascriptTestSuite.php</file>
     </testsuite>
   </testsuites>
   <listeners>
