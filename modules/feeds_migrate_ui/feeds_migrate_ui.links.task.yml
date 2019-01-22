@@ -1,22 +1,17 @@
+# Importers.
 entity.feeds_migrate_importer.list:
   title: 'Importers'
   route_name: entity.feeds_migrate_importer.collection
   base_route: entity.feeds_migrate_importer.collection
 
-
-entity.migration.list:
-  title: 'Migration Mappers'
-  route_name: entity.migration.collection
-  base_route: entity.feeds_migrate_importer.collection
-  weight: 100
-
+# Mapping.
 entity.migration.mapping.list:
   title: 'Mapping'
   route_name: entity.migration.mapping.list
   base_route: entity.migration.overview
   weight: 10
 
-# Export migration
+# Export.
 entity.migration.export:
   title: 'Export'
   route_name: entity.migration.export_form

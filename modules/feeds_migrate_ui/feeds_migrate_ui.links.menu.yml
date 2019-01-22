@@ -1,5 +1,0 @@
-entity.migration.collection:
-  title: 'Feeds Migrate'
-  route_name: entity.migration.collection
-  description: 'Add and Edit Feeds Migrations Types'
-  parent: system.admin_structure
