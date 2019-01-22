@@ -3,6 +3,9 @@
   "type": "drupal-module",
   "description": "Drupal Feeds using core migrate plugins.",
   "homepage": "http://drupal.org/project/feeds_migrate",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/feeds_migrate"
+  },
   "license": "GPL-2.0+",
   "repositories": [
     {
@@ -11,16 +14,6 @@
     }
   ],
   "require": {
-    "drupal/core": "^8.6",
-    "drupal/migrate_plus": "^4.0",
-    "drupal/migrate_tools": "^4.0"
-  },
-  "minimum-stability": "dev",
-  "require-dev": {
-    "cweagans/composer-patches": "dev-master",
-    "drupal/coder": "^8.3",
-    "drupal/drupal-extension": "master-dev",
-    "phpmd/phpmd": "dev-master",
-    "phpmetrics/phpmetrics": "dev-master"
+    "drupal/migrate_plus": "~4.0"
   }
 }
