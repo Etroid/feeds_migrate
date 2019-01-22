@@ -166,14 +166,7 @@ class MigrationForm extends EntityForm {
   public function form(array $form, FormStateInterface $form_state) {
     $form['#tree'] = TRUE;
 
-    $form['basics'] = [
-      '#title' => $this->t('Basic settings'),
-      '#type' => 'details',
-      '#open' => $this->entity->isNew(),
-      '#tree' => FALSE,
-    ];
-
-    $form['basics']['label'] = [
+    $form['label'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Label'),
       '#maxlength' => 255,
@@ -185,7 +178,7 @@ class MigrationForm extends EntityForm {
     ];
 
     $entity_class = $this->entity->getEntityType()->getClass();
-    $form['basics']['id'] = [
+    $form['id'] = [
       '#type' => 'machine_name',
       '#default_value' => $this->entity->id(),
       '#disabled' => !$this->entity->isNew(),
@@ -206,13 +199,6 @@ class MigrationForm extends EntityForm {
     $form['plugin_settings']['#prefix'] = '<div id="feeds-ajax-form-wrapper" class="feeds-feed-type-secondary-settings">';
     $form['plugin_settings']['#suffix'] = '</div>';
 
-    $form['feed_type_settings'] = [
-      '#type' => 'details',
-      '#group' => 'plugin_settings',
-      '#title' => $this->t('Settings'),
-      '#tree' => FALSE,
-    ];
-
     // Settings.
     $groups = MigrationGroup::loadMultiple();
     $group_options = [];
@@ -223,7 +209,7 @@ class MigrationForm extends EntityForm {
       $this->entity->set('migration_group', 'default');
     }
 
-    $form['feed_type_settings']['migration_group'] = [
+    $form['migration_group'] = [
       '#type' => 'select',
       '#title' => $this->t('Migration Group'),
       '#empty_value' => '',
@@ -238,7 +224,9 @@ class MigrationForm extends EntityForm {
       natcasesort($options);
 
       $form[$type . '_wrapper'] = [
-        '#type' => 'container',
+        '#type' => 'details',
+        '#group' => 'plugin_settings',
+        '#title' => ucwords($this->t($type)),
         '#attributes' => ['class' => ['feeds-plugin-inline']],
       ];
 
