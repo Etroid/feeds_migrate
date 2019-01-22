@@ -3,7 +3,7 @@ services:
   - mariadb:10.3
   - selenium/standalone-chrome-debug:3.7.1-beryllium
 variables:
-  MYSQL_ALLOW_EMPTY_PASSWORD: 1
+  MYSQL_ALLOW_EMPTY_PASSWORD: "1"
 
 before_script:
   - ln -sf ${CI_PROJECT_DIR} /var/www/html/modules/feeds_migrate
@@ -31,11 +31,16 @@ test:tests:
   stage: test
   script:
     - cd /var/www/html
-    #- ./update-dependencies.sh feeds_migrate
+    - ./update-dependencies.sh feeds_migrate
     #- ./test.sh feeds_migrate
     #- ./test-functional.sh feeds_migrate
-    - ./test-functional-js.sh feeds_migrate
+    #- ./test-functional-js.sh feeds_migrate
+    - export selenium_remote_url="http://selenium__standalone-chrome:4444/wd/hub/"
+    - apache2-foreground&
+    - robo override:phpunit-config feeds_migrate
+    - sudo -E -u www-data vendor/bin/phpunit -c core --group feeds_migrate --testsuite functional-javascript --debug --verbose --log-junit artifacts/phpunit/phpunit.xml
   artifacts:
+    when: on_failure
     paths:
       - artifacts/phpunit
 
@@ -44,7 +49,6 @@ test:code_sniffer:
   stage: test
   script:
     - cd /var/www/html
-    - ./update-dependencies.sh feeds_migrate
     - ./code-sniffer.sh feeds_migrate
   artifacts:
     paths:
@@ -55,8 +59,9 @@ test:code_coverage:
   stage: test
   script:
     - cd /var/www/html
-    - ./update-dependencies.sh feeds_migrate
     - ./code-coverage-stats.sh feeds_migrate
   artifacts:
     paths:
-      - artifacts
+      - artifacts/phpcs
+      - artifacts/phpmd
+      - artifacts/phpmetric

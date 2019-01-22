@@ -38,20 +38,20 @@
   </php>
   <testsuites>
     <testsuite name="unit">
-      <file>./tests/TestSuites/UnitTestSuite.php</file>
+     <directory>../modules/feeds_migrate/tests/src/Unit</directory>
+     <directory>../modules/feeds_migrate/modules/*/tests/src/Unit</directory>
     </testsuite>
     <testsuite name="kernel">
-      <file>./tests/TestSuites/KernelTestSuite.php</file>
+     <directory>../modules/feeds_migrate/tests/src/Kernel</directory>
+     <directory>../modules/feeds_migrate/modules/*/tests/src/Kernel</directory>
     </testsuite>
     <testsuite name="functional">
-      <file>./tests/TestSuites/FunctionalTestSuite.php</file>
-    </testsuite>
-    <testsuite name="nonfunctional">
-      <file>./tests/TestSuites/UnitTestSuite.php</file>
-      <file>./tests/TestSuites/KernelTestSuite.php</file>
+     <directory>../modules/feeds_migrate/tests/src/Functional</directory>
+     <directory>../modules/feeds_migrate/modules/*/tests/src/Functional</directory>
     </testsuite>
     <testsuite name="functional-javascript">
-      <file>./tests/TestSuites/FunctionalJavascriptTestSuite.php</file>
+     <directory>../modules/feeds_migrate/tests/src/FunctionalJavaScript</directory>
+     <directory>../modules/feeds_migrate/modules/*/tests/src/FunctionalJavaScript</directory>
     </testsuite>
   </testsuites>
   <listeners>
