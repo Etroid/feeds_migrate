@@ -253,6 +253,12 @@ class MigrationForm extends EntityForm {
         ];
       }
 
+      // Set the source default to URL.
+      if ($type == 'source') {
+        $source = $this->entity->get('source');
+        $form[$type . '_wrapper']['id']['#default_value'] = 'url';
+      }
+
       // We can't instantiate the data parser plugin without causing issues with
       // migrate trying to read from a real source.  So we create a workaround.
       if ($type == 'parser') {
@@ -337,7 +343,7 @@ class MigrationForm extends EntityForm {
    * @todo move to a service class.
    */
   protected function getPlugins() {
-    $plugins = array_fill_keys(['fetcher', 'parser', 'destination'], NULL);
+    $plugins = array_fill_keys(['source', 'fetcher', 'parser', 'destination'], NULL);
 
     // Convert migration entity to array in order to create a dummy migration
     // plugin instance. This dummy is needed in order to instantiate a
@@ -412,6 +418,7 @@ class MigrationForm extends EntityForm {
         $manager = \Drupal::service("plugin.manager.feeds_migrate.data_parser_form");
         break;
 
+      case 'source':
       case 'destination':
         $manager = \Drupal::service("plugin.manager.migrate.$plugin_type");
         break;
