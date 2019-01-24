@@ -21,6 +21,8 @@ restore_cache: &restore_cache
   # fallback to using the latest cache if no exact match is found
   - v4-dependencies-
 
+run: php composer.phar require "drupal/core:8.7.x-dev"
+
 # If composer.json hasn't changed, restore the Composer cache directory. We
 # don't restore the lock file so we ensure we get updated dependencies.
 save_cache: &save_cache
