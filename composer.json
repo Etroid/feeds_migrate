@@ -19,6 +19,7 @@
     "drupal/migrate_tools": "^4.0"
   },
   "require-dev": {
+    "composer/installers": "^1.2",
     "cweagans/composer-patches": "^1.6",
     "drupal/coder": "8.2.12",
     "bex/behat-screenshot": "^1.2",
