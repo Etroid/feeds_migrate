@@ -40,9 +40,10 @@ update_dependencies: &update_dependencies
     - run:
         working_directory: /var/www/html
         command: |
-          composer remove egulias/email-validator 1.2.15
           rm -rf core/
+          rm -rf composer.lock
           sed -i 's/\("replace":{\).*\(},"minimum-stability"\)/\1\2/' composer.json
+          composer update
 
     - run:
         working_directory: /var/www/html
