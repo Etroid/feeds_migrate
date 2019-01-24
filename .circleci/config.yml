@@ -39,7 +39,7 @@ update_dependencies: &update_dependencies
     - run:
         working_directory: /var/www/html
         command: |
-          php composer.phar require "drupal/core:8.7.x-dev"
+          composer require "drupal/core:8.7.x-dev"
 
     - run:
         working_directory: /var/www/html
