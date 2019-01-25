@@ -36,6 +36,11 @@ update_dependencies: &update_dependencies
 
     - restore_cache: *restore_cache
 
+    - run:
+        working_directory: /var/www/html
+        command: |
+          ./update-dependencies.sh $CIRCLE_PROJECT_REPONAME
+
     # Remove hard-coded dependency on drupal/core: 8.6 and allow upgrading to 8.7.x-dev
     - run:
         working_directory: /var/www/html
@@ -46,11 +51,6 @@ update_dependencies: &update_dependencies
           composer clear-cache
           composer require "drupal/core:8.7.x-dev"
           drush status
-
-    - run:
-        working_directory: /var/www/html
-        command: |
-          ./update-dependencies.sh $CIRCLE_PROJECT_REPONAME
 
     - save_cache: *save_cache
 
