@@ -41,7 +41,8 @@ update_dependencies: &update_dependencies
         command: |
           ./update-dependencies.sh $CIRCLE_PROJECT_REPONAME
 
-    # Remove hard-coded dependency on drupal/core: 8.6 and allow upgrading to 8.7.x-dev
+    # Remove hard-coded dependency on drupal/core: 8.6 allow upgrading to 8.7.x-dev
+    # Some of our module dependencies rely on a later version of core
     - run:
         working_directory: /var/www/html
         command: |
@@ -76,8 +77,8 @@ unit_kernel_tests: &unit_kernel_tests
     - store_artifacts:
         path: /var/www/html/artifacts
 
-# Run Drupal functional tests. This command invokes the test-functional.sh
-# hook.
+# Run Drupal functional and functional JS tests as one job. This command invokes
+# the test-functional.sh and test-functional-js hooks.
 functional_tests: &functional_tests
   <<: *defaults
   steps:
@@ -90,25 +91,6 @@ functional_tests: &functional_tests
         working_directory: /var/www/html
         command: |
           ./test-functional.sh $CIRCLE_PROJECT_REPONAME
-
-    - store_test_results:
-        path: /var/www/html/artifacts/phpunit
-    - store_artifacts:
-        path: /var/www/html/artifacts
-
-# Run Drupal functional tests. This command invokes the test-functional-js.sh
-# hook.
-functional_js_tests: &functional_js_tests
-  <<: *defaults
-  steps:
-    - attach_workspace:
-        at: /var/www/html
-
-    - checkout
-
-    - run:
-        working_directory: /var/www/html
-        command: |
           ./test-functional-js.sh $CIRCLE_PROJECT_REPONAME
 
     - store_test_results:
@@ -130,8 +112,8 @@ code_sniffer: &code_sniffer
     - run:
         working_directory: /var/www/html
         command: |
-          - vendor/bin/phpcs --config-set ignore_warnings_on_exit 1
-          - vendor/bin/phpcs --config-set ignore_errors_on_exit 1
+          vendor/bin/phpcs --config-set ignore_warnings_on_exit 1
+          vendor/bin/phpcs --config-set ignore_errors_on_exit 1
           ./code-sniffer.sh $CIRCLE_PROJECT_REPONAME
 
     - store_test_results:
@@ -164,8 +146,6 @@ jobs:
      <<: *unit_kernel_tests
   run-functional-tests:
      <<: *functional_tests
-  run-functional-js-tests:
-     <<: *functional_js_tests
   run-code-sniffer:
      <<: *code_sniffer
   run-code-coverage:
@@ -182,9 +162,6 @@ workflows:
           requires:
             - update-dependencies
       - run-functional-tests:
-          requires:
-            - update-dependencies
-      - run-functional-js-tests:
           requires:
             - update-dependencies
       - run-code-sniffer:
