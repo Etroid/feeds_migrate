@@ -12,6 +12,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Renderer;
 use Drupal\feeds_migrate\AuthenticationFormPluginManager;
 use Drupal\feeds_migrate\DataFetcherFormPluginManager;
 use Drupal\feeds_migrate\DataParserPluginManager;
@@ -100,6 +101,13 @@ class MigrationForm extends EntityForm {
   protected $parserManager;
 
   /**
+   * The renderer service.
+   *
+   * @var \Drupal\Core\Render\Renderer
+   */
+  protected $renderer;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
@@ -111,14 +119,15 @@ class MigrationForm extends EntityForm {
       $container->get('plugin.manager.feeds_migrate.authentication_form'),
       $container->get('plugin.manager.feeds_migrate.data_fetcher_form'),
       $container->get('plugin.manager.feeds_migrate.mapping_field_form'),
-      $container->get('entity_field.manager')
+      $container->get('entity_field.manager'),
+      $container->get('renderer')
     );
   }
 
   /**
    * @todo: document.
    */
-  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, PluginFormFactory $form_factory, DataParserPluginManager $parser_manager, FeedsMigrateUiParserSuggestion $parser_suggestion, AuthenticationFormPluginManager $authentication_plugins, DataFetcherFormPluginManager $fetcher_plugins, MappingFieldFormManager $mapping_field_manager, EntityFieldManager $field_manager) {
+  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, PluginFormFactory $form_factory, DataParserPluginManager $parser_manager, FeedsMigrateUiParserSuggestion $parser_suggestion, AuthenticationFormPluginManager $authentication_plugins, DataFetcherFormPluginManager $fetcher_plugins, MappingFieldFormManager $mapping_field_manager, EntityFieldManager $field_manager, Renderer $renderer) {
     $this->migrationPluginManager = $migration_plugin_manager;
     $this->formFactory = $form_factory;
     $this->parserManager = $parser_manager;
@@ -127,6 +136,7 @@ class MigrationForm extends EntityForm {
     $this->fetcherPlugins = $fetcher_plugins;
     $this->mappingFieldManager = $mapping_field_manager;
     $this->fieldManager = $field_manager;
+    $this->renderer = $renderer;
   }
 
   /**
@@ -411,11 +421,11 @@ class MigrationForm extends EntityForm {
   protected function getPluginOptionsList($plugin_type) {
     switch ($plugin_type) {
       case 'fetcher':
-        $manager = \Drupal::service("plugin.manager.feeds_migrate.data_fetcher_form");
+        $manager = $this->fetcherPlugins;
         break;
 
       case 'parser':
-        $manager = \Drupal::service("plugin.manager.feeds_migrate.data_parser_form");
+        $manager = $this->parserManager;
         break;
 
       case 'source':
@@ -439,7 +449,7 @@ class MigrationForm extends EntityForm {
    * Sends an ajax response.
    */
   public function ajaxCallback(array $form, FormStateInterface $form_state) {
-    $renderer = \Drupal::service('renderer');
+    $renderer = $this->renderer;
     $type = $form_state->getTriggeringElement()['#plugin_type'];
 
     $response = new AjaxResponse();
