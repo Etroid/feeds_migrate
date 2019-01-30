@@ -5,7 +5,6 @@ namespace Drupal\feeds_migrate_ui\Form;
 use Drupal\Core\Entity\EntityFieldManager;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
 use Drupal\Core\Url;
@@ -151,7 +150,7 @@ class MigrationMappingFormBase extends EntityForm {
     $form['#prefix'] = '<div id="feeds-migration-mapping-ajax-wrapper">';
     $form['#suffix'] = '</div>';
 
-    // General mapping settings
+    // General mapping settings.
     $form['general'] = [
       '#title' => $this->t('General'),
       '#type' => 'details',
@@ -197,7 +196,7 @@ class MigrationMappingFormBase extends EntityForm {
       ],
     ];
 
-    // Mapping Field Plugin settings
+    // Mapping Field Plugin settings.
     if ($this->key) {
       // Field specific mapping settings.
       $form['mapping'] = [
@@ -206,7 +205,7 @@ class MigrationMappingFormBase extends EntityForm {
         '#tree' => TRUE,
         $this->key => [
           '#parents' => ['mapping', $this->key],
-        ]
+        ],
       ];
 
       /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
@@ -248,7 +247,7 @@ class MigrationMappingFormBase extends EntityForm {
         'entity.migration.mapping.delete_form',
         [
           'migration' => $this->entity->id(),
-          'key' =>  rawurlencode($this->key),
+          'key' => rawurlencode($this->key),
         ]
       );
     }
@@ -342,15 +341,15 @@ class MigrationMappingFormBase extends EntityForm {
       // If we edited an existing mapping.
       $this->messenger()->addMessage($this->t('Migration mapping for field 
         @destination_field has been updated.', [
-        '@destination_field' => $this->migrationEntityHelper()->getMappingFieldLabel($this->key)
-      ]));
+          '@destination_field' => $this->migrationEntityHelper()->getMappingFieldLabel($this->key),
+        ]));
     }
     else {
       // If we created a new mapping.
       $this->messenger()->addMessage($this->t('Migration mapping for field
         @destination_field has been added.', [
-        '@destination_field' => $this->migrationEntityHelper()->getMappingFieldLabel($this->key)
-      ]));
+          '@destination_field' => $this->migrationEntityHelper()->getMappingFieldLabel($this->key),
+        ]));
     }
 
     // Redirect the user to the mapping edit form.
@@ -370,7 +369,8 @@ class MigrationMappingFormBase extends EntityForm {
     return $form;
   }
 
-  /** ----------- */
+  /**
+   * ----------- .*/
 
   /**
    * Returns a list of all mapping destination options, keyed by field name.
@@ -378,8 +378,8 @@ class MigrationMappingFormBase extends EntityForm {
   protected function getMappingOptions() {
     $options = [];
 
-    /** @var FieldDefinitionInterface[] $fields */
-    $fields =  $this->fieldManager->getFieldDefinitions($this->migrationEntityHelper()->getEntityTypeIdFromDestination(), $this->migrationEntityHelper()->getEntityBundleFromDestination());
+    /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $fields */
+    $fields = $this->fieldManager->getFieldDefinitions($this->migrationEntityHelper()->getEntityTypeIdFromDestination(), $this->migrationEntityHelper()->getEntityBundleFromDestination());
     foreach ($fields as $field_name => $field) {
       $options[$field->getName()] = $field->getLabel();
     }

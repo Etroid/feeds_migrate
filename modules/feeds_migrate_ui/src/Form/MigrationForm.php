@@ -448,10 +448,10 @@ class MigrationForm extends EntityForm {
     // @todo activate once plugin configuration form is implemented.
     /*
     if (isset($form[$type . '_configuration']['#id'])) {
-      $hash = ltrim($form[$type . '_configuration']['#id'], '#');
-      $response->addCommand(new SetHashCommand($hash));
+    $hash = ltrim($form[$type . '_configuration']['#id'], '#');
+    $response->addCommand(new SetHashCommand($hash));
     }
-    */
+     */
 
     // Update the forms.
     $plugin_settings = $renderer->renderRoot($form['plugin_settings']);

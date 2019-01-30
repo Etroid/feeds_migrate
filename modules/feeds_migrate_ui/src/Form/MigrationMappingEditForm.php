@@ -5,7 +5,6 @@ namespace Drupal\feeds_migrate_ui\Form;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\migrate_plus\Entity\MigrationInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Drupal\Core\Form\SubformState;
 
 /**
  * Provides a form for editing a single migration mapping.
@@ -27,7 +26,6 @@ class MigrationMappingEditForm extends MigrationMappingFormBase {
 
     $this->key = $key;
     $this->mapping = $this->migrationEntityHelper()->getMapping($key);
-
 
     $form = parent::buildForm($form, $form_state, $migration, $key);
 
