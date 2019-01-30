@@ -439,6 +439,10 @@ class MigrationForm extends EntityForm {
 
     $options = [];
     foreach ($manager->getDefinitions() as $id => $definition) {
+      // Filter out empty and null plugins.
+      if (in_array($id, ['null', 'empty'])) {
+        continue;
+      }
       $options[$id] = isset($definition['label']) ? $definition['label'] : $id;
     }
 
