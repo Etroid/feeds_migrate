@@ -269,15 +269,6 @@ class MigrationForm extends EntityForm {
         $form[$type . '_wrapper']['id']['#default_value'] = 'url';
       }
 
-      // Toggle visibility of fetcher & parser fields depending on source value.
-      if (in_array($type, ['fetcher', 'parser'])) {
-        $form[$type . '_wrapper']['id']['#states'] =[
-          'visible' => [
-            'select[name="source"]' => ['value' => 'url']
-          ]
-        ];
-      }
-
       // We can't instantiate the data parser plugin without causing issues with
       // migrate trying to read from a real source.  So we create a workaround.
       if ($type == 'parser') {
