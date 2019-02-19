@@ -439,7 +439,8 @@ class MigrationForm extends EntityForm {
 
     $options = [];
     foreach ($manager->getDefinitions() as $id => $definition) {
-      // Filter out empty and null plugins.
+      // Filter out empty and null migration plugins as those aren't valid feeds
+      // source or destination.
       if (in_array($id, ['null', 'empty'])) {
         continue;
       }
