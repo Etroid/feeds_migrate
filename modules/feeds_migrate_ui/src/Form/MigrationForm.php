@@ -266,7 +266,7 @@ class MigrationForm extends EntityForm {
       // Set the source default to URL.
       if ($type == 'source') {
         $source = $this->entity->get('source');
-        $form[$type . '_wrapper']['id']['#default_value'] = isset($source['source']) ? $source['source'] : NULL;
+        $form[$type . '_wrapper']['id']['#default_value'] = isset($source['plugin']) ? $source['plugin'] : 'url';
       }
 
       // We can't instantiate the data parser plugin without causing issues with
