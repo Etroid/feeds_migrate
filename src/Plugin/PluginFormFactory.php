@@ -5,6 +5,7 @@ namespace Drupal\feeds_migrate\Plugin;
 use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\DependencyInjection\ClassResolverInterface;
 use Drupal\Core\Plugin\PluginFormInterface;
+use Drupal\migrate_plus\Entity\MigrationInterface;
 
 /**
  * Provides form discovery capabilities for plugins.
@@ -61,15 +62,17 @@ class PluginFormFactory {
   /**
    * Creates a form instance for the plugin.
    *
-   * @param \Drupal\feeds\Plugin\Type\FeedsPluginInterface $plugin
+   * @param \Drupal\Component\Plugin\PluginInspectionInterface $plugin
    *   The Feeds plugin.
    * @param string $operation
    *   The type of form to create. See ::hasForm above for possible types.
    *
+   * @param \Drupal\migrate_plus\Entity\MigrationInterface|null $migration
+   *
    * @return \Drupal\Core\Plugin\PluginFormInterface
    *   A form for the plugin.
    */
-  public function createInstance($plugin, $operation) {
+  public function createInstance(PluginInspectionInterface $plugin, $operation, MigrationInterface $migration = NULL) {
     $definition = $plugin->getPluginDefinition();
 
     // If the form specified is the plugin itself, use it directly.
@@ -87,6 +90,10 @@ class PluginFormFactory {
 
     if ($form_object instanceof PluginAwareInterface) {
       $form_object->setPlugin($plugin);
+    }
+
+    if (isset($migration)) {
+      $form_object->setEntity($migration);
     }
 
     return $form_object;

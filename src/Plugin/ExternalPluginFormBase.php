@@ -3,21 +3,34 @@
 namespace Drupal\feeds_migrate\Plugin;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\PluginFormInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\feeds_migrate\Plugin\PluginAwareInterface;
+use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
+use Drupal\migrate_plus\Entity\MigrationInterface;
 use ReflectionClass;
+use Symfony\Component\DependencyInjection\ContainerAwareInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Base class for Feeds plugins that have external configuration forms.
  */
-abstract class ExternalPluginFormBase implements PluginFormInterface, PluginAwareInterface {
+abstract class ExternalPluginFormBase implements PluginFormInterface, PluginAwareInterface, ContainerInjectionInterface {
 
   use StringTranslationTrait;
   use DependencySerializationTrait;
+
+  /**
+   * Plugin manager for migration plugins.
+   *
+   * @var \Drupal\migrate\Plugin\MigrationPluginManagerInterface
+   */
+  protected $migrationPluginManager;
 
   /**
    * The Migrate plugin.
@@ -27,10 +40,42 @@ abstract class ExternalPluginFormBase implements PluginFormInterface, PluginAwar
   protected $plugin;
 
   /**
+   * The migration entity.
+   *
+   * @var \Drupal\migrate_plus\Entity\MigrationInterface
+   */
+  protected $entity;
+
+  /**
+   * ExternalPluginFormBase constructor.
+   *
+   * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_plugin_manager
+   */
+  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager) {
+    $this->migrationPluginManager = $migration_plugin_manager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('plugin.manager.migration')
+    );
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function setPlugin(PluginInspectionInterface $plugin) {
     $this->plugin = $plugin;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setEntity(MigrationInterface $entity) {
+    $this->entity = $entity;
   }
 
   /**
@@ -60,22 +105,57 @@ abstract class ExternalPluginFormBase implements PluginFormInterface, PluginAwar
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {}
 
   /**
-   * Gets the migration from the plugin.
+   * Gets the migration entity from the plugin.
    *
-   * @return \Drupal\migrate\Plugin\MigrationInterface
+   * @return \Drupal\migrate_plus\Entity\MigrationInterface
    *   The migration.
    */
-  protected function getMigration() {
+  protected function getMigrationEntity() {
+    if (!empty($this->entity)) {
+      return $this->entity;
+    }
+
     if (!empty($this->plugin)) {
       // Get migration from plugin. We need to use reflection here as there
       // is no public method to retrieve the plugin's migration.
       $class = new ReflectionClass(get_class($this->plugin));
       $property = $class->getProperty('migration');
       $property->setAccessible(TRUE);
-      $migration = $property->getValue($this->plugin);
+      $entity = $property->getValue($this->plugin);
 
-      return $migration;
+      return $entity;
     }
+  }
+
+  /**
+   * Gets the migration array from the plugin.
+   *
+   * @return \Drupal\migrate\Plugin\Migration
+   */
+  protected function getMigrationArray() {
+    $entity = $this->getMigrationEntity();
+
+    // Convert migration entity to array in order to create a dummy migration
+    // plugin instance. This dummy is needed in order to instantiate a
+    // destination plugin. We cannot call toArray() on the migration entity,
+    // because that may only be called on saved entities. And we really need an
+    // array representation for unsaved entities too.
+    $keys = [
+      'source',
+      'process',
+      'destination',
+      'migration_tags',
+      'migration_dependencies',
+    ];
+    $migration_data = [];
+    foreach ($keys as $key) {
+      $migration_data[$key] = $entity->get($key);
+    }
+
+    // And instantiate the migration plugin.
+    $migration = $this->migrationPluginManager->createStubMigration($migration_data);
+
+    return $migration;
   }
 
   /**
