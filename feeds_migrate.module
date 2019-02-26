@@ -7,6 +7,7 @@
 
 use Drupal\feeds_migrate\Entity\FeedsMigrateImporter;
 use Drupal\feeds_migrate\Plugin\migrate\destination\Form\EntityProcessorOptionForm;
+use Drupal\feeds_migrate\Plugin\migrate\source\Form\UrlForm;
 use Drupal\migrate\Plugin\migrate\destination\EntityContentBase;
 
 /**
@@ -24,6 +25,32 @@ function feeds_migrate_cron() {
       $importer->save();
     }
   }
+}
+
+/**
+ * Implements hook_migrate_source_info_alter().
+ *
+ * @param array $plugins
+ */
+function feeds_migrate_migrate_source_info_alter(array &$plugins) {
+  // Specify configuration form class for url source plugin.
+  $plugins['url']['feeds']['form']['configuration'] = UrlForm::class;
+}
+
+/**
+ * @param array $plugins
+ */
+function feeds_migrate_data_fetcher_info_alter(array &$plugins) {
+  // Specify configuration form class for url source plugin.
+  $plugins['file']['feeds']['form']['configuration'] = \Drupal\feeds_migrate\Plugin\migrate_plus\data_fetcher\Form\FileForm::class;
+}
+
+/**
+ * @param array $plugins
+ */
+function feeds_migrate_data_parser_info_alter(array &$plugins) {
+  // Specify configuration form class for url source plugin.
+  $plugins['json']['feeds']['form']['configuration'] = \Drupal\feeds_migrate\Plugin\migrate_plus\data_parser\Form\JsonForm::class;
 }
 
 /**
