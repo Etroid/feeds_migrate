@@ -8,6 +8,14 @@ use Drupal\feeds_migrate\Plugin\MigrateFormPluginBase;
 
 /**
  * The configuration form for entity destinations.
+ *
+ * @MigrateForm(
+ *   id = "default_value",
+ *   title = @Translation("Default Value Process Plugin Form"),
+ *   form = "configuration",
+ *   parent_id = "default_value",
+ *   parent_type = "process"
+ * )
  */
 class DefaultValueForm extends MigrateFormPluginBase {
 
@@ -17,7 +25,6 @@ class DefaultValueForm extends MigrateFormPluginBase {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     // @ TODO
   }
-
 
   /**
    * {@inheritdoc}
