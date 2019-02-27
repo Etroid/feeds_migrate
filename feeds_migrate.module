@@ -32,13 +32,13 @@ function feeds_migrate_cron() {
  * Defines form classes for source plugins.
  */
 function feeds_migrate_migrate_source_info_alter(array &$plugins) {
-  /* @var \Drupal\feeds_migrate\Plugin\SourceFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.source.form');
+  /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
+  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.source_form');
   $form_plugins = $manager->getDefinitions();
 
-  // Iterate over each source form plugin and attach it to its parent plugin.
+  // Iterate over each source form plugin and attach it to its parent_id plugin.
   foreach ($form_plugins as $form_plugin) {
-    $parent_plugin_id = $form_plugin['parent'] ?? FALSE;
+    $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
     $type = $form_plugin['type'] ?? 'configuration';
     if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
       $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
@@ -52,13 +52,13 @@ function feeds_migrate_migrate_source_info_alter(array &$plugins) {
  * Defines form classes for data fetcher plugins.
  */
 function feeds_migrate_data_fetcher_info_alter(array &$plugins) {
-  /* @var \Drupal\feeds_migrate\Plugin\DataFetcherFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.data_fetcher.form');
+  /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
+  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.data_fetcher_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each data_fetcher form plugin and attach it to its parent plugin.
   foreach ($form_plugins as $form_plugin) {
-    $parent_plugin_id = $form_plugin['parent'] ?? FALSE;
+    $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
     $type = $form_plugin['type'] ?? 'configuration';
     if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
       $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
@@ -72,13 +72,13 @@ function feeds_migrate_data_fetcher_info_alter(array &$plugins) {
  * Defines form classes for data parser plugins.
  */
 function feeds_migrate_data_parser_info_alter(array &$plugins) {
-  /* @var \Drupal\feeds_migrate\Plugin\DataParserFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.data_parser.form');
+  /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
+  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.data_parser_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each data_parser form plugin and attach it to its parent plugin.
   foreach ($form_plugins as $form_plugin) {
-    $parent_plugin_id = $form_plugin['parent'] ?? FALSE;
+    $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
     $type = $form_plugin['type'] ?? 'configuration';
     if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
       $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
@@ -100,13 +100,13 @@ function feeds_migrate_migrate_destination_info_alter(array &$plugins) {
     }
   }
 
-  /* @var \Drupal\feeds_migrate\Plugin\DestinationFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.destination.form');
+  /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
+  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.destination_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each destination form plugin and attach it to its parent plugin.
   foreach ($form_plugins as $form_plugin) {
-    $parent_plugin_id = $form_plugin['parent'] ?? FALSE;
+    $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
     $type = $form_plugin['type'] ?? 'configuration';
     if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
       $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
@@ -120,13 +120,13 @@ function feeds_migrate_migrate_destination_info_alter(array &$plugins) {
  * Defines form classes for process plugins.
  */
 function feeds_migrate_migrate_process_info_alter(array &$plugins) {
-  /* @var \Drupal\feeds_migrate\Plugin\ProcessFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.process.form');
+  /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
+  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.process_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each process form plugin and attach it to its parent plugin.
   foreach ($form_plugins as $form_plugin) {
-    $parent_plugin_id = $form_plugin['parent'] ?? FALSE;
+    $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
     $type = $form_plugin['type'] ?? 'configuration';
     if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
       $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];

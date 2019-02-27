@@ -1,28 +1,28 @@
 services:
-  # Plugin Managers.
-  plugin.manager.feeds_migrate.authentication.form:
-    class: Drupal\feeds_migrate\Plugin\AuthenticationFormPluginManager
-    parent: default_plugin_manager
-  plugin.manager.feeds_migrate.data_fetcher.form:
-    class: Drupal\feeds_migrate\Plugin\DataFetcherFormPluginManager
-    parent: default_plugin_manager
-  plugin.manager.feeds_migrate.data_parser.form:
-    class: Drupal\feeds_migrate\Plugin\DataParserFormPluginManager
-    parent: default_plugin_manager
-  plugin.manager.feeds_migrate.destination.form:
-    class: Drupal\feeds_migrate\Plugin\DestinationFormPluginManager
-    parent: default_plugin_manager
-  plugin.manager.feeds_migrate.mapping_field.form:
+  # Migrate form plugin managers.
+  plugin.manager.feeds_migrate.migrate.authentication_form:
+    class: Drupal\feeds_migrate\Plugin\MigrateFormPluginManager
+    arguments: [authentication,'@container.namespaces', '@cache.discovery', '@module_handler']
+  plugin.manager.feeds_migrate.migrate.data_fetcher_form:
+    class: Drupal\feeds_migrate\Plugin\MigrateFormPluginManager
+    arguments: [data_fetcher ,'@container.namespaces', '@cache.discovery', '@module_handler']
+  plugin.manager.feeds_migrate.migrate.data_parser_form:
+    class: Drupal\feeds_migrate\Plugin\MigrateFormPluginManager
+    arguments: [data_parser ,'@container.namespaces', '@cache.discovery', '@module_handler']
+  plugin.manager.feeds_migrate.migrate.destination_form:
+    class: Drupal\feeds_migrate\Plugin\MigrateFormPluginManager
+    arguments: [destination, '@container.namespaces', '@cache.discovery', '@module_handler']
+  plugin.manager.feeds_migrate.migrate.mapping_field_form:
     class: Drupal\feeds_migrate\Plugin\MappingFieldFormManager
     parent: default_plugin_manager
-  plugin.manager.feeds_migrate.process.form:
-    class: Drupal\feeds_migrate\Plugin\ProcessFormPluginManager
-    parent: default_plugin_manager
-  plugin.manager.feeds_migrate.source.form:
-    class: Drupal\feeds_migrate\Plugin\SourceFormPluginManager
-    parent: default_plugin_manager
+  plugin.manager.feeds_migrate.migrate.process_form:
+    class: Drupal\feeds_migrate\Plugin\MigrateFormPluginManager
+    arguments: [process, '@container.namespaces', '@cache.discovery', '@module_handler']
+  plugin.manager.feeds_migrate.migrate.source_form:
+    class: Drupal\feeds_migrate\Plugin\MigrateFormPluginManager
+    arguments: [source, '@container.namespaces', '@cache.discovery', '@module_handler']
 
-  # Plugin Factory.
+  # Plugin Factories.
   feeds_migrate.migrate_form_plugin_factory:
     class: Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory
     arguments: ['@class_resolver']

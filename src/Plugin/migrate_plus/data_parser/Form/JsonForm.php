@@ -8,11 +8,12 @@ use Drupal\Core\Form\FormStateInterface;
 /**
  * The configuration form for the json migrate data parser plugin.
  *
- * @DataParserForm(
+ * @MigrateForm(
  *   id = "json",
  *   title = @Translation("Json Data Parser Plugin Form"),
- *   type = "configuration",
- *   parent = "json"
+ *   form = "configuration",
+ *   parent_id = "json",
+ *   parent_type = "data_parser"
  * )
  */
 class JsonForm extends DataParserFormPluginBase {

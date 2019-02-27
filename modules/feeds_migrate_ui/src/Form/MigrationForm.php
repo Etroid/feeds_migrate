@@ -334,10 +334,16 @@ class MigrationForm extends EntityForm {
   }
 
   /**
-   * @param $type
-   * @param $plugin_id
+   * Load a Migrate Plugin based on type and id.
+   *
+   * @param string $type
+   *   The type of migrate plugin.
+   * @param string $plugin_id
+   *   The plugin identifier.
    *
    * @return object|null
+   *   The plugin, or NULL if type is not supported.
+   *
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
   protected function loadMigratePlugin($type, $plugin_id) {
@@ -356,23 +362,6 @@ class MigrationForm extends EntityForm {
     }
 
     return $plugin;
-  }
-
-  /**
-   * Returns the plugin forms for this feed type.
-   *
-   * @return \Drupal\feeds_migrate\Plugin\Type\ExternalPluginFormInterface[]
-   *   A list of form objects, keyed by plugin id.
-   */
-  protected function getPluginForms() {
-    $plugins = [];
-    foreach ($this->getPlugins() as $type => $plugin) {
-      if ($plugin && $this->formFactory->hasForm($plugin, 'configuration')) {
-        $plugins[$type] = $this->formFactory->createInstance($plugin, 'configuration');
-      }
-    }
-
-    return $plugins;
   }
 
   /**

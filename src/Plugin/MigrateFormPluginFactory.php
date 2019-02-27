@@ -4,7 +4,6 @@ namespace Drupal\feeds_migrate\Plugin;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\DependencyInjection\ClassResolverInterface;
-use Drupal\Core\Plugin\PluginFormInterface;
 use Drupal\migrate_plus\Entity\MigrationInterface;
 
 /**
@@ -67,6 +66,7 @@ class MigrateFormPluginFactory {
    * @param string $operation
    *   The type of form to create. See ::hasForm above for possible types.
    * @param \Drupal\migrate_plus\Entity\MigrationInterface|null $migration
+   *   The migration context in which the plugin will run.
    *
    * @return \Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface
    *   A form for the plugin.

@@ -8,11 +8,12 @@ use Drupal\Core\Form\FormStateInterface;
 /**
  * The configuration form for the file migrate data fetcher plugin.
  *
- * @DataFetcherForm(
+ * @MigrateForm(
  *   id = "file",
  *   title = @Translation("File Data Fetcher Plugin Form"),
- *   type = "configuration",
- *   parent = "file"
+ *   form = "configuration",
+ *   parent_id = "file",
+ *   parent_type = "data_fetcher"
  * )
  */
 class FileForm extends DataFetcherFormPluginBase {

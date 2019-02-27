@@ -13,11 +13,12 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * The configuration form for the url migrate source plugin.
  *
- * @SourceForm(
+ * @MigrateForm(
  *   id = "url",
  *   title = @Translation("Url Source Plugin Form"),
- *   type = "configuration",
- *   parent = "url"
+ *   form = "configuration",
+ *   parent_id = "url",
+ *   parent_type = "source",
  * )
  */
 class UrlForm extends SourceFormPluginBase {
@@ -83,13 +84,6 @@ class UrlForm extends SourceFormPluginBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    // Plugins.
-    $form['plugin_settings'] = [
-      '#type' => 'vertical_tabs',
-      '#prefix' => '<div id="feeds-migration-ajax-wrapper">',
-      '#suffix' => '</div>',
-    ];
-
     $plugins = $this->getPlugins();
     $weight = 1;
     foreach ($plugins as $type => $plugin_id) {
@@ -110,7 +104,7 @@ class UrlForm extends SourceFormPluginBase {
           '#type' => 'value',
           '#value' => $plugin_id,
           '#plugin_type' => $type,
-          '#parents' => [$type, 'plugin'],
+          '#parents' => ['source', "{$type}_plugin"],
         ];
       }
       else {
@@ -121,10 +115,10 @@ class UrlForm extends SourceFormPluginBase {
           '#default_value' => $plugin_id,
           '#ajax' => [
             'callback' => '::ajaxCallback',
-            'wrapper' => 'feeds-migration-plugins-ajax-wrapper',
+            'wrapper' => 'feeds-migration-ajax-wrapper',
           ],
           '#plugin_type' => $type,
-          '#parents' => [$type, 'plugin'],
+          '#parents' => ['source', "{$type}_plugin"],
         ];
       }
 
@@ -184,6 +178,13 @@ class UrlForm extends SourceFormPluginBase {
   }
 
   /**
+   * Sends an ajax response.
+   */
+  public function ajaxCallback(array $form, FormStateInterface $form_state) {
+    return $form['plugin_settings'];
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
@@ -218,19 +219,15 @@ class UrlForm extends SourceFormPluginBase {
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
   protected function loadMigratePlugin($type, $id) {
-    /** @var \Drupal\migrate\Plugin\MigrationInterface $migration */
-    $migration = $this->getMigrationArray();
     $plugin = NULL;
 
     switch ($type) {
       case 'data_fetcher':
-        $configuration = $migration->get('source')['data_fetcher_plugin'] ?? [];
-        $plugin = $this->dataFetcherPluginManager->createInstance($id, $configuration);
+        $plugin = $this->dataFetcherPluginManager->createInstance($id);
         break;
 
       case 'data_parser':
-        $configuration = $migration->get('source')['data_parser_plugin'] ?? [];
-        $plugin = $this->dataParserPluginManager->createInstance($id, $configuration);
+        $plugin = $this->dataParserPluginManager->createInstance($id);
         break;
     }
 
