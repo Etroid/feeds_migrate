@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\feeds_migrate\Plugin;
+namespace Drupal\feeds_migrate;
 
 use Drupal\Core\Field\FieldTypePluginManager;
 use Drupal\Core\Form\FormStateInterface;
