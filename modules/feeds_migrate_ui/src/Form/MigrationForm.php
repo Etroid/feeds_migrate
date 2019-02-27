@@ -8,7 +8,7 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
 use Drupal\Core\Render\Renderer;
-use Drupal\feeds_migrate\Plugin\PluginFormFactory;
+use Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory;
 use Drupal\migrate\Plugin\MigratePluginManagerInterface;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
 use Drupal\migrate_plus\Entity\MigrationGroup;
@@ -45,7 +45,7 @@ class MigrationForm extends EntityForm {
   /**
    * The form factory.
    *
-   * @var \Drupal\feeds_migrate\Plugin\PluginFormFactory
+   * @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory
    */
   protected $formFactory;
 
@@ -64,7 +64,7 @@ class MigrationForm extends EntityForm {
       $container->get('plugin.manager.migration'),
       $container->get('plugin.manager.migrate.source'),
       $container->get('plugin.manager.migrate.destination'),
-      $container->get('feeds_migrate.plugin_form_factory'),
+      $container->get('feeds_migrate.migrate_form_plugin_factory'),
       $container->get('renderer')
     );
   }
@@ -75,10 +75,10 @@ class MigrationForm extends EntityForm {
    * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_plugin_manager
    * @param \Drupal\migrate\Plugin\MigratePluginManagerInterface $source_plugin_manager
    * @param \Drupal\migrate\Plugin\MigratePluginManagerInterface $destination_plugin_manager
-   * @param \Drupal\feeds_migrate\Plugin\PluginFormFactory $form_factory
+   * @param \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory $form_factory
    * @param \Drupal\Core\Render\Renderer $renderer
    */
-  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, MigratePluginManagerInterface $source_plugin_manager, MigratePluginManagerInterface $destination_plugin_manager, PluginFormFactory $form_factory, Renderer $renderer) {
+  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, MigratePluginManagerInterface $source_plugin_manager, MigratePluginManagerInterface $destination_plugin_manager, MigrateFormPluginFactory $form_factory, Renderer $renderer) {
     $this->migrationPluginManager = $migration_plugin_manager;
     $this->sourcePluginManager = $source_plugin_manager;
     $this->destinationPluginManager = $destination_plugin_manager;
