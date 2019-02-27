@@ -2,6 +2,7 @@
 
 namespace Drupal\feeds_migrate\Plugin\migrate_plus\data_parser\Form;
 
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
@@ -14,15 +15,24 @@ class JsonForm extends DataParserPluginFormBase {
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     /** @var \Drupal\migrate_plus\Entity\MigrationInterface $entity */
-    $entity = $this->getMigrationEntity();
+    $entity = $this->entity;
     $source = $entity->get('source');
-    $element['item_selector'] = [
+
+    $form['item_selector'] = [
       '#type' => 'textfield',
       '#title' => $this->t('JSON Item Selector'),
       '#default_value' => $source['item_selector'] ?: '',
       '#required' => TRUE,
     ];
-    return $element;
+
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
+    $entity->source['item_selector'] = $form_state->getValue('item_selector');
   }
 
 }
