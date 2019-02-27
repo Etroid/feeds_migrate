@@ -8,7 +8,9 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
 use Drupal\Core\Url;
+use Drupal\feeds_migrate\Annotation\MigrateForm;
 use Drupal\feeds_migrate\MigrationEntityHelperManager;
+use Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory;
 use Drupal\feeds_migrate\Plugin\PluginFormFactory;
 use Drupal\feeds_migrate\MappingFieldFormManager;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
@@ -95,7 +97,7 @@ class MigrationMappingFormBase extends EntityForm {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('plugin.manager.migration'),
-      $container->get('feeds_migrate.plugin_form_factory'),
+      $container->get('feeds_migrate.migrate_form_plugin_factory'),
       $container->get('plugin.manager.feeds_migrate.mapping_field_form'),
       $container->get('entity_field.manager'),
       $container->get('feeds_migrate.migration_entity_helper')
@@ -106,12 +108,12 @@ class MigrationMappingFormBase extends EntityForm {
    * MigrationMappingFormBase constructor.
    *
    * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_plugin_manager
-   * @param \Drupal\feeds_migrate\Plugin\PluginFormFactory $form_factory
+   * @param \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory $form_factory
    * @param \Drupal\feeds_migrate\MappingFieldFormManager $mapping_field_manager
    * @param \Drupal\Core\Entity\EntityFieldManager $field_manager
    * @param \Drupal\feeds_migrate\MigrationEntityHelperManager $migration_entity_helper_manager
    */
-  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, PluginFormFactory $form_factory, MappingFieldFormManager $mapping_field_manager, EntityFieldManager $field_manager, MigrationEntityHelperManager $migration_entity_helper_manager) {
+  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, MigrateFormPluginFactory $form_factory, MappingFieldFormManager $mapping_field_manager, EntityFieldManager $field_manager, MigrationEntityHelperManager $migration_entity_helper_manager) {
     $this->migrationPluginManager = $migration_plugin_manager;
     $this->formFactory = $form_factory;
     $this->mappingFieldManager = $mapping_field_manager;
