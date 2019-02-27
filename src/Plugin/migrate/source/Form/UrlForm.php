@@ -6,7 +6,7 @@ use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\feeds_migrate\Plugin\ExternalPluginFormBase;
+use Drupal\Core\Form\SubformState;
 use Drupal\feeds_migrate\Plugin\PluginFormFactory;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -45,13 +45,6 @@ class UrlForm extends SourcePluginFormBase {
   protected $formFactory;
 
   /**
-   * The migrate source plugin.
-   *
-   * @var \Drupal\migrate_plus\Plugin\migrate\source\Url
-   */
-  protected $plugin;
-
-  /**
    * UrlForm constructor.
    *
    * @param \Drupal\Component\Plugin\PluginManagerInterface $authentication_plugin_manager
@@ -80,27 +73,20 @@ class UrlForm extends SourcePluginFormBase {
   }
 
   /**
-   * Get the plugin.
-   *
-   * @return \Drupal\migrate_plus\Plugin\migrate\source\Url
-   *   The migrate source plugin.
-   */
-  protected function getPlugin() {
-    return $this->plugin;
-  }
-
-  /**
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    // The url source plugin support additional data fetcher and data parser plugins.
-    $plugins = [
-      'data_fetcher' => 'file',
-      'data_parser' => 'json',
+    // Plugins.
+    $form['plugin_settings'] = [
+      '#type' => 'vertical_tabs',
+      '#prefix' => '<div id="feeds-migration-ajax-wrapper">',
+      '#suffix' => '</div>',
     ];
 
+    $plugins = $this->getPlugins();
+    $weight = 1;
     foreach ($plugins as $type => $plugin_id) {
-      $plugin = $this->loadPlugin($type, $plugin_id);
+      $plugin = $this->loadMigratePlugin($type, $plugin_id);
       $options = $this->getPluginOptionsList($type);
       natcasesort($options);
 
@@ -108,7 +94,8 @@ class UrlForm extends SourcePluginFormBase {
         '#type' => 'details',
         '#group' => 'plugin_settings',
         '#title' => ucwords($this->t($type)),
-        '#weight' => 10,
+        '#attributes' => ['class' => ['feeds-plugin-inline']],
+        '#weight' => $weight,
       ];
 
       if (count($options) === 1) {
@@ -116,7 +103,7 @@ class UrlForm extends SourcePluginFormBase {
           '#type' => 'value',
           '#value' => $plugin_id,
           '#plugin_type' => $type,
-          '#parents' => [$type],
+          '#parents' => [$type, 'plugin'],
         ];
       }
       else {
@@ -127,74 +114,103 @@ class UrlForm extends SourcePluginFormBase {
           '#default_value' => $plugin_id,
           '#ajax' => [
             'callback' => '::ajaxCallback',
-            'wrapper' => 'feeds-ajax-form-wrapper',
+            'wrapper' => 'feeds-migration-plugins-ajax-wrapper',
           ],
           '#plugin_type' => $type,
-          '#parents' => [$type],
+          '#parents' => [$type, 'plugin'],
         ];
       }
-
-      $plugin_state = $this->createSubFormState($type . '_configuration', $form_state);
 
       // This is the small form that appears directly under the plugin dropdown.
+      $form[$type . '_wrapper']['options'] = [
+        '#type' => 'container',
+        '#prefix' => '<div id="feeds-migration-plugin-' . $type . '-options">',
+        '#suffix' => '</div>',
+      ];
+
       if ($plugin && $this->formFactory->hasForm($plugin, 'option')) {
-        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->getMigrationEntity());
-        $form[$type . '_wrapper']['advanced'] = $option_form->buildConfigurationForm([], $plugin_state);
+        $option_form_state = SubformState::createForSubform($form[$type . '_wrapper']['options'], $form, $form_state);
+        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->entity);
+        $form[$type . '_wrapper']['options'] = $option_form->buildConfigurationForm([], $option_form_state);
       }
 
-      $form[$type . '_wrapper']['advanced']['#prefix'] = '<div id="feeds-plugin-' . $type . '-advanced">';
-      $form[$type . '_wrapper']['advanced']['#suffix'] = '</div>';
+      // Configuration form for the plugin.
+      $form[$type . '_wrapper']['configuration'] = [
+        '#type' => 'container',
+        '#prefix' => '<div id="feeds-migration-plugin-' . $type . '-configuration">',
+        '#suffix' => '</div>',
+      ];
 
       if ($plugin && $this->formFactory->hasForm($plugin, 'configuration')) {
-        $form_builder = $this->formFactory->createInstance($plugin, 'configuration', $this->getMigrationEntity());
-
-        $plugin_form = $form_builder->buildConfigurationForm([], $plugin_state);
-        $form[$type . '_wrapper']['configuration'] = [
-          '#type' => 'container',
-        ];
-        $form[$type . '_wrapper']['configuration'] += $plugin_form;
+        $config_form_state = SubformState::createForSubform($form[$type . '_wrapper']['configuration'], $form, $form_state);
+        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->entity);
+        $form[$type . '_wrapper']['configuration'] += $config_form->buildConfigurationForm([], $config_form_state);
       }
-    }
 
-    // @todo
+      // Increment weight.
+      $weight++;
+    }
 
     return $form;
   }
 
   /**
-   * Creates a FormStateInterface object for a plugin.
-   *
-   * @param string|array $key
-   *   The form state key.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The form state to copy values from.
-   *
-   * @return \Drupal\Core\Form\FormStateInterface
-   *   A new form state object.
-   *
-   * @see FormStateInterface::getValue()
+   * {@inheritdoc}
    */
-  protected function createSubFormState($key, FormStateInterface $form_state) {
-    // There might turn out to be other things that need to be copied and passed
-    // into plugins. This works for now.
-    return (new FormState())->setValues($form_state->getValue($key, []));
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    // Allow plugins to validate their settings.
+    foreach ($this->getPlugins() as $type => $plugin_id) {
+      $plugin = $this->loadMigratePlugin($type, $plugin_id);
+
+      if ($plugin && isset($form[$type . '_wrapper']['option']) && $this->formFactory->hasForm($plugin, 'option')) {
+        $option_form_state = SubformState::createForSubform($form[$type . '_wrapper']['options'], $form, $form_state);
+        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->entity);
+        $option_form->validateConfigurationForm($form[$type . '_wrapper']['option'], $option_form_state);
+      }
+
+      if ($plugin && isset($form[$type . '_wrapper']['configuration']) && $this->formFactory->hasForm($plugin, 'configuration')) {
+        $config_form_state = SubformState::createForSubform($form[$type . '_wrapper']['configuration'], $form, $form_state);
+        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->entity);
+        $config_form->validateConfigurationForm($form[$type . '_wrapper']['configuration'], $config_form_state);
+      }
+    }
   }
 
   /**
    * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
-    // @todo
+    parent::copyFormValuesToEntity($entity, $form, $form_state);
+
+    // Allow plugins to set values on the Migration entity.
+    foreach ($this->getPlugins() as $type => $plugin_id) {
+      $plugin = $this->loadMigratePlugin($type, $plugin_id);
+      if ($plugin && isset($form[$type . '_wrapper']['options']) && $this->formFactory->hasForm($plugin, 'option')) {
+        $option_form_state = SubformState::createForSubform($form[$type . '_wrapper']['options'], $form, $form_state);
+        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->entity);
+        $option_form->copyFormValuesToEntity($entity, $form[$type . '_wrapper']['options'], $option_form_state);
+      }
+
+      if ($plugin && isset($form[$type . '_wrapper']['configuration']) && $this->formFactory->hasForm($plugin, 'configuration')) {
+        $config_form_state = SubformState::createForSubform($form[$type . '_wrapper']['configuration'], $form, $form_state);
+        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->entity);
+        $config_form->copyFormValuesToEntity($entity, $form[$type . '_wrapper']['configuration'], $config_form_state);
+      }
+    }
   }
 
   /**
-   * @param $type
-   * @param $plugin_id
+   * Load the Migrate plugin for a given type.
+   *
+   * @param string $type
+   *  The type of Migration Plugin (e.g. data_fetcher, data_parser).
+   * @param string $id
+   *  The id of the plugin.
    *
    * @return object|null
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
-  protected function loadPlugin($type, $plugin_id) {
+  protected function loadMigratePlugin($type, $id) {
     /** @var \Drupal\migrate\Plugin\MigrationInterface $migration */
     $migration = $this->getMigrationArray();
     $plugin = NULL;
@@ -202,16 +218,44 @@ class UrlForm extends SourcePluginFormBase {
     switch ($type) {
       case 'data_fetcher':
         $configuration = $migration->get('source')['data_fetcher_plugin'] ?? [];
-        $plugin = $this->dataFetcherPluginManager->createInstance($plugin_id, $configuration);
+        $plugin = $this->dataFetcherPluginManager->createInstance($id, $configuration);
         break;
 
       case 'data_parser':
         $configuration = $migration->get('source')['data_parser_plugin'] ?? [];
-        $plugin = $this->dataParserPluginManager->createInstance($plugin_id, $configuration);
+        $plugin = $this->dataParserPluginManager->createInstance($id, $configuration);
         break;
     }
 
     return $plugin;
+  }
+
+  /**
+   * Returns a list of plugins on the migration source plugin, listed per type.
+   *
+   * @return array
+   *   A list of plugins, listed per type.
+   */
+  protected function getPlugins() {
+    $source = $this->entity->get('source');
+
+    // Declare some default plugins.
+    $plugins = [
+      'data_fetcher' => 'file',
+      'data_parser' => 'json',
+    ];
+
+    // Data fetcher.
+    if (isset($source['data_fetcher_plugin'])) {
+      $plugins['data_fetcher'] = $source['data_fetcher_plugin'];
+    }
+
+    // Data parser.
+    if (isset($source['data_parser_plugin'])) {
+      $plugins['data_parser'] = $source['data_parser_plugin'];
+    }
+
+    return $plugins;
   }
 
   /**
