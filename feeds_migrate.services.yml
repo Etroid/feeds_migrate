@@ -1,4 +1,17 @@
 services:
+  plugin.manager.feeds_migrate.authentication_form:
+    class: Drupal\feeds_migrate\AuthenticationFormPluginManager
+    parent: default_plugin_manager
+  plugin.manager.feeds_migrate.data_fetcher_form:
+    class: Drupal\feeds_migrate\DataFetcherFormPluginManager
+    parent: default_plugin_manager
+  plugin.manager.feeds_migrate.data_parser_form:
+    class: Drupal\feeds_migrate\DataParserPluginManager
+    parent: default_plugin_manager
+  plugin.manager.feeds_migrate.mapping_field_form:
+    class: Drupal\feeds_migrate\MappingFieldFormManager
+    parent: default_plugin_manager
+
   # Migrate form plugin managers.
   plugin.manager.feeds_migrate.migrate.authentication_form:
     class: Drupal\feeds_migrate\Plugin\MigrateFormPluginManager
@@ -12,9 +25,6 @@ services:
   plugin.manager.feeds_migrate.migrate.destination_form:
     class: Drupal\feeds_migrate\Plugin\MigrateFormPluginManager
     arguments: [destination, '@container.namespaces', '@cache.discovery', '@module_handler']
-  plugin.manager.feeds_migrate.migrate.mapping_field_form:
-    class: Drupal\feeds_migrate\Plugin\MappingFieldFormManager
-    parent: default_plugin_manager
   plugin.manager.feeds_migrate.migrate.process_form:
     class: Drupal\feeds_migrate\Plugin\MigrateFormPluginManager
     arguments: [process, '@container.namespaces', '@cache.discovery', '@module_handler']
@@ -22,7 +32,7 @@ services:
     class: Drupal\feeds_migrate\Plugin\MigrateFormPluginManager
     arguments: [source, '@container.namespaces', '@cache.discovery', '@module_handler']
 
-  # Plugin Factories.
+  # Migrate Plugin Factory.
   feeds_migrate.migrate_form_plugin_factory:
     class: Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory
     arguments: ['@class_resolver']
