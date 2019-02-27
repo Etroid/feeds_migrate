@@ -1,20 +1,20 @@
 <?php
 
-namespace Drupal\feeds_migrate;
+namespace Drupal\feeds_migrate\Plugin;
 
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
 
 /**
- * Class AuthenticationFormPluginManager.
+ * Class SourceFormPluginManager.
  *
  * @package Drupal\feeds_migrate
  */
-class AuthenticationFormPluginManager extends DefaultPluginManager {
+class SourceFormPluginManager extends DefaultPluginManager {
 
   /**
-   * Constructs a new AuthenticationPluginManager.
+   * Constructs a new Migrate Source Form Plugin Form Manager.
    *
    * @param \Traversable $namespaces
    *   An object that implements \Traversable which contains the root paths
@@ -25,10 +25,10 @@ class AuthenticationFormPluginManager extends DefaultPluginManager {
    *   The module handler to invoke the alter hook with.
    */
   public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
-    parent::__construct('Plugin/feeds_migrate/authentication', $namespaces, $module_handler, 'Drupal\feeds_migrate\AuthenticationFormInterface', 'Drupal\feeds_migrate\Annotation\AuthenticationForm');
+    parent::__construct('Plugin/migrate/source/form', $namespaces, $module_handler, 'Drupal\feeds_migrate\MigratePluginFormInterface', 'Drupal\feeds_migrate\Annotation\SourceForm');
 
-    $this->alterInfo('authentication_form_info');
-    $this->setCacheBackend($cache_backend, 'migrate_plus_plugins_authentication_form');
+    $this->alterInfo('migrate_source_form_info');
+    $this->setCacheBackend($cache_backend, 'migrate_plugins_source_form');
   }
 
   /**

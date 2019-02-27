@@ -1,14 +1,21 @@
 <?php
 
-namespace Drupal\feeds_migrate\Plugin\migrate_plus\data_fetcher\Form;
+namespace Drupal\feeds_migrate\Plugin\migrate_plus\data_fetcher\form;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
  * The configuration form for the file migrate data fetcher plugin.
+ *
+ * @DataFetcherForm(
+ *   id = "file",
+ *   title = @Translation("File Data Fetcher Plugin Form"),
+ *   type = "configuration",
+ *   parent = "file"
+ * )
  */
-class FileForm extends DataFetcherPluginFormBase {
+class FileForm extends DataFetcherFormPluginBase {
 
   /**
    * {@inheritdoc}

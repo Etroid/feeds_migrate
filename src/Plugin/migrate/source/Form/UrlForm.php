@@ -1,20 +1,26 @@
 <?php
 
-namespace Drupal\feeds_migrate\Plugin\migrate\source\Form;
+namespace Drupal\feeds_migrate\Plugin\migrate\source\form;
 
 use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
-use Drupal\feeds_migrate\Plugin\PluginFormFactory;
+use Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * The configuration form for the url migrate source plugin.
+ *
+ * @SourceForm(
+ *   id = "url",
+ *   title = @Translation("Url Source Plugin Form"),
+ *   type = "configuration",
+ *   parent = "url"
+ * )
  */
-class UrlForm extends SourcePluginFormBase {
+class UrlForm extends SourceFormPluginBase {
 
   /**
    * Plugin manager for authentication plugins.
@@ -40,7 +46,7 @@ class UrlForm extends SourcePluginFormBase {
   /**
    * The form factory.
    *
-   * @var \Drupal\feeds_migrate\Plugin\PluginFormFactory
+   * @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory
    */
   protected $formFactory;
 
@@ -50,8 +56,9 @@ class UrlForm extends SourcePluginFormBase {
    * @param \Drupal\Component\Plugin\PluginManagerInterface $authentication_plugin_manager
    * @param \Drupal\Component\Plugin\PluginManagerInterface $data_fetcher_plugin_manager
    * @param \Drupal\Component\Plugin\PluginManagerInterface $data_parser_plugin_manager
+   * @param \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory $form_factory
    */
-  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, PluginManagerInterface $authentication_plugin_manager, PluginManagerInterface $data_fetcher_plugin_manager, PluginManagerInterface $data_parser_plugin_manager, PluginFormFactory $form_factory) {
+  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, PluginManagerInterface $authentication_plugin_manager, PluginManagerInterface $data_fetcher_plugin_manager, PluginManagerInterface $data_parser_plugin_manager, MigrateFormPluginFactory $form_factory) {
     parent::__construct($migration_plugin_manager);
     $this->authenticationPluginManager = $authentication_plugin_manager;
     $this->dataFetcherPluginManager = $data_fetcher_plugin_manager;
@@ -68,7 +75,7 @@ class UrlForm extends SourcePluginFormBase {
       $container->get('plugin.manager.migrate_plus.authentication'),
       $container->get('plugin.manager.migrate_plus.data_fetcher'),
       $container->get('plugin.manager.migrate_plus.data_parser'),
-      $container->get('feeds_migrate.plugin_form_factory')
+      $container->get('feeds_migrate.migrate_form_plugin_factory')
     );
   }
 

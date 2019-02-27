@@ -5,18 +5,18 @@ namespace Drupal\feeds_migrate\Annotation;
 use Drupal\Component\Annotation\Plugin;
 
 /**
- * Defines a data fetcher annotation object.
+ * Defines a process annotation object.
  *
- * Plugin namespace: Plugin\migrate_plus\data_fetcher\form.
+ * Plugin namespace: Plugin\migrate\process\form.
  *
- * @see \Drupal\migrate_plus\DataFetcherPluginBase
- * @see \Drupal\migrate_plus\DataFetcherPluginInterface
- * @see \Drupal\migrate_plus\DataFetcherPluginManager
+ * @see \Drupal\migrate\ProcessPluginBase
+ * @see \Drupal\migrate\ProcessPluginInterface
+ * @see \Drupal\migrate\ProcessPluginManager
  * @see plugin_api
  *
  * @Annotation
  */
-class DataFetcherForm extends Plugin {
+class ProcessForm extends Plugin {
 
   /**
    * The plugin ID.
@@ -35,7 +35,14 @@ class DataFetcherForm extends Plugin {
   public $title;
 
   /**
-   * The data_fetcher plugin id the form is for.
+   * The type of form.
+   *
+   * @var string
+   */
+  public $type;
+
+  /**
+   * The process plugin id the form is for.
    *
    * @var string
    */

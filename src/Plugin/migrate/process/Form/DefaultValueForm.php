@@ -1,15 +1,15 @@
 <?php
 
-namespace Drupal\feeds_migrate\Plugin\migrate\process\Form;
+namespace Drupal\feeds_migrate\Plugin\migrate\process\form;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\feeds_migrate\Plugin\ExternalPluginFormBase;
+use Drupal\feeds_migrate\Plugin\MigrateFormPluginBase;
 
 /**
  * The configuration form for entity destinations.
  */
-class DefaultValueForm extends ExternalPluginFormBase {
+class DefaultValueForm extends MigrateFormPluginBase {
 
   /**
    * {@inheritdoc}

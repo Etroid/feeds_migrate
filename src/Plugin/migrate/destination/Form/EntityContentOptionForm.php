@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\feeds_migrate\Plugin\migrate\destination\Form;
+namespace Drupal\feeds_migrate\Plugin\migrate\destination\form;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * The configuration form for entity destinations.
  */
-class EntityContentOptionForm extends DestinationPluginFormBase {
+class EntityContentOptionForm extends DestinationFormPluginBase {
 
   /**
    * Manager for entity types.

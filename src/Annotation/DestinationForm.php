@@ -5,18 +5,18 @@ namespace Drupal\feeds_migrate\Annotation;
 use Drupal\Component\Annotation\Plugin;
 
 /**
- * Defines a data fetcher annotation object.
+ * Defines an destination annotation object.
  *
- * Plugin namespace: Plugin\migrate_plus\data_fetcher\form.
+ * Plugin namespace: Plugin\migrate\destination\form.
  *
- * @see \Drupal\migrate_plus\DataFetcherPluginBase
- * @see \Drupal\migrate_plus\DataFetcherPluginInterface
- * @see \Drupal\migrate_plus\DataFetcherPluginManager
+ * @see \Drupal\migrate\DestinationPluginBase
+ * @see \Drupal\migrate\DestinationPluginInterface
+ * @see \Drupal\migrate\DestinationPluginManager
  * @see plugin_api
  *
  * @Annotation
  */
-class DataFetcherForm extends Plugin {
+class DestinationForm extends Plugin {
 
   /**
    * The plugin ID.
@@ -35,7 +35,7 @@ class DataFetcherForm extends Plugin {
   public $title;
 
   /**
-   * The data_fetcher plugin id the form is for.
+   * The destination plugin id the form is for.
    *
    * @var string
    */

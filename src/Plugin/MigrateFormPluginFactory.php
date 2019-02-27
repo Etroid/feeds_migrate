@@ -10,7 +10,7 @@ use Drupal\migrate_plus\Entity\MigrationInterface;
 /**
  * Provides form discovery capabilities for plugins.
  */
-class PluginFormFactory {
+class MigrateFormPluginFactory {
 
   /**
    * The class resolver.
@@ -50,13 +50,13 @@ class PluginFormFactory {
   public function hasForm(PluginInspectionInterface $plugin, $operation) {
     $definition = $plugin->getPluginDefinition();
 
-    if (empty($definition['feeds']['form'][$operation])) {
+    if (empty($definition['feeds_migrate']['form'][$operation])) {
       return FALSE;
     }
 
-    $class = $definition['feeds']['form'][$operation];
+    $class = $definition['feeds_migrate']['form'][$operation];
 
-    return class_exists($class) && is_subclass_of($class, PluginFormInterface::class);
+    return class_exists($class) && is_subclass_of($class, MigrateFormPluginInterface::class);
   }
 
   /**
@@ -66,35 +66,31 @@ class PluginFormFactory {
    *   The Feeds plugin.
    * @param string $operation
    *   The type of form to create. See ::hasForm above for possible types.
-   *
    * @param \Drupal\migrate_plus\Entity\MigrationInterface|null $migration
    *
-   * @return \Drupal\Core\Plugin\PluginFormInterface
+   * @return \Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface
    *   A form for the plugin.
    */
-  public function createInstance(PluginInspectionInterface $plugin, $operation, MigrationInterface $migration = NULL) {
+  public function createInstance(PluginInspectionInterface $plugin, $operation, MigrationInterface $migration) {
     $definition = $plugin->getPluginDefinition();
 
     // If the form specified is the plugin itself, use it directly.
-    if (get_class($plugin) === ltrim($definition['feeds']['form'][$operation], '\\')) {
+    if (get_class($plugin) === ltrim($definition['feeds_migrate']['form'][$operation], '\\')) {
       $form_object = $plugin;
     }
     else {
-      $form_object = $this->classResolver->getInstanceFromDefinition($definition['feeds']['form'][$operation]);
+      $form_object = $this->classResolver->getInstanceFromDefinition($definition['feeds_migrate']['form'][$operation]);
     }
 
-    // Ensure the resulting object is a plugin form.
-    if (!$form_object instanceof PluginFormInterface) {
-      throw new \LogicException($plugin->getPluginId(), sprintf('The "%s" plugin did not specify a valid "%s" form class, must implement \Drupal\Core\Plugin\PluginFormInterface', $plugin->getPluginId(), $operation));
+    // Ensure the resulting object is a migrate plugin form.
+    if (!$form_object instanceof MigrateFormPluginInterface) {
+      throw new \LogicException($plugin->getPluginId(), sprintf('The "%s" plugin did not specify a valid "%s" form class, must implement \Drupal\Core\Plugin\MigrateFormPluginInterface', $plugin->getPluginId(), $operation));
     }
 
-    if ($form_object instanceof PluginAwareInterface) {
-      $form_object->setPlugin($plugin);
-    }
-
-    if (isset($migration)) {
-      $form_object->setEntity($migration);
-    }
+    // Set parent plugin.
+    $form_object->setPlugin($plugin);
+    // Set migration entity.
+    $form_object->setEntity($migration);
 
     return $form_object;
   }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\feeds_migrate;
+namespace Drupal\feeds_migrate\Plugin;
 
 use Drupal\migrate_plus\Entity\MigrationInterface;
 
