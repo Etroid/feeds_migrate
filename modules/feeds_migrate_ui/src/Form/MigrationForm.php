@@ -137,7 +137,7 @@ class MigrationForm extends EntityForm {
         '@type' => $this->entity->getEntityType()->getLabel(),
       ]),
       '#required' => TRUE,
-      '#parents' => ['label'],
+      '#parents' => ['migration', 'label'],
     ];
 
     $entity_class = $this->entity->getEntityType()->getClass();
@@ -148,11 +148,13 @@ class MigrationForm extends EntityForm {
       '#maxlength' => EntityTypeInterface::BUNDLE_MAX_LENGTH,
       '#machine_name' => [
         'exists' => '\\' . $entity_class . '::load',
+        'label' => '<br/>' . $this->t('Machine name'),
         'replace_pattern' => '[^a-z0-9_]+',
         'replace' => '_',
-        'source' => ['basics', 'label'],
+        'source' => ['label'],
       ],
-      '#parents' => ['id'],
+      '#required' => TRUE,
+      '#parents' => ['migration', 'id'],
     ];
 
     // Migration Group.
@@ -172,7 +174,7 @@ class MigrationForm extends EntityForm {
       '#default_value' => $this->entity->get('migration_group'),
       '#options' => $group_options,
       '#description' => $this->t('Assign this migration to an existing group.'),
-      '#parents' => ['migration_group'],
+      '#parents' => ['migration', 'migration_group'],
     ];
 
     // Plugins.
@@ -193,7 +195,10 @@ class MigrationForm extends EntityForm {
         '#type' => 'details',
         '#group' => 'plugin_settings',
         '#title' => ucwords($this->t($type)),
-        '#attributes' => ['class' => ['feeds-plugin-inline']],
+        '#attributes' => [
+          'id' => 'plugin_settings--' . $type,
+          'class' => ['feeds-plugin-inline']
+        ],
         '#weight' => $weight,
       ];
 
@@ -202,7 +207,7 @@ class MigrationForm extends EntityForm {
           '#type' => 'value',
           '#value' => $plugin_id,
           '#plugin_type' => $type,
-          '#parents' => [$type, 'plugin'],
+          '#parents' => ['migration', $type, 'plugin'],
         ];
       }
       else {
@@ -216,7 +221,7 @@ class MigrationForm extends EntityForm {
             'wrapper' => 'feeds-migration-ajax-wrapper',
           ],
           '#plugin_type' => $type,
-          '#parents' => [$type, 'plugin'],
+          '#parents' => ['migration', $type, 'plugin'],
         ];
       }
 
@@ -419,7 +424,16 @@ class MigrationForm extends EntityForm {
    * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
-    parent::copyFormValuesToEntity($entity, $form, $form_state);
+    // Map values from form directly to migration entity where possible.
+    // We use a root `migration` key to prevent collision with reserved keywords
+    // in the $form_state. Example: `destination` cannot be used on the root
+    // $form_state as it is stripped by RequestSanitizer on AJAX callback:
+    // @see /core/lib/Drupal/Core/Security/RequestSanitizer.php:92
+    $values = $form_state->getValue('migration');
+
+    foreach ($values as $key => $value) {
+      $entity->set($key, $value);
+    }
 
     // Allow plugins to set values on the Migration entity.
     foreach ($this->getPlugins() as $type => $plugin_id) {

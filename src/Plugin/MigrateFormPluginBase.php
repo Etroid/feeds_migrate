@@ -95,11 +95,19 @@ abstract class MigrateFormPluginBase implements MigrateFormPluginInterface {
    *   The current state of the form.
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
+    $values = $form_state->getValue('migration');
     $values = $form_state->getValues();
 
     foreach ($values as $key => $value) {
       $entity->set($key, $value);
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function defaultConfiguration() {
+    return [];
   }
 
   /**

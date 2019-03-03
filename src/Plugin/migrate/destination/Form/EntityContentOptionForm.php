@@ -64,6 +64,7 @@ class EntityContentOptionForm extends DestinationFormPluginBase {
         '#title' => $entity_type->getBundleLabel(),
         '#required' => TRUE,
         '#default_value' => $this->getSetting('default_bundle'),
+        '#parents' => ['migration', 'destination', 'default_bundle'],
       ];
     }
 

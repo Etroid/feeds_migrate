@@ -36,24 +36,44 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
 
     $this->drupalGet('/admin/structure/migrate/sources/add');
 
-    $edit = [
-      'fetcher' => 'http',
-      'parser' => 'json',
-      'destination_wrapper[advanced][default_bundle]' => $content_type->id(),
-    ];
+    // Set label and wait for machine name element to appear.
+    $label = $this->assertSession()->fieldExists('migration[label]');
+    $label->focus();
+    $label->setValue('Migration A');
+    $this->assertSession()->waitForElementVisible('css', '#edit-migration-id');
 
-    // Select 'entity:node' for destination, so a selector for bundle appears.
-    $this->assertSession()->fieldExists('destination');
-    $this->getSession()->getPage()->selectFieldOption('destination', 'entity:node');
+    // Select 'url' for source.
+    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--source"]')->click();
+    $this->assertSession()->fieldExists('migration[source][plugin]');
+    $this->getSession()->getPage()->selectFieldOption('migration[source][plugin]', 'url');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
-    // Set label and wait for machine name element to appear.
-    $field = $this->assertSession()->fieldExists('label');
-    $field->setValue('Migration A');
-    $this->assertSession()->waitForElementVisible('css', '#edit-label-machine-name-suffix');
+    // Select 'http' for data fetcher.
+    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--data_fetcher"]')->click();
+    $this->assertSession()->fieldExists('migration[source][data_fetcher_plugin]');
+    $this->getSession()->getPage()->selectFieldOption('migration[source][data_fetcher_plugin]', 'http');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    // Select 'json' for data parser.
+    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--data_parser"]')->click();
+    $this->assertSession()->fieldExists('migration[source][data_parser_plugin]');
+    $this->getSession()->getPage()->selectFieldOption('migration[source][data_parser_plugin]', 'json');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $item_selector = $this->assertSession()->fieldExists('source_wrapper[configuration][data_parser_wrapper][configuration][item_selector]');
+    $item_selector->setValue('/');
+
+    // Select 'entity:node' for destination, so a selector for bundle appears.
+    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--destination"]')->click();
+    $this->assertSession()->fieldExists('migration[destination][plugin]');
+    $this->getSession()->getPage()->selectFieldOption('migration[destination][plugin]', 'entity:node');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    // Set bundle.
+    $this->assertSession()->fieldExists('migration[destination][default_bundle]');
+    $this->getSession()->getPage()->selectFieldOption('migration[destination][default_bundle]', $content_type->id());
 
     // And submit the form.
-    $this->submitForm($edit, 'Save');
+    $this->submitForm([], 'Save');
 
     // Check if migration is saved with the expected values.
     $migration = Migration::load('migration_a');
@@ -76,24 +96,45 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $vocabulary = $this->createVocabulary();
 
     $this->drupalGet('/admin/structure/migrate/sources/add');
-    $edit = [
-      'fetcher' => 'file',
-      'parser' => 'simple_xml',
-      'destination_wrapper[advanced][default_bundle]' => $vocabulary->id(),
-    ];
-
-    // Select 'entity:taxonomy_term' for destination, so a selector for bundle appears.
-    $this->assertSession()->fieldExists('destination');
-    $this->getSession()->getPage()->selectFieldOption('destination', 'entity:taxonomy_term');
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     // Set label and wait for machine name element to appear.
-    $field = $this->assertSession()->fieldExists('label');
-    $field->setValue('Migration B');
-    $this->assertSession()->waitForElementVisible('css', '#edit-label-machine-name-suffix');
+    $label = $this->assertSession()->fieldExists('migration[label]');
+    $label->focus();
+    $label->setValue('Migration B');
+    $this->assertSession()->waitForElementVisible('css', '#edit-migration-id');
+
+    // Select 'url' for source.
+    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--source"]')->click();
+    $this->assertSession()->fieldExists('migration[source][plugin]');
+    $this->getSession()->getPage()->selectFieldOption('migration[source][plugin]', 'url');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    // Select 'http' for data fetcher.
+    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--data_fetcher"]')->click();
+    $this->assertSession()->fieldExists('migration[source][data_fetcher_plugin]');
+    $this->getSession()->getPage()->selectFieldOption('migration[source][data_fetcher_plugin]', 'http');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    // Select 'json' for data parser.
+    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--data_parser"]')->click();
+    $this->assertSession()->fieldExists('migration[source][data_parser_plugin]');
+    $this->getSession()->getPage()->selectFieldOption('migration[source][data_parser_plugin]', 'json');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $item_selector = $this->assertSession()->fieldExists('source_wrapper[configuration][data_parser_wrapper][configuration][item_selector]');
+    $item_selector->setValue('/');
+
+    // Select 'entity:taxonomy_term' for destination, so a selector for bundle appears.
+    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--destination"]')->click();
+    $this->assertSession()->fieldExists('migration[destination][plugin]');
+    $this->getSession()->getPage()->selectFieldOption('migration[destination][plugin]', 'entity:taxonomy_term');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    // Set bundle.
+    $this->assertSession()->fieldExists('migration[destination][default_bundle]');
+    $this->getSession()->getPage()->selectFieldOption('migration[destination][default_bundle]', $vocabulary->id());
 
     // And submit the form.
-    $this->submitForm($edit, 'Save');
+    $this->submitForm([], 'Save');
 
     // Check if migration is saved with the expected values.
     $migration = Migration::load('migration_b');
@@ -112,8 +153,7 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
    * Tests editing an existing migration.
    */
   public function testEditMigration() {
-    // Create two vocabularies.
-    $vocabulary1 = $this->createVocabulary();
+    // Create vocabulary.
     $vocabulary2 = $this->createVocabulary();
 
     // Create a migration entity.
@@ -122,7 +162,7 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
       'label' => 'Migration C',
       'migration_group' => 'default',
       'source' => [
-        'plugin' => 'null',
+        'plugin' => 'url',
         'data_fetcher_plugin' => 'http',
         'data_parser_plugin' => 'simple_xml',
       ],
@@ -138,15 +178,18 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     // Check if fields have the expected values.
     $this->drupalGet('/admin/structure/migrate/manage/default/migrations/migration_c/edit');
     $session = $this->assertSession();
-    $session->fieldValueEquals('label', 'Migration C');
-    $session->fieldValueEquals('fetcher', 'http');
-    $session->fieldValueEquals('parser', 'simple_xml');
-    $session->fieldValueEquals('destination', 'entity:taxonomy_term');
-    $session->fieldValueEquals('destination_wrapper[advanced][default_bundle]', $vocabulary2->id());
+    $session->fieldValueEquals('migration[label]', 'Migration C');
+    $session->fieldValueEquals('migration[source][data_fetcher_plugin]', 'http');
+    $session->fieldValueEquals('migration[source][data_parser_plugin]', 'simple_xml');
+    $session->fieldValueEquals('migration[destination][plugin]', 'entity:taxonomy_term');
+    $session->fieldValueEquals('migration[destination][default_bundle]', $vocabulary2->id());
 
     // Change destination to 'user'.
-    $this->getSession()->getPage()->selectFieldOption('destination', 'entity:user');
-    $session->assertWaitOnAjaxRequest();
+    // Select 'entity:taxonomy_term' for destination, so a selector for bundle appears.
+    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--destination"]')->click();
+    $this->assertSession()->fieldExists('migration[destination][plugin]');
+    $this->getSession()->getPage()->selectFieldOption('migration[destination][plugin]', 'entity:user');
+    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->submitForm([], 'Save');
 

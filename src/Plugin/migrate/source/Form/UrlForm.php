@@ -3,6 +3,7 @@
 namespace Drupal\feeds_migrate\Plugin\migrate\source\form;
 
 use Drupal\Component\Plugin\PluginManagerInterface;
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
@@ -84,6 +85,8 @@ class UrlForm extends SourceFormPluginBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+    $form['#tree'] = TRUE;
+
     $plugins = $this->getPlugins();
     $weight = 1;
     foreach ($plugins as $type => $plugin_id) {
@@ -95,7 +98,10 @@ class UrlForm extends SourceFormPluginBase {
         '#type' => 'details',
         '#group' => 'plugin_settings',
         '#title' => ucwords($this->t($type)),
-        '#attributes' => ['class' => ['feeds-plugin-inline']],
+        '#attributes' => [
+          'id' => 'plugin_settings--' . $type,
+          'class' => ['feeds-plugin-inline']
+        ],
         '#weight' => $weight,
       ];
 
@@ -104,7 +110,7 @@ class UrlForm extends SourceFormPluginBase {
           '#type' => 'value',
           '#value' => $plugin_id,
           '#plugin_type' => $type,
-          '#parents' => ['source', "{$type}_plugin"],
+          '#parents' => ['migration', 'source', "{$type}_plugin"],
         ];
       }
       else {
@@ -114,11 +120,11 @@ class UrlForm extends SourceFormPluginBase {
           '#options' => $options,
           '#default_value' => $plugin_id,
           '#ajax' => [
-            'callback' => '::ajaxCallback',
+            'callback' => [get_class($this), 'ajaxCallback'],
             'wrapper' => 'feeds-migration-ajax-wrapper',
           ],
           '#plugin_type' => $type,
-          '#parents' => ['source', "{$type}_plugin"],
+          '#parents' => ['migration', 'source', "{$type}_plugin"],
         ];
       }
 
