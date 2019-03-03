@@ -148,7 +148,6 @@ class MigrationForm extends EntityForm {
       '#maxlength' => EntityTypeInterface::BUNDLE_MAX_LENGTH,
       '#machine_name' => [
         'exists' => '\\' . $entity_class . '::load',
-        'label' => '<br/>' . $this->t('Machine name'),
         'replace_pattern' => '[^a-z0-9_]+',
         'replace' => '_',
         'source' => ['label'],
