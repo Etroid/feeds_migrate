@@ -92,7 +92,7 @@ class Import extends ControllerBase {
    */
   protected function getBatch(FeedsMigrateImporterInterface $feeds_migrate_importer) {
 
-    /** @var FeedsMigrateExecutable $migrate_executable */
+    /** @var \Drupal\feeds_migrate\FeedsMigrateExecutable $migrate_executable */
     $migrate_executable = $feeds_migrate_importer->getExecutable();
     $this->migration = $migrate_executable->getMigration();
     $source = $this->migration->getSourcePlugin();
