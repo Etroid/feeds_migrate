@@ -195,7 +195,7 @@ class FeedsMigrateImporterForm extends EntityForm {
       '#type' => 'details',
       '#group' => 'plugin_settings',
       '#title' => $this->t('Data Fetcher Settings'),
-      '#description' => $this->t('Select an migration source to configure the fetcher'),
+      '#description' => $this->t('Select a migration source to configure the fetcher'),
       '#tree' => TRUE,
     ];
 
