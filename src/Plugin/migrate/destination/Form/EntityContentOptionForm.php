@@ -64,7 +64,6 @@ class EntityContentOptionForm extends DestinationFormPluginBase {
         '#title' => $entity_type->getBundleLabel(),
         '#required' => TRUE,
         '#default_value' => $this->getSetting('default_bundle'),
-        '#parents' => ['migration', 'destination', 'default_bundle'],
       ];
     }
 
@@ -77,7 +76,7 @@ class EntityContentOptionForm extends DestinationFormPluginBase {
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
     $entity_type = $this->getEntityType();
     if ($entity_type && $bundle_key = $entity_type->getKey('bundle')) {
-      $entity->destination['default_bundle'] = $form_state->getCompleteFormState()->getValue('migration')['destination']['default_bundle'];
+      $entity->destination['default_bundle'] = $form_state->getValue('default_bundle');
     }
     else {
       unset($entity->destination['default_bundle']);
