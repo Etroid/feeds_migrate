@@ -14,7 +14,6 @@
     }
   ],
   "require": {
-    "drupal/core": "^8.6",
     "drupal/migrate_plus": "~4.0",
     "drupal/migrate_tools": "^4.0"
   },
@@ -24,6 +23,9 @@
     "drupal/coder": "8.2.12",
     "bex/behat-screenshot": "^1.2",
     "phpmd/phpmd": "^2.6",
-    "phpmetrics/phpmetrics": "^2.4"
+    "phpmetrics/phpmetrics": "^2.4",
+    "phpunit/phpunit": "^6.5",
+    "squizlabs/php_codesniffer": "^2.8.1",
+    "symfony/phpunit-bridge": "^3.4.3"
   }
 }
