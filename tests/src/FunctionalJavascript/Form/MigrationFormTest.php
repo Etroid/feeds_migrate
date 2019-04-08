@@ -69,8 +69,8 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     // Set bundle.
-    $this->assertSession()->fieldExists('migration[destination][default_bundle]');
-    $this->getSession()->getPage()->selectFieldOption('migration[destination][default_bundle]', $content_type->id());
+    $this->assertSession()->fieldExists('destination_wrapper[options][default_bundle]');
+    $this->getSession()->getPage()->selectFieldOption('destination_wrapper[options][default_bundle]', $content_type->id());
 
     // And submit the form.
     $this->submitForm([], 'Save');
@@ -112,13 +112,13 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     // Select 'http' for data fetcher.
     $this->getSession()->getPage()->find('css', '[href="#plugin_settings--data_fetcher"]')->click();
     $this->assertSession()->fieldExists('migration[source][data_fetcher_plugin]');
-    $this->getSession()->getPage()->selectFieldOption('migration[source][data_fetcher_plugin]', 'http');
+    $this->getSession()->getPage()->selectFieldOption('migration[source][data_fetcher_plugin]', 'file');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     // Select 'json' for data parser.
     $this->getSession()->getPage()->find('css', '[href="#plugin_settings--data_parser"]')->click();
     $this->assertSession()->fieldExists('migration[source][data_parser_plugin]');
-    $this->getSession()->getPage()->selectFieldOption('migration[source][data_parser_plugin]', 'json');
+    $this->getSession()->getPage()->selectFieldOption('migration[source][data_parser_plugin]', 'simple_xml');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $item_selector = $this->assertSession()->fieldExists('source_wrapper[configuration][data_parser_wrapper][configuration][item_selector]');
     $item_selector->setValue('/');
@@ -130,8 +130,8 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     // Set bundle.
-    $this->assertSession()->fieldExists('migration[destination][default_bundle]');
-    $this->getSession()->getPage()->selectFieldOption('migration[destination][default_bundle]', $vocabulary->id());
+    $this->assertSession()->fieldExists('destination_wrapper[options][default_bundle]');
+    $this->getSession()->getPage()->selectFieldOption('destination_wrapper[options][default_bundle]', $vocabulary->id());
 
     // And submit the form.
     $this->submitForm([], 'Save');
@@ -182,7 +182,7 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $session->fieldValueEquals('migration[source][data_fetcher_plugin]', 'http');
     $session->fieldValueEquals('migration[source][data_parser_plugin]', 'simple_xml');
     $session->fieldValueEquals('migration[destination][plugin]', 'entity:taxonomy_term');
-    $session->fieldValueEquals('migration[destination][default_bundle]', $vocabulary2->id());
+    $session->fieldValueEquals('destination_wrapper[options][default_bundle]', $vocabulary2->id());
 
     // Change destination to 'user'.
     // Select 'entity:taxonomy_term' for destination, so a selector for bundle appears.

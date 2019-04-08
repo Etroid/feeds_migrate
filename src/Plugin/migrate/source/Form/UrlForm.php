@@ -138,7 +138,7 @@ class UrlForm extends SourceFormPluginBase {
       if ($plugin && $this->formFactory->hasForm($plugin, 'option')) {
         $option_form_state = SubformState::createForSubform($form[$type . '_wrapper']['options'], $form, $form_state);
         $option_form = $this->formFactory->createInstance($plugin, 'option', $this->entity);
-        $form[$type . '_wrapper']['options'] = $option_form->buildConfigurationForm([], $option_form_state);
+        $form[$type . '_wrapper']['options'] += $option_form->buildConfigurationForm([], $option_form_state);
       }
 
       // Configuration form for the plugin.
