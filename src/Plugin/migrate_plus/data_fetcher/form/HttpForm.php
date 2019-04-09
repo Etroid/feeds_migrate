@@ -29,7 +29,7 @@ class HttpForm extends DataFetcherFormPluginBase {
     $form['urls'] = [
       '#type' => 'textfield',
       '#title' => $this->t('File Location (single location only)'),
-      '#default_value' => $source['data_fetcher']['urls'] ?: 'public://migrate/data.xml',
+      '#default_value' => $source['urls'] ?: 'public://migrate/data.xml',
     ];
 
     return $form;
@@ -39,7 +39,8 @@ class HttpForm extends DataFetcherFormPluginBase {
    * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
-    $entity->source['data_fetcher']['urls'] = $form_state->getValue('urls');
+    // The urls property goes right into source, not under data_fetcher.
+    $entity->source['urls'] = $form_state->getValue('urls');
   }
 
 }
