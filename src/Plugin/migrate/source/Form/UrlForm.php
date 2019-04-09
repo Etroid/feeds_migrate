@@ -56,9 +56,13 @@ class UrlForm extends SourceFormPluginBase {
    * UrlForm constructor.
    *
    * @param \Drupal\Component\Plugin\PluginManagerInterface $authentication_plugin_manager
+   *   The plugin manager for migrate plus authentication plugins.
    * @param \Drupal\Component\Plugin\PluginManagerInterface $data_fetcher_plugin_manager
+   *   The plugin manager for migrate plus data fetcher plugins.
    * @param \Drupal\Component\Plugin\PluginManagerInterface $data_parser_plugin_manager
+   *   The plugin manager for migrate plus data parser plugins.
    * @param \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory $form_factory
+   *   The factory for feeds migrate form plugins.
    */
   public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, PluginManagerInterface $authentication_plugin_manager, PluginManagerInterface $data_fetcher_plugin_manager, PluginManagerInterface $data_parser_plugin_manager, MigrateFormPluginFactory $form_factory) {
     parent::__construct($migration_plugin_manager);
@@ -294,6 +298,7 @@ class UrlForm extends SourceFormPluginBase {
 
     // Iterate over available plugins and filter out empty/null plugins.
     foreach ($manager->getDefinitions() as $plugin_id => $definition) {
+      // @todo let's not hard code this.
       if (in_array($plugin_id, ['null', 'empty'])) {
         continue;
       }

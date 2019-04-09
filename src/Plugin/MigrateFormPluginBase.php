@@ -82,17 +82,7 @@ abstract class MigrateFormPluginBase implements MigrateFormPluginInterface {
   }
 
   /**
-   * Copies top-level form values to entity properties.
-   *
-   * This should not change existing entity properties that are not being edited
-   * by this form.
-   *
-   * @param \Drupal\Core\Entity\EntityInterface $entity
-   *   The entity the current form should operate upon.
-   * @param array $form
-   *   A nested array of form elements comprising the form.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The current state of the form.
+   * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
