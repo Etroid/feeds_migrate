@@ -335,7 +335,8 @@ class MigrationMappingFormBase extends EntityForm {
     // Add the mapping to the process section.
     $mapping = $this->mapping;
     $process = $entity->get('process') ?: [];
-    $process = array_merge($process, $this->migrationEntityHelper()->processMapping($mapping));
+    $process = array_merge($process, $this->migrationEntityHelper()
+      ->processMapping($mapping));
 
     $entity->set('process', $process);
 
@@ -400,15 +401,17 @@ class MigrationMappingFormBase extends EntityForm {
       // If we edited an existing mapping.
       $this->messenger()->addMessage($this->t('Migration mapping for field 
         @destination_field has been updated.', [
-          '@destination_field' => $this->migrationEntityHelper()->getMappingFieldLabel($this->key),
-        ]));
+        '@destination_field' => $this->migrationEntityHelper()
+          ->getMappingFieldLabel($this->key),
+      ]));
     }
     else {
       // If we created a new mapping.
       $this->messenger()->addMessage($this->t('Migration mapping for field
         @destination_field has been added.', [
-          '@destination_field' => $this->migrationEntityHelper()->getMappingFieldLabel($this->key),
-        ]));
+        '@destination_field' => $this->migrationEntityHelper()
+          ->getMappingFieldLabel($this->key),
+      ]));
     }
 
     // Redirect the user to the mapping edit form.
@@ -438,7 +441,9 @@ class MigrationMappingFormBase extends EntityForm {
     $options = [];
 
     /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $fields */
-    $fields = $this->fieldManager->getFieldDefinitions($this->migrationEntityHelper()->getEntityTypeIdFromDestination(), $this->migrationEntityHelper()->getEntityBundleFromDestination());
+    $fields = $this->fieldManager->getFieldDefinitions($this->migrationEntityHelper()
+      ->getEntityTypeIdFromDestination(), $this->migrationEntityHelper()
+      ->getEntityBundleFromDestination());
     foreach ($fields as $field_name => $field) {
       $options[$field->getName()] = $field->getLabel();
     }
