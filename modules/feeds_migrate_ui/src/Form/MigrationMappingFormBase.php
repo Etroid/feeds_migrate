@@ -92,6 +92,13 @@ class MigrationMappingFormBase extends EntityForm {
   protected $mapping;
 
   /**
+   * Get whether the field is a unique field used for migration IDs.
+   *
+   * @var bool
+   */
+  protected $unique;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
@@ -308,10 +315,13 @@ class MigrationMappingFormBase extends EntityForm {
         $plugin->submitConfigurationForm($form, $plugin_form_state);
         // Copy mapping values from plugin.
         $mapping = $plugin->getConfigurationFormMapping($form, $plugin_form_state);
-
         $mapping['#destination']['key'] = $this->key;
 
         $this->mapping = $mapping;
+
+        // Copy unique value from plugin.
+        $unique = $plugin->isUnique($form, $plugin_form_state);
+        $this->unique = $unique;
       }
     }
 
@@ -322,11 +332,35 @@ class MigrationMappingFormBase extends EntityForm {
    * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
+    // Add the mapping to the process section.
     $mapping = $this->mapping;
     $process = $entity->get('process') ?: [];
     $process = array_merge($process, $this->migrationEntityHelper()->processMapping($mapping));
 
     $entity->set('process', $process);
+
+    // Add the unique values to the source section.
+    $source = $entity->get('source');
+    $ids = $source['ids'] ?: [];
+    if ($this->unique) {
+      // Is unique, make sure it's there.
+      if (!array_key_exists($mapping["source"], $ids)) {
+        // Doesn't exist, so add it.
+        $ids[$mapping["source"]] = ['type' => 'string'];
+      }
+    }
+    else {
+      // Is not unique, make sure it's not there.
+      if (array_key_exists($mapping["source"], $ids)) {
+        // Doesn't exist, so add it.
+        unset($ids[$mapping["source"]]);
+      }
+    }
+    $source['ids'] = $ids;
+    $entity->set('source', $source);
+
+    // Add the fields to the source section.
+
   }
 
   /**

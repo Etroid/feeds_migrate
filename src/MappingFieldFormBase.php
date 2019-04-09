@@ -120,6 +120,13 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
       '#default_value' => $mapping['source'],
     ];
 
+    $checked = array_key_exists($mapping['source'], $this->migration->source["ids"]);
+    $form['is_unique'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Unique Field'),
+      '#default_value' => $checked,
+    ];
+
     $this->buildProcessPluginsConfigurationForm($form, $form_state);
 
     return $form;
@@ -179,6 +186,8 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     $mapping = $this->getConfigurationFormMapping($form, $form_state);
 
+    $unique = $this->isUnique($form, $form_state);
+
     // Todo: iterate over all process plugins and execute
     //       submitConfigurationForm on them.
   }
@@ -194,6 +203,14 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
     ];
 
     return $mapping;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isUnique(array &$form, FormStateInterface $form_state) {
+    $unique = $form_state->getValue('is_unique');
+    return $unique;
   }
 
   /**
