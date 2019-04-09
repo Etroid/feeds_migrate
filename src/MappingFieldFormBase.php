@@ -144,7 +144,7 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
 
     // Load available migrate process plugins.
     $plugins = $this->getProcessPlugins();
-    $form['add'] =[
+    $form['add'] = [
       '#type' => 'select',
       '#options' => $plugins,
       '#empty_option' => $this->t('- Select a process plugin -'),
