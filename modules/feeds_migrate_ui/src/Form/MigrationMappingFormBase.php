@@ -357,10 +357,33 @@ class MigrationMappingFormBase extends EntityForm {
       }
     }
     $source['ids'] = $ids;
-    $entity->set('source', $source);
 
     // Add the fields to the source section.
+    //    fields:
+    //      -
+    //      name: title
+    //      label: Title
+    //      selector: title
 
+    $fields = $source['fields'] ?: [];
+    $foundField = FALSE;
+    foreach ($fields as $field) {
+      if ($field['name'] == $mapping['source']) {
+        $foundField = TRUE;
+        break;
+      }
+    }
+    if (!$foundField) {
+      $newField = [
+        'name' => $mapping['source'],
+        'label' => $mapping['source'],
+        'selector' => $mapping['source'],
+      ];
+      $fields[] = $newField;
+      $source['fields'] = $fields;
+      $entity->set('source', $source);
+
+    }
   }
 
   /**
