@@ -20,7 +20,6 @@
   "require-dev": {
     "composer/installers": "^1.2",
     "cweagans/composer-patches": "^1.6",
-    "drupal/coder": "8.2.12",
     "bex/behat-screenshot": "^1.2",
     "phpmd/phpmd": "^2.6",
     "phpmetrics/phpmetrics": "^2.4"
