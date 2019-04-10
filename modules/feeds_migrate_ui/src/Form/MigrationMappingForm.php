@@ -298,12 +298,12 @@ class MigrationMappingForm extends EntityForm {
 
     // Unique.
     if (!$property) {
-      $checked = array_key_exists($source, $migration->source['ids']);
+      $unique = array_key_exists($source, $migration->source['ids']);
       $row['unique'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('Unique'),
         '#title_display' => 'invisible',
-        '#default_value' => $checked,
+        '#default_value' => $unique,
         '#disabled' => TRUE,
       ];
     }
