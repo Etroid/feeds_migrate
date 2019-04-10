@@ -2,11 +2,15 @@
 
 namespace Drupal\feeds_migrate\Plugin\feeds_migrate\data_fetcher;
 
+use Drupal\Core\File\FileSystem;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\feeds_migrate\DataFetcherFormPluginBase;
 use Drupal\feeds_migrate\FeedsMigrateImporterInterface;
 use Drupal\migrate\Plugin\Migration;
 use Drupal\file\Entity\File as FileEntity;
+use League\Container\ContainerAwareInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Provides basic authentication for the HTTP resource.
@@ -17,7 +21,34 @@ use Drupal\file\Entity\File as FileEntity;
  *   parent = "file"
  * )
  */
-class File extends DataFetcherFormPluginBase {
+class File extends DataFetcherFormPluginBase implements ContainerFactoryPluginInterface {
+
+  /**
+   * File system.
+   *
+   * @var \Drupal\Core\File\FileSystem
+   */
+  protected $fileSystem;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('file_system')
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, FileSystem $fileSystem) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->fileSystem = $fileSystem;
+  }
 
   /**
    * {@inheritdoc}
@@ -83,7 +114,7 @@ class File extends DataFetcherFormPluginBase {
       if ($file = FileEntity::load(reset($fids['file']))) {
 
         $source_config = $migration->getSourceConfiguration();
-        $source_config['urls'] = \Drupal::service('file_system')->realpath($file->getFileUri());
+        $source_config['urls'] = $this->fileSystem->realpath($file->getFileUri());
         $migration->set('source', $source_config);
       }
     }
