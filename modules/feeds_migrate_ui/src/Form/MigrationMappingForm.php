@@ -50,7 +50,7 @@ class MigrationMappingForm extends EntityForm {
 
   /**
    * {@inheritdoc}
-   * TODO clean up dependencies
+   * TODO clean up dependencies.
    */
   public static function create(ContainerInterface $container) {
     return new static(
@@ -114,7 +114,7 @@ class MigrationMappingForm extends EntityForm {
           $id = $target . '.' . $property;
           $rows[$id] = $this->buildTableRow($mapping, $property);
 
-          // Exclude these rows from the form_state
+          // Exclude these rows from the form_state.
           $rows[$id]['#parents'] = ['mapping', $target];
         }
       }
@@ -137,7 +137,7 @@ class MigrationMappingForm extends EntityForm {
           'action' => 'order',
           'relationship' => 'sibling',
           'group' => 'row-weight',
-        ]
+        ],
       ],
     ] + $rows;
 
@@ -268,7 +268,7 @@ class MigrationMappingForm extends EntityForm {
       ];
     }
 
-    // Destination
+    // Destination.
     $row['destination'] = [
       [
         '#theme' => 'indentation',
@@ -277,15 +277,15 @@ class MigrationMappingForm extends EntityForm {
       ],
       [
         '#markup' => $destination,
-      ]
+      ],
     ];
 
-    // Source
+    // Source.
     $row['source'] = [
       '#markup' => is_array($source) ? implode('<br>', $source) : $source,
     ];
 
-    // Summary of process plugins
+    // Summary of process plugins.
     $summary = $plugin->getSummary($mapping, $property);
     if ($summary) {
       $row['summary'] = [
@@ -296,18 +296,19 @@ class MigrationMappingForm extends EntityForm {
       ];
     }
 
-    // Unique
+    // Unique.
     if (!$property) {
+      $unique = array_key_exists($source, $migration->source['ids']);
       $row['unique'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('Unique'),
         '#title_display' => 'invisible',
-        '#default_value' => FALSE,
+        '#default_value' => $unique,
         '#disabled' => TRUE,
       ];
     }
 
-    // Operations
+    // Operations.
     if (!$property) {
       $operations['edit'] = [
         'title' => $this->t('Edit'),
@@ -325,7 +326,7 @@ class MigrationMappingForm extends EntityForm {
           'entity.migration.mapping.delete_form',
           [
             'migration' => $migration->id(),
-            'key' =>  rawurlencode($mapping['#destination']['key']),
+            'key' => rawurlencode($mapping['#destination']['key']),
           ]
         ),
       ];
@@ -360,7 +361,8 @@ class MigrationMappingForm extends EntityForm {
       if (!isset($mappings_original[$key])) {
         $form_state->setError($form['mappings'][$key],
           $this->t('A mapping for field %destination_field does not exist.', [
-            '%destination_field' => $key]));
+            '%destination_field' => $key,
+          ]));
         continue;
       }
 
@@ -371,7 +373,7 @@ class MigrationMappingForm extends EntityForm {
       return;
     }
 
-    // Set the new mappings
+    // Set the new mappings.
     $this->migrationEntityHelper()->setMappings($mappings_sorted);
 
     parent::validateForm($form, $form_state);
@@ -400,7 +402,7 @@ class MigrationMappingForm extends EntityForm {
     $this->messenger()->AddMessage($this->t('Migration mapping for migration 
         @migration has been updated.', [
           '@migration' => $migration->label(),
-    ]));
+        ]));
   }
 
 }

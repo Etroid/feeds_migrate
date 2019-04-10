@@ -33,7 +33,7 @@ class MigrationMappingDeleteForm extends EntityConfirmFormBase {
 
   /**
    * The key of the destination field.
-   * 
+   *
    * @var string
    */
   protected $key;

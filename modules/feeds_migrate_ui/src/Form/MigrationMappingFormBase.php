@@ -5,11 +5,12 @@ namespace Drupal\feeds_migrate_ui\Form;
 use Drupal\Core\Entity\EntityFieldManager;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
 use Drupal\Core\Url;
+use Drupal\feeds_migrate\Annotation\MigrateForm;
 use Drupal\feeds_migrate\MigrationEntityHelperManager;
+use Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory;
 use Drupal\feeds_migrate\Plugin\PluginFormFactory;
 use Drupal\feeds_migrate\MappingFieldFormManager;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
@@ -91,12 +92,19 @@ class MigrationMappingFormBase extends EntityForm {
   protected $mapping;
 
   /**
+   * Get whether the field is a unique field used for migration IDs.
+   *
+   * @var bool
+   */
+  protected $unique;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('plugin.manager.migration'),
-      $container->get('feeds_migrate.plugin_form_factory'),
+      $container->get('feeds_migrate.migrate_form_plugin_factory'),
       $container->get('plugin.manager.feeds_migrate.mapping_field_form'),
       $container->get('entity_field.manager'),
       $container->get('feeds_migrate.migration_entity_helper')
@@ -107,12 +115,12 @@ class MigrationMappingFormBase extends EntityForm {
    * MigrationMappingFormBase constructor.
    *
    * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_plugin_manager
-   * @param \Drupal\feeds_migrate\Plugin\PluginFormFactory $form_factory
+   * @param \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory $form_factory
    * @param \Drupal\feeds_migrate\MappingFieldFormManager $mapping_field_manager
    * @param \Drupal\Core\Entity\EntityFieldManager $field_manager
    * @param \Drupal\feeds_migrate\MigrationEntityHelperManager $migration_entity_helper_manager
    */
-  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, PluginFormFactory $form_factory, MappingFieldFormManager $mapping_field_manager, EntityFieldManager $field_manager, MigrationEntityHelperManager $migration_entity_helper_manager) {
+  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, MigrateFormPluginFactory $form_factory, MappingFieldFormManager $mapping_field_manager, EntityFieldManager $field_manager, MigrationEntityHelperManager $migration_entity_helper_manager) {
     $this->migrationPluginManager = $migration_plugin_manager;
     $this->formFactory = $form_factory;
     $this->mappingFieldManager = $mapping_field_manager;
@@ -151,7 +159,7 @@ class MigrationMappingFormBase extends EntityForm {
     $form['#prefix'] = '<div id="feeds-migration-mapping-ajax-wrapper">';
     $form['#suffix'] = '</div>';
 
-    // General mapping settings
+    // General mapping settings.
     $form['general'] = [
       '#title' => $this->t('General'),
       '#type' => 'details',
@@ -197,7 +205,7 @@ class MigrationMappingFormBase extends EntityForm {
       ],
     ];
 
-    // Mapping Field Plugin settings
+    // Mapping Field Plugin settings.
     if ($this->key) {
       // Field specific mapping settings.
       $form['mapping'] = [
@@ -206,7 +214,7 @@ class MigrationMappingFormBase extends EntityForm {
         '#tree' => TRUE,
         $this->key => [
           '#parents' => ['mapping', $this->key],
-        ]
+        ],
       ];
 
       /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
@@ -248,7 +256,7 @@ class MigrationMappingFormBase extends EntityForm {
         'entity.migration.mapping.delete_form',
         [
           'migration' => $this->entity->id(),
-          'key' =>  rawurlencode($this->key),
+          'key' => rawurlencode($this->key),
         ]
       );
     }
@@ -307,10 +315,13 @@ class MigrationMappingFormBase extends EntityForm {
         $plugin->submitConfigurationForm($form, $plugin_form_state);
         // Copy mapping values from plugin.
         $mapping = $plugin->getConfigurationFormMapping($form, $plugin_form_state);
-
         $mapping['#destination']['key'] = $this->key;
 
         $this->mapping = $mapping;
+
+        // Copy unique value from plugin.
+        $unique = $plugin->isUnique($form, $plugin_form_state);
+        $this->unique = $unique;
       }
     }
 
@@ -321,11 +332,59 @@ class MigrationMappingFormBase extends EntityForm {
    * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
+    // Add the mapping to the process section.
     $mapping = $this->mapping;
     $process = $entity->get('process') ?: [];
-    $process = array_merge($process, $this->migrationEntityHelper()->processMapping($mapping));
+    $process = array_merge($process, $this->migrationEntityHelper()
+      ->processMapping($mapping));
 
     $entity->set('process', $process);
+
+    // Add the unique values to the source section.
+    $source = $entity->get('source');
+    $ids = $source['ids'] ?: [];
+    if ($this->unique) {
+      // Is unique, make sure it's there.
+      if (!array_key_exists($mapping["source"], $ids)) {
+        // Doesn't exist, so add it.
+        $ids[$mapping["source"]] = ['type' => 'string'];
+      }
+    }
+    else {
+      // Is not unique, make sure it's not there.
+      if (array_key_exists($mapping["source"], $ids)) {
+        // Doesn't exist, so add it.
+        unset($ids[$mapping["source"]]);
+      }
+    }
+    $source['ids'] = $ids;
+
+    // Add the fields to the source section.
+    //    fields:
+    //      -
+    //      name: title
+    //      label: Title
+    //      selector: title
+
+    $fields = $source['fields'] ?: [];
+    $foundField = FALSE;
+    foreach ($fields as $field) {
+      if ($field['name'] == $mapping['source']) {
+        $foundField = TRUE;
+        break;
+      }
+    }
+    if (!$foundField) {
+      $newField = [
+        'name' => $mapping['source'],
+        'label' => $mapping['source'],
+        'selector' => $mapping['source'],
+      ];
+      $fields[] = $newField;
+      $source['fields'] = $fields;
+      $entity->set('source', $source);
+
+    }
   }
 
   /**
@@ -342,14 +401,16 @@ class MigrationMappingFormBase extends EntityForm {
       // If we edited an existing mapping.
       $this->messenger()->addMessage($this->t('Migration mapping for field 
         @destination_field has been updated.', [
-        '@destination_field' => $this->migrationEntityHelper()->getMappingFieldLabel($this->key)
+        '@destination_field' => $this->migrationEntityHelper()
+          ->getMappingFieldLabel($this->key),
       ]));
     }
     else {
       // If we created a new mapping.
       $this->messenger()->addMessage($this->t('Migration mapping for field
         @destination_field has been added.', [
-        '@destination_field' => $this->migrationEntityHelper()->getMappingFieldLabel($this->key)
+        '@destination_field' => $this->migrationEntityHelper()
+          ->getMappingFieldLabel($this->key),
       ]));
     }
 
@@ -370,7 +431,8 @@ class MigrationMappingFormBase extends EntityForm {
     return $form;
   }
 
-  /** ----------- */
+  /**
+   * ----------- .*/
 
   /**
    * Returns a list of all mapping destination options, keyed by field name.
@@ -378,8 +440,10 @@ class MigrationMappingFormBase extends EntityForm {
   protected function getMappingOptions() {
     $options = [];
 
-    /** @var FieldDefinitionInterface[] $fields */
-    $fields =  $this->fieldManager->getFieldDefinitions($this->migrationEntityHelper()->getEntityTypeIdFromDestination(), $this->migrationEntityHelper()->getEntityBundleFromDestination());
+    /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $fields */
+    $fields = $this->fieldManager->getFieldDefinitions($this->migrationEntityHelper()
+      ->getEntityTypeIdFromDestination(), $this->migrationEntityHelper()
+      ->getEntityBundleFromDestination());
     foreach ($fields as $field_name => $field) {
       $options[$field->getName()] = $field->getLabel();
     }

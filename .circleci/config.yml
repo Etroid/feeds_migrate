@@ -41,15 +41,6 @@ update_dependencies: &update_dependencies
         command: |
           ./update-dependencies.sh $CIRCLE_PROJECT_REPONAME
 
-    # Remove hard-coded dependency on drupal/core: 8.6 allow upgrading to 8.7.x-dev
-    # Some of our module dependencies rely on a later version of core
-    - run:
-        working_directory: /var/www/html
-        command: |
-          rm -rf core
-          sed -i 's/\("replace":{\).*\(},"minimum-stability"\)/\1\2/' composer.json
-          composer remove "egulias/email-validator"
-
     - save_cache: *save_cache
 
     - persist_to_workspace:

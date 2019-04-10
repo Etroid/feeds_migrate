@@ -15,7 +15,7 @@ function feeds_migrate_ui_entity_type_alter(array &$entity_types) {
   $migration->setFormClass('add', 'Drupal\feeds_migrate_ui\Form\MigrationForm');
   $migration->setFormClass('edit', 'Drupal\feeds_migrate_ui\Form\MigrationForm');
   $migration->setFormClass('export', 'Drupal\feeds_migrate_ui\Form\MigrationExportForm');
-  // TODO consider moving mapping UX and logic to migrate_tools module
+  // @todo consider moving mapping UX and logic to migrate_tools module
   $migration->setFormClass('mapping', 'Drupal\feeds_migrate_ui\Form\MigrationMappingForm');
   $migration->setFormClass('mapping-list', 'Drupal\feeds_migrate_ui\Form\MigrationMappingForm');
   $migration->setFormClass('mapping-add', 'Drupal\feeds_migrate_ui\Form\MigrationMappingAddForm');

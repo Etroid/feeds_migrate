@@ -120,6 +120,13 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
       '#default_value' => $mapping['source'],
     ];
 
+    $checked = array_key_exists($mapping['source'], $this->migration->source["ids"]);
+    $form['is_unique'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Unique Field'),
+      '#default_value' => $checked,
+    ];
+
     $this->buildProcessPluginsConfigurationForm($form, $form_state);
 
     return $form;
@@ -137,7 +144,7 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
 
     // Load available migrate process plugins.
     $plugins = $this->getProcessPlugins();
-    $form['add'] =[
+    $form['add'] = [
       '#type' => 'select',
       '#options' => $plugins,
       '#empty_option' => $this->t('- Select a process plugin -'),
@@ -179,6 +186,8 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     $mapping = $this->getConfigurationFormMapping($form, $form_state);
 
+    $unique = $this->isUnique($form, $form_state);
+
     // Todo: iterate over all process plugins and execute
     //       submitConfigurationForm on them.
   }
@@ -197,13 +206,21 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public function isUnique(array &$form, FormStateInterface $form_state) {
+    $unique = $form_state->getValue('is_unique');
+    return $unique;
+  }
+
+  /**
    * Returns a list of migrate process plugins with a configuration form.
    */
   protected function getProcessPlugins() {
     $plugins = [];
     foreach ($this->migrateProcessManager->getDefinitions() as $id => $definition) {
       // Only include process plugins which have a configuration form.
-      if (isset($definition['feeds']['form']['configuration'])) {
+      if (isset($definition['feeds_migrate']['form']['configuration'])) {
         $plugins[$id] = isset($definition['label']) ? $definition['label'] : $id;
       }
     }

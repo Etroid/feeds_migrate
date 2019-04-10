@@ -34,6 +34,9 @@ class FeedsMigrateUiParserSuggestion {
     $this->fetcherManager = \Drupal::service('plugin.manager.migrate_plus.data_fetcher');
   }
 
+  /**
+   *
+   */
   public function getSuggestedParser($data) {
     $headers = get_headers($data);
     foreach ($headers as $header) {
@@ -49,6 +52,9 @@ class FeedsMigrateUiParserSuggestion {
     return FALSE;
   }
 
+  /**
+   *
+   */
   public function getSuggestedSelectors($fetcher_plugin_id, $url) {
     /** @var \Drupal\migrate_plus\DataFetcherPluginInterface $fetcher_plugin */
     $fetcher_plugin = $this->fetcherManager->createInstance($fetcher_plugin_id);
@@ -67,6 +73,9 @@ class FeedsMigrateUiParserSuggestion {
     }
   }
 
+  /**
+   *
+   */
   protected function getSuggestedSelectorsXml($contents, &$suggestions = [], $path = '') {
     $xml = simplexml_load_string($contents);
     if (empty($path)) {
@@ -85,6 +94,9 @@ class FeedsMigrateUiParserSuggestion {
     return $suggestions;
   }
 
+  /**
+   *
+   */
   protected function getSuggestedSelectorsJson($contents) {
     return [];
   }
