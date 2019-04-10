@@ -5,13 +5,13 @@ namespace Drupal\feeds_migrate\Annotation;
 use Drupal\Component\Annotation\Plugin;
 
 /**
- * Defines an authentication annotation object.
+ * Defines a data parser annotation object.
  *
- * Plugin namespace: Plugin\migrate_plus\authentication\form.
+ * Plugin namespace: Plugin\migrate_plus\data_parser\form.
  *
- * @see \Drupal\migrate_plus\AuthenticationPluginBase
- * @see \Drupal\migrate_plus\AuthenticationPluginInterface
- * @see \Drupal\migrate_plus\AuthenticationPluginManager
+ * @see \Drupal\migrate_plus\DataParserPluginBase
+ * @see \Drupal\migrate_plus\DataParserPluginInterface
+ * @see \Drupal\migrate_plus\DataParserPluginManager
  * @see plugin_api
  *
  * @Annotation
@@ -35,7 +35,7 @@ class DataParserForm extends Plugin {
   public $title;
 
   /**
-   * The data_fetcher plugin id the form is for.
+   * The data_parser plugin id the form is for.
    *
    * @var string
    */

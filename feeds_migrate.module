@@ -6,8 +6,8 @@
  */
 
 use Drupal\feeds_migrate\Entity\FeedsMigrateImporter;
-use Drupal\feeds_migrate\Plugin\migrate\destination\Form\EntityProcessorOptionForm;
 use Drupal\migrate\Plugin\migrate\destination\EntityContentBase;
+use \Drupal\feeds_migrate\Plugin\migrate\destination\Form\EntityContentOptionForm;
 
 /**
  * Implements hook_cron().
@@ -27,21 +27,90 @@ function feeds_migrate_cron() {
 }
 
 /**
+ * Implements hook_migrate_source_info_alter().
+ *
+ * Defines form classes for source plugins.
+ */
+function feeds_migrate_migrate_source_info_alter(array &$plugins) {
+  /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
+  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.source_form');
+  $form_plugins = $manager->getDefinitions();
+
+  // Iterate over each source form plugin and attach it to its parent_id plugin.
+  foreach ($form_plugins as $form_plugin) {
+    $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
+    $type = $form_plugin['type'] ?? 'configuration';
+    if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
+      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
+    }
+  }
+}
+
+/**
+ * Implements hook_migrate_data_fetcher_info_alter().
+ *
+ * Defines form classes for data fetcher plugins.
+ */
+function feeds_migrate_data_fetcher_info_alter(array &$plugins) {
+  /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
+  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.data_fetcher_form');
+  $form_plugins = $manager->getDefinitions();
+
+  // Iterate over each data_fetcher form plugin and attach it to its parent plugin.
+  foreach ($form_plugins as $form_plugin) {
+    $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
+    $type = $form_plugin['type'] ?? 'configuration';
+    if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
+      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
+    }
+  }
+}
+
+/**
+ * Implements hook_migrate_data_parser_info_alter().
+ *
+ * Defines form classes for data parser plugins.
+ */
+function feeds_migrate_data_parser_info_alter(array &$plugins) {
+  /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
+  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.data_parser_form');
+  $form_plugins = $manager->getDefinitions();
+
+  // Iterate over each data_parser form plugin and attach it to its parent plugin.
+  foreach ($form_plugins as $form_plugin) {
+    $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
+    $type = $form_plugin['type'] ?? 'configuration';
+    if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
+      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
+    }
+  }
+}
+
+/**
  * Implements hook_migrate_destination_info_alter().
  *
  * Defines form classes for destination plugins.
  */
 function feeds_migrate_migrate_destination_info_alter(array &$plugins) {
+  // Add option form to all Entity Content Base destination plugins.
   foreach ($plugins as &$plugin) {
     if ($plugin['class'] == EntityContentBase::class || is_subclass_of($plugin['class'], EntityContentBase::class)) {
       // Specify option form class for content entity destinations.
-      $plugin['feeds']['form']['option'] = EntityProcessorOptionForm::class;
-
-      // Specify settings form class.
-      // @todo yes, specify these!
+      $plugin['feeds_migrate']['form']['option'] = EntityContentOptionForm::class;
     }
+  }
 
-    // @todo other destination types may also have settings.
+  /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
+  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.destination_form');
+  $form_plugins = $manager->getDefinitions();
+
+  // Iterate over each destination form plugin and attach it to its parent plugin.
+  foreach ($form_plugins as $form_plugin) {
+    $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
+    $type = $form_plugin['type'] ?? 'configuration';
+    if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
+      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
+    }
   }
 }
 
@@ -51,7 +120,16 @@ function feeds_migrate_migrate_destination_info_alter(array &$plugins) {
  * Defines form classes for process plugins.
  */
 function feeds_migrate_migrate_process_info_alter(array &$plugins) {
-  // @todo don't hardcode these, but use a way to dynamically enhance the
-  //       plugin definition of "each" process plugins with a form.
-  $plugins['default_value']['feeds']['form']['configuration'] = \Drupal\feeds_migrate\Plugin\migrate\process\Form\DefaultValueForm::class;
+  /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
+  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.process_form');
+  $form_plugins = $manager->getDefinitions();
+
+  // Iterate over each process form plugin and attach it to its parent plugin.
+  foreach ($form_plugins as $form_plugin) {
+    $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
+    $type = $form_plugin['type'] ?? 'configuration';
+    if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
+      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
+    }
+  }
 }

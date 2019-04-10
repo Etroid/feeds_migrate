@@ -5,13 +5,13 @@ namespace Drupal\feeds_migrate\Annotation;
 use Drupal\Component\Annotation\Plugin;
 
 /**
- * Defines an authentication annotation object.
+ * Defines a data fetcher annotation object.
  *
- * Plugin namespace: Plugin\migrate_plus\authentication\form.
+ * Plugin namespace: Plugin\migrate_plus\data_fetcher\form.
  *
- * @see \Drupal\migrate_plus\AuthenticationPluginBase
- * @see \Drupal\migrate_plus\AuthenticationPluginInterface
- * @see \Drupal\migrate_plus\AuthenticationPluginManager
+ * @see \Drupal\migrate_plus\DataFetcherPluginBase
+ * @see \Drupal\migrate_plus\DataFetcherPluginInterface
+ * @see \Drupal\migrate_plus\DataFetcherPluginManager
  * @see plugin_api
  *
  * @Annotation

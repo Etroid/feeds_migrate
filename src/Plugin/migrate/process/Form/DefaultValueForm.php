@@ -1,15 +1,23 @@
 <?php
 
-namespace Drupal\feeds_migrate\Plugin\migrate\process\Form;
+namespace Drupal\feeds_migrate\Plugin\migrate\process\form;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\feeds_migrate\Plugin\ExternalPluginFormBase;
+use Drupal\feeds_migrate\Plugin\MigrateFormPluginBase;
 
 /**
  * The configuration form for entity destinations.
+ *
+ * @MigrateForm(
+ *   id = "default_value",
+ *   title = @Translation("Default Value Process Plugin Form"),
+ *   form = "configuration",
+ *   parent_id = "default_value",
+ *   parent_type = "process"
+ * )
  */
-class DefaultValueForm extends ExternalPluginFormBase {
+class DefaultValueForm extends MigrateFormPluginBase {
 
   /**
    * {@inheritdoc}
@@ -17,7 +25,6 @@ class DefaultValueForm extends ExternalPluginFormBase {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     // @ TODO
   }
-
 
   /**
    * {@inheritdoc}
