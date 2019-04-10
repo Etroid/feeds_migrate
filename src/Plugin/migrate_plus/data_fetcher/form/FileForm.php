@@ -29,6 +29,7 @@ class FileForm extends DataFetcherFormPluginBase {
     $form['directory'] = [
       '#type' => 'textfield',
       '#title' => $this->t('File Upload Directory'),
+      // @todo move this to defaultConfiguration
       '#default_value' => $source['data_fetcher']['directory'] ?: 'public://migrate',
     ];
 

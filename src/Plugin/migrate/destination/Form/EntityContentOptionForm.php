@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\feeds_migrate\Plugin\migrate\destination\form;
+namespace Drupal\feeds_migrate\Plugin\migrate\destination\Form;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
@@ -32,8 +32,11 @@ class EntityContentOptionForm extends DestinationFormPluginBase {
    * EntityContentOptionForm constructor.
    *
    * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_plugin_manager
+   *   The plugin manager for config entity-based migrations.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity manager service.
    * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $bundle_manager
+   *   The bundle manager service.
    */
   public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, EntityTypeManagerInterface $entity_type_manager, EntityTypeBundleInfoInterface $bundle_manager) {
     parent::__construct($migration_plugin_manager);
