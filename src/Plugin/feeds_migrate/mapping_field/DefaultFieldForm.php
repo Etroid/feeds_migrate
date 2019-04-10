@@ -124,4 +124,20 @@ class DefaultFieldForm extends MappingFieldFormBase {
     return $field_properties;
   }
 
+  /**
+   * Returns whether the field is a unique field in the migration source.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   *
+   * @return bool
+   *   TRUE if unique, FALSE if not.
+   */
+  public function isUnique(array &$form, FormStateInterface $form_state) {
+    $unique = $form_state->getValue('is_unique');
+    return $unique;
+  }
+
 }

@@ -92,6 +92,13 @@ class MigrationMappingFormBase extends EntityForm {
   protected $mapping;
 
   /**
+   * Get whether the field is a unique field used for migration IDs.
+   *
+   * @var bool
+   */
+  protected $unique;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
@@ -308,10 +315,13 @@ class MigrationMappingFormBase extends EntityForm {
         $plugin->submitConfigurationForm($form, $plugin_form_state);
         // Copy mapping values from plugin.
         $mapping = $plugin->getConfigurationFormMapping($form, $plugin_form_state);
-
         $mapping['#destination']['key'] = $this->key;
 
         $this->mapping = $mapping;
+
+        // Copy unique value from plugin.
+        $unique = $plugin->isUnique($form, $plugin_form_state);
+        $this->unique = $unique;
       }
     }
 
@@ -322,11 +332,59 @@ class MigrationMappingFormBase extends EntityForm {
    * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
+    // Add the mapping to the process section.
     $mapping = $this->mapping;
     $process = $entity->get('process') ?: [];
-    $process = array_merge($process, $this->migrationEntityHelper()->processMapping($mapping));
+    $process = array_merge($process, $this->migrationEntityHelper()
+      ->processMapping($mapping));
 
     $entity->set('process', $process);
+
+    // Add the unique values to the source section.
+    $source = $entity->get('source');
+    $ids = $source['ids'] ?: [];
+    if ($this->unique) {
+      // Is unique, make sure it's there.
+      if (!array_key_exists($mapping["source"], $ids)) {
+        // Doesn't exist, so add it.
+        $ids[$mapping["source"]] = ['type' => 'string'];
+      }
+    }
+    else {
+      // Is not unique, make sure it's not there.
+      if (array_key_exists($mapping["source"], $ids)) {
+        // Doesn't exist, so add it.
+        unset($ids[$mapping["source"]]);
+      }
+    }
+    $source['ids'] = $ids;
+
+    // Add the fields to the source section.
+    //    fields:
+    //      -
+    //      name: title
+    //      label: Title
+    //      selector: title
+
+    $fields = $source['fields'] ?: [];
+    $foundField = FALSE;
+    foreach ($fields as $field) {
+      if ($field['name'] == $mapping['source']) {
+        $foundField = TRUE;
+        break;
+      }
+    }
+    if (!$foundField) {
+      $newField = [
+        'name' => $mapping['source'],
+        'label' => $mapping['source'],
+        'selector' => $mapping['source'],
+      ];
+      $fields[] = $newField;
+      $source['fields'] = $fields;
+      $entity->set('source', $source);
+
+    }
   }
 
   /**
@@ -343,15 +401,17 @@ class MigrationMappingFormBase extends EntityForm {
       // If we edited an existing mapping.
       $this->messenger()->addMessage($this->t('Migration mapping for field 
         @destination_field has been updated.', [
-          '@destination_field' => $this->migrationEntityHelper()->getMappingFieldLabel($this->key),
-        ]));
+        '@destination_field' => $this->migrationEntityHelper()
+          ->getMappingFieldLabel($this->key),
+      ]));
     }
     else {
       // If we created a new mapping.
       $this->messenger()->addMessage($this->t('Migration mapping for field
         @destination_field has been added.', [
-          '@destination_field' => $this->migrationEntityHelper()->getMappingFieldLabel($this->key),
-        ]));
+        '@destination_field' => $this->migrationEntityHelper()
+          ->getMappingFieldLabel($this->key),
+      ]));
     }
 
     // Redirect the user to the mapping edit form.
@@ -381,7 +441,9 @@ class MigrationMappingFormBase extends EntityForm {
     $options = [];
 
     /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $fields */
-    $fields = $this->fieldManager->getFieldDefinitions($this->migrationEntityHelper()->getEntityTypeIdFromDestination(), $this->migrationEntityHelper()->getEntityBundleFromDestination());
+    $fields = $this->fieldManager->getFieldDefinitions($this->migrationEntityHelper()
+      ->getEntityTypeIdFromDestination(), $this->migrationEntityHelper()
+      ->getEntityBundleFromDestination());
     foreach ($fields as $field_name => $field) {
       $options[$field->getName()] = $field->getLabel();
     }

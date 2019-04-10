@@ -83,7 +83,7 @@ class File extends DataFetcherFormPluginBase {
       if ($file = FileEntity::load(reset($fids['file']))) {
 
         $source_config = $migration->getSourceConfiguration();
-        $source_config['urls'] = file_create_url($file->getFileUri());
+        $source_config['urls'] = \Drupal::service('file_system')->realpath($file->getFileUri());
         $migration->set('source', $source_config);
       }
     }
