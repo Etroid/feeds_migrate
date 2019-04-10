@@ -29,6 +29,7 @@ class JsonForm extends DataParserFormPluginBase {
     $form['item_selector'] = [
       '#type' => 'textfield',
       '#title' => $this->t('JSON Item Selector'),
+      // @todo move this to defaultConfiguration
       '#default_value' => $source['item_selector'] ?: '',
       '#required' => TRUE,
     ];
