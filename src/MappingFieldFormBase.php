@@ -46,6 +46,7 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
    * @param \Drupal\Core\Field\FieldTypePluginManager $field_type_manager
    *   The plugin manager for handling field types.
    * @param \Drupal\migrate\Plugin\MigratePluginManagerInterface $migrate_process_manager
+   *   The migration process manager.
    * @param \Drupal\migrate_plus\Entity\MigrationInterface $migration
    *   The migration entity.
    */
