@@ -44,7 +44,7 @@ class MigrationDeleteForm extends EntityConfirmFormBase {
     $entity = $this->entity;
     $entity->delete();
 
-    drupal_set_message($this->t('@type deleted @label.', [
+    $this->messenger()->addMessage($this->t('@type deleted @label.', [
       '@type' => $entity->getEntityType()->getLabel(),
       '@label' => $entity->label(),
     ]));
