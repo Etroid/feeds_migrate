@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\feeds_migrate\Plugin\migrate\source\form;
+namespace Drupal\feeds_migrate\Plugin\migrate\source\Form;
 
 use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Component\Utility\Html;

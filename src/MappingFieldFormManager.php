@@ -72,8 +72,9 @@ class MappingFieldFormManager extends DefaultPluginManager implements MappingFie
    * Get a migration mapping plugin instance for a given migration mapping.
    *
    * @param array $mapping
-   *   An associative array containing a migration mapping, keyed by destination field..
+   *   Associative array with a migration mapping keyed by destination field.
    * @param \Drupal\migrate_plus\Entity\MigrationInterface $migration
+   *   The migration object.
    *
    * @return \Drupal\feeds_migrate\MappingFieldFormInterface
    *   A migration mapping plugin instance

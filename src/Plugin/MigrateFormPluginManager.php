@@ -6,6 +6,7 @@ use Drupal\Component\Plugin\FallbackPluginManagerInterface;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
+use Traversable;
 
 /**
  * Class MigrateFormPluginManager.
@@ -27,9 +28,9 @@ class MigrateFormPluginManager extends DefaultPluginManager {
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   The module handler to invoke the alter hook with.
    */
-  public function __construct($type, \Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
+  public function __construct($type, Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
     $module = $this->getPluginModule($type);
-    parent::__construct("Plugin/$module/$type/form", $namespaces, $module_handler, 'Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface', 'Drupal\feeds_migrate\Annotation\MigrateForm');
+    parent::__construct("Plugin/$module/$type/Form", $namespaces, $module_handler, 'Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface', 'Drupal\feeds_migrate\Annotation\MigrateForm');
 
     $this->alterInfo("migrate_form_{$type}_info");
     $this->setCacheBackend($cache_backend, "migrate_form:{$type}");
