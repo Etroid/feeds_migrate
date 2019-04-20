@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\feeds_migrate\Plugin\migrate\destination\form;
+namespace Drupal\feeds_migrate\Plugin\migrate\destination\Form;
 
 use Drupal\feeds_migrate\Plugin\MigrateFormPluginBase;
 
