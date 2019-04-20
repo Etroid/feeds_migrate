@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\feeds_migrate\Plugin\migrate_plus\data_fetcher\form;
+namespace Drupal\feeds_migrate\Plugin\migrate_plus\data_fetcher\Form;
 
 use Drupal\feeds_migrate\Plugin\MigrateFormPluginBase;
 

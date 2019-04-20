@@ -165,6 +165,7 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
         'plugin' => 'url',
         'data_fetcher_plugin' => 'http',
         'data_parser_plugin' => 'simple_xml',
+        'item_selector' => '/items/item',
       ],
       'destination' => [
         'plugin' => 'entity:taxonomy_term',
