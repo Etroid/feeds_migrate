@@ -194,6 +194,10 @@ class MigrationEntityHelper {
     $mappings = [];
     $process = $this->getProcessNormalized($this->migration->get('process'));
     foreach ($process as $destination => $configuration) {
+      if (!isset($configuration)) {
+        continue;
+      }
+
       // Determine the destination field. Migrations support `field/property`
       // destination as well.
       // Example: 'body/value' and 'body/text_format' have the same destination
@@ -291,7 +295,10 @@ class MigrationEntityHelper {
     $process = [];
 
     foreach ($mappings as $destination => $mapping) {
-      $process += $this->processMapping($mapping);
+      // Filter our empty destination keys.
+      if (!empty($destination)) {
+        $process += $this->processMapping($mapping);
+      }
     }
 
     return $process;
