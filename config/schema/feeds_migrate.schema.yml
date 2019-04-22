@@ -14,12 +14,9 @@ feeds_migrate.importer.*:
     existing:
       type: sring
       label: "Existing content"
-    orphans:
-      type: string
-      label: "Orphaned Items"
-    lastRun:
-      type: integer
-      label: "Queued up for cron"
+    keepOrphans:
+      type: boolean
+      label: "Keep orphaned Items"
     migrationId:
       type: string
       label: 'Migration ID'
