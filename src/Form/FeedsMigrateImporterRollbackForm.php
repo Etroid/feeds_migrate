@@ -37,8 +37,9 @@ class FeedsMigrateImporterRollbackForm extends EntityConfirmFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+    /** @var \Drupal\feeds_migrate\FeedsMigrateImporterInterface $entity */
     $entity = $this->entity;
-    $entity->lastRan = 0;
+    $entity->setLastRun(0);
     $entity->save();
 
     /** @var \Drupal\feeds_migrate\FeedsMigrateExecutable $migrate_executable */
