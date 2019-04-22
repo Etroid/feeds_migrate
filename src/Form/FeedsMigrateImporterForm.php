@@ -24,6 +24,13 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class FeedsMigrateImporterForm extends EntityForm {
 
   /**
+   * The feeds importer entity.
+   *
+   * @var \Drupal\feeds_migrate\FeedsMigrateImporterInterface
+   */
+  protected $entity;
+
+  /**
    * Plugin manager for migration plugins.
    *
    * @var \Drupal\migrate\Plugin\MigrationPluginManagerInterface
@@ -100,8 +107,8 @@ class FeedsMigrateImporterForm extends EntityForm {
    */
   protected function prepareEntity() {
     // Initialize migration entity when editing an existing importer.
-    if (isset($this->entity->migrationId)) {
-      $this->migration = Migration::load($this->entity->migrationId);
+    if ($this->entity->getMigrationId()) {
+      $this->migration = Migration::load($this->entity->getMigrationId());
     }
   }
 
@@ -178,7 +185,7 @@ class FeedsMigrateImporterForm extends EntityForm {
       '#title' => $this->t('Import frequency'),
       '#options' => $options,
       '#description' => $this->t('Choose how often the importer should run.'),
-      '#default_value' => $this->entity->importFrequency,
+      '#default_value' => $this->entity->getImportFrequency(),
       '#parents' => ['importPeriod'],
     ];
 
@@ -192,21 +199,17 @@ class FeedsMigrateImporterForm extends EntityForm {
     $form['processor_settings']['existing'] = [
       '#type' => 'radios',
       '#title' => $this->t('Update Existing Content'),
-      '#default_value' => $this->entity->existing ?: FeedsMigrateImporterInterface::EXISTING_LEAVE,
+      '#default_value' => $this->entity->getExisting() ?: FeedsMigrateImporterInterface::EXISTING_LEAVE,
       '#options' => [
         FeedsMigrateImporterInterface::EXISTING_LEAVE => $this->t('Do not update existing content'),
         FeedsMigrateImporterInterface::EXISTING_REPLACE => $this->t('Replace existing content'),
         FeedsMigrateImporterInterface::EXISTING_UPDATE => $this->t('Update existing content'),
       ],
     ];
-    $form['processor_settings']['orphans'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Orphaned Items'),
-      '#default_value' => $this->entity->orphans ?: '__keep',
-      '#options' => [
-        FeedsMigrateImporterInterface::ORPHANS_KEEP => $this->t('Keep'),
-        FeedsMigrateImporterInterface::ORPHANS_DELETE => $this->t('Delete'),
-      ],
+    $form['processor_settings']['keep_orphans'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Keep orphaned Items?'),
+      '#default_value' => $this->entity->keepOrphans() ?: FALSE,
     ];
 
     // Migration settings.
@@ -228,7 +231,7 @@ class FeedsMigrateImporterForm extends EntityForm {
       '#type' => 'select',
       '#title' => $this->t('Migration Source'),
       '#options' => $options,
-      '#default_value' => $this->entity->migrationId,
+      '#default_value' => $this->entity->getMigrationId(),
       "#empty_option" => t('- Select Migration -'),
       '#ajax' => [
         'callback' => '::ajaxCallback',
@@ -239,7 +242,7 @@ class FeedsMigrateImporterForm extends EntityForm {
       ],
       '#required' => TRUE,
       '#attributes' => [
-        'disabled' => !empty($this->entity->migrationId),
+        'disabled' => !empty($this->entity->getMigrationId()),
       ],
     ];
 
@@ -251,9 +254,6 @@ class FeedsMigrateImporterForm extends EntityForm {
     ];
 
     if ($this->migration) {
-      /** @var \Drupal\migrate\Plugin\MigrationInterface $migration */
-      $migration = $this->migration;
-
       $form['migration_settings']['wrapper']['plugin_settings'] = [
         '#type' => 'vertical_tabs',
       ];
@@ -302,7 +302,8 @@ class FeedsMigrateImporterForm extends EntityForm {
           ];
         }
 
-        // This is the small form that appears directly under the plugin dropdown.
+        // This is the small form that appears directly under the plugin
+        // dropdown.
         $form[$type . '_wrapper']['options'] = [
           '#type' => 'container',
           '#prefix' => '<div id="feeds-migration-plugin-' . $type . '-options">',
@@ -470,8 +471,8 @@ class FeedsMigrateImporterForm extends EntityForm {
       }
     }
     // Save our migration entity.
-    elseif (!empty($this->entity->migrationId)) {
-      $this->migration = Migration::load($this->entity->migrationId);
+    elseif ($this->entity->getMigrationId()) {
+      $this->migration = Migration::load($this->entity->getMigrationId());
     }
     else {
       $this->migration = NULL;
@@ -485,7 +486,7 @@ class FeedsMigrateImporterForm extends EntityForm {
     parent::copyFormValuesToEntity($entity, $form, $form_state);
 
     // Allow plugins to set values on the migration entity.
-    if ($this->migration && $this->migration->id() === $this->entity->migrationId) {
+    if ($this->migration && $this->migration->id() === $this->entity->getMigrationId()) {
       // Map values from form directly to migration entity where possible.
       $values = $form_state->getValue('migration');
       foreach ($values as $key => $value) {
