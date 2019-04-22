@@ -2,6 +2,7 @@
 
 namespace Drupal\feeds_migrate\Controller;
 
+use Drupal;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Messenger\MessengerInterface;
@@ -14,6 +15,7 @@ use Drupal\migrate\Plugin\MigrateIdMapInterface;
 use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
 use Drupal\migrate\Row;
+use Exception;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -100,7 +102,7 @@ class Import extends ControllerBase {
     try {
       $source->rewind();
     }
-    catch (\Exception $e) {
+    catch (Exception $e) {
       $this->message->display(
         $this->t('Migration failed with source plugin exception: @e', ['@e' => $e->getMessage()]), 'error');
       $this->migration->setStatus(MigrationInterface::STATUS_IDLE);
@@ -125,7 +127,7 @@ class Import extends ControllerBase {
       try {
         $source->next();
       }
-      catch (\Exception $e) {
+      catch (Exception $e) {
         $this->message->display(
           $this->t('Migration failed with source plugin exception: @e',
             ['@e' => $e->getMessage()]), 'error');
@@ -134,7 +136,7 @@ class Import extends ControllerBase {
       }
     }
 
-    $feeds_migrate_importer->lastRan = time();
+    $feeds_migrate_importer->setLastRun(time());
     $feeds_migrate_importer->save();
     return $batch;
   }
@@ -155,7 +157,7 @@ class Import extends ControllerBase {
    * @param $operations
    */
   public static function batchFinished($success, $results, $operations) {
-    $messenger = \Drupal::messenger();
+    $messenger = Drupal::messenger();
 
     if (empty($results)) {
       $messenger->addMessage(t('No items processed.'));
