@@ -19,4 +19,29 @@ interface FeedsMigrateImporterInterface extends ConfigEntityInterface {
    */
   const SCHEDULE_CONTINUOUSLY = 0;
 
+  /**
+   * Indicates that existing items should be left alone.
+   */
+  const EXISTING_LEAVE = 'leave';
+
+  /**
+   * Indicates that existing items should be replaced.
+   */
+  const EXISTING_REPLACE = 'replace';
+
+  /**
+   * Indicates that existing items should be updated.
+   */
+  const EXISTING_UPDATE = 'update';
+
+  /**
+   * Indicates that orphaned items should be kept.
+   */
+  const ORPHANS_KEEP = 'keep';
+
+  /**
+   * Indicates that orphaned items should be deleted.
+   */
+  const ORPHANS_DELETE = 'delete';
+
 }
