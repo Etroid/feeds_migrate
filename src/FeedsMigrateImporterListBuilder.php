@@ -61,7 +61,7 @@ class FeedsMigrateImporterListBuilder extends ConfigEntityListBuilder {
    */
   public function buildRow(EntityInterface $entity) {
     /** @var \Drupal\migrate_plus\Entity\Migration $migration */
-    $migration = Migration::load($entity->source);
+    $migration = Migration::load($entity->migrationId);
 
     $data = [
       'label' => $entity->label(),
@@ -70,8 +70,8 @@ class FeedsMigrateImporterListBuilder extends ConfigEntityListBuilder {
       'count' => 0,
     ];
 
-    if ($entity->lastRan) {
-      $data['last'] = $this->dateFormatter->formatDiff($entity->lastRan, $this->dateTime->getRequestTime(), ['granularity' => 1]);
+    if ($entity->lastRun) {
+      $data['last'] = $this->dateFormatter->formatDiff($entity->lastRun, $this->dateTime->getRequestTime(), ['granularity' => 1]);
     }
 
     /** @var \Drupal\feeds_migrate\FeedsMigrateExecutable $migration */
