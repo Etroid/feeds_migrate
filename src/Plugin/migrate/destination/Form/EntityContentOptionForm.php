@@ -66,7 +66,7 @@ class EntityContentOptionForm extends DestinationFormPluginBase {
         '#options' => $this->getBundleOptionsList($entity_type->id()),
         '#title' => $entity_type->getBundleLabel(),
         '#required' => TRUE,
-        '#default_value' => $this->getSetting('default_bundle'),
+        '#default_value' => $this->entity->get('destination')['default_bundle'],
       ];
     }
 

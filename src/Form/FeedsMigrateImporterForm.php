@@ -98,8 +98,21 @@ class FeedsMigrateImporterForm extends EntityForm {
   /**
    * {@inheritdoc}
    */
+  protected function prepareEntity() {
+    // Initialize migration entity when editing an existing importer.
+    if (isset($this->entity->migrationId)) {
+      $this->migration = Migration::load($this->entity->migrationId);
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildForm($form, $form_state);
+
+    // SubFormStates work best when form tree structure is preserved.
+    $form['#tree'] = TRUE;
 
     // Feeds migrate importer settings.
     $form['importer_settings'] = [
@@ -298,7 +311,7 @@ class FeedsMigrateImporterForm extends EntityForm {
 
         if ($plugin && $this->formFactory->hasForm($plugin, 'option')) {
           $option_form_state = SubformState::createForSubform($form[$type . '_wrapper']['options'], $form, $form_state);
-          $option_form = $this->formFactory->createInstance($plugin, 'option', $migration);
+          $option_form = $this->formFactory->createInstance($plugin, 'option', $this->migration);
           $form[$type . '_wrapper']['options'] += $option_form->buildConfigurationForm([], $option_form_state);
         }
 
@@ -311,7 +324,7 @@ class FeedsMigrateImporterForm extends EntityForm {
 
         if ($plugin && $this->formFactory->hasForm($plugin, 'configuration')) {
           $config_form_state = SubformState::createForSubform($form[$type . '_wrapper']['configuration'], $form, $form_state);
-          $config_form = $this->formFactory->createInstance($plugin, 'configuration', $migration);
+          $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->migration);
           $form[$type . '_wrapper']['configuration'] += $config_form->buildConfigurationForm([], $config_form_state);
         }
 
