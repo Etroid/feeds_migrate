@@ -13,14 +13,14 @@ use \Drupal\feeds_migrate\Plugin\migrate\destination\Form\EntityContentOptionFor
  * Implements hook_cron().
  */
 function feeds_migrate_cron() {
-  $request_time = \Drupal::time()->getRequestTime();
-  $queue = \Drupal::queue('feeds_migrate_importer');
+  $request_time = Drupal::time()->getRequestTime();
+  $queue = Drupal::queue('feeds_migrate_importer');
 
   /** @var FeedsMigrateImporter $importer */
   foreach (FeedsMigrateImporter::loadMultiple() as $importer) {
     if ($importer->needsImported() && $queue->createItem($importer->id())) {
       // Add timestamp to avoid queueing item more than once.
-      $importer->lastRan = $request_time;
+      $importer->setLastRun($request_time);
       $importer->save();
     }
   }
@@ -33,7 +33,7 @@ function feeds_migrate_cron() {
  */
 function feeds_migrate_migrate_source_info_alter(array &$plugins) {
   /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.source_form');
+  $manager = Drupal::service('plugin.manager.feeds_migrate.migrate.source_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each source form plugin and attach it to its parent_id plugin.
@@ -53,7 +53,7 @@ function feeds_migrate_migrate_source_info_alter(array &$plugins) {
  */
 function feeds_migrate_data_fetcher_info_alter(array &$plugins) {
   /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.data_fetcher_form');
+  $manager = Drupal::service('plugin.manager.feeds_migrate.migrate.data_fetcher_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each data_fetcher form plugin and attach it to its parent plugin.
@@ -73,7 +73,7 @@ function feeds_migrate_data_fetcher_info_alter(array &$plugins) {
  */
 function feeds_migrate_data_parser_info_alter(array &$plugins) {
   /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.data_parser_form');
+  $manager = Drupal::service('plugin.manager.feeds_migrate.migrate.data_parser_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each data_parser form plugin and attach it to its parent plugin.
@@ -101,7 +101,7 @@ function feeds_migrate_migrate_destination_info_alter(array &$plugins) {
   }
 
   /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.destination_form');
+  $manager = Drupal::service('plugin.manager.feeds_migrate.migrate.destination_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each destination form plugin and attach it to its parent plugin.
@@ -121,7 +121,7 @@ function feeds_migrate_migrate_destination_info_alter(array &$plugins) {
  */
 function feeds_migrate_migrate_process_info_alter(array &$plugins) {
   /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.process_form');
+  $manager = Drupal::service('plugin.manager.feeds_migrate.migrate.process_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each process form plugin and attach it to its parent plugin.

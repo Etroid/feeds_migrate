@@ -38,8 +38,7 @@ use Drupal\migrate_plus\Entity\Migration;
  *     "label",
  *     "importFrequency",
  *     "existing",
- *     "orphans",
- *     "lastRan",
+ *     "keepOrphans",
  *     "migrationId",
  *     "migrationConfig"
  *   },
@@ -57,53 +56,32 @@ use Drupal\migrate_plus\Entity\Migration;
 class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImporterInterface {
 
   /**
-   * The identifier of the importer.
-   *
-   * @var string
-   */
-  public $id;
-
-  /**
-   * The label for the importer.
-   *
-   * @var string
-   */
-  public $label;
-
-  /**
    * The frequency at which this importer should be executed.
    *
    * @var int
    */
-  public $importFrequency;
+  protected $importFrequency;
 
   /**
    * Indicates how existing content should be processed.
    *
    * @var string
    */
-  public $existing;
+  protected $existing;
 
   /**
-   * Indicates how orphaned content should be handled.
+   * Indicates if orphaned content should be kept.
    *
-   * @var string
+   * @var bool
    */
-  public $orphans;
-
-  /**
-   * Indicates the last time the import was run.
-   *
-   * @var int
-   */
-  public $lastRan = 0;
+  protected $keepOrphans;
 
   /**
    * The migration ID.
    *
    * @var string
    */
-  public $migrationId;
+  protected $migrationId;
 
   /**
    * Migration Config.
@@ -129,10 +107,77 @@ class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImpor
   protected $migration;
 
   /**
-   * Get the original migration plugin.
-   *
-   * @return \Drupal\migrate_plus\Entity\MigrationInterface
-   *   The original migration entity before any configuration changes.
+   * {@inheritdoc}
+   */
+  public function getImportFrequency() {
+    return $this->importFrequency;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setImportFrequency(int $importFrequency) {
+    $this->importFrequency = $importFrequency;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getExisting() {
+    return $this->existing;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setExisting(string $existing) {
+    $this->existing = $existing;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function keepOrphans() {
+    return $this->keepOrphans;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setKeepOrphans(bool $keep_orphans) {
+    $this->keepOrphans = $keep_orphans;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getLastRun() {
+    return Drupal::state()->get('feeds_migrate_importer.' . $this->id() . '.last_run', 0);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setLastRun(int $last_run) {
+    Drupal::state()->set('feeds_migrate_importer.' . $this->id() . '.last_run', $last_run);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getMigrationId() {
+    return $this->migrationId;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setMigrationId(string $id) {
+    $this->migrationId = $id;
+  }
+
+  /**
+   * {@inheritdoc}
    */
   public function getOriginalMigration() {
     if (!isset($this->originalMigration)) {
@@ -143,10 +188,7 @@ class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImpor
   }
 
   /**
-   * Get the altered migration plugin.
-   *
-   * @return \Drupal\migrate_plus\Entity\MigrationInterface
-   *   The migration plugin after configuration changes are applied.
+   * {@inheritdoc}
    */
   public function getMigration() {
     if (!isset($this->migration)) {
@@ -172,14 +214,11 @@ class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImpor
   }
 
   /**
-   * If the periodic import should be executed.
-   *
-   * @return bool
-   *   TRUE if it should be run on cron, FALSE otherwise.
+   * {@inheritdoc}
    */
   public function needsImport() {
     $request_time = Drupal::time()->getRequestTime();
-    if ($this->importFrequency != -1 && ($this->lastRan + $this->importFrequency) <= $request_time) {
+    if ($this->importFrequency != -1 && ($this->getLastRun() + $this->importFrequency) <= $request_time) {
       return TRUE;
     }
 
@@ -187,15 +226,7 @@ class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImpor
   }
 
   /**
-   * Get the altered migrate executable object that can run the import.
-   *
-   * @return \Drupal\feeds_migrate\FeedsMigrateExecutable
-   *   The executable to run the import.
-   *
-   * @throws \Drupal\migrate\MigrateException
-   *   If the executable failed.
-   * @throws \Drupal\Component\Plugin\Exception\PluginException
-   *   If the instance cannot be created, such as if the ID is invalid.
+   * {@inheritdoc}
    */
   public function getExecutable() {
     /* @var \Drupal\migrate\Plugin\MigrationPluginManager $migration_manager */
