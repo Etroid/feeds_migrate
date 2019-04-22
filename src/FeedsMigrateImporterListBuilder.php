@@ -18,9 +18,28 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class FeedsMigrateImporterListBuilder extends ConfigEntityListBuilder {
 
+  /**
+   * The date formatter service.
+   *
+   * @var \Drupal\Core\Datetime\DateFormatterInterface
+   */
   protected $dateFormatter;
 
+  /**
+   * The time service.
+   *
+   * @var \Drupal\Component\Datetime\TimeInterface
+   */
   protected $dateTime;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, DateFormatterInterface $date_formatter, TimeInterface $time) {
+    parent::__construct($entity_type, $storage);
+    $this->dateFormatter = $date_formatter;
+    $this->dateTime = $time;
+  }
 
   /**
    * {@inheritdoc}
@@ -32,15 +51,6 @@ class FeedsMigrateImporterListBuilder extends ConfigEntityListBuilder {
       $container->get('date.formatter'),
       $container->get('datetime.time')
     );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, DateFormatterInterface $date_formatter, TimeInterface $time) {
-    parent::__construct($entity_type, $storage);
-    $this->dateFormatter = $date_formatter;
-    $this->dateTime = $time;
   }
 
   /**
@@ -60,8 +70,10 @@ class FeedsMigrateImporterListBuilder extends ConfigEntityListBuilder {
    * {@inheritdoc}
    */
   public function buildRow(EntityInterface $entity) {
+    /** @var \Drupal\feeds_migrate\Entity\FeedsMigrateImporter $importer */
+    $importer = $entity;
     /** @var \Drupal\migrate_plus\Entity\Migration $migration */
-    $migration = Migration::load($entity->migrationId);
+    $migration = Migration::load($importer->getMigrationId());
 
     $data = [
       'label' => $entity->label(),
@@ -70,16 +82,16 @@ class FeedsMigrateImporterListBuilder extends ConfigEntityListBuilder {
       'count' => 0,
     ];
 
-    if ($entity->lastRun) {
-      $data['last'] = $this->dateFormatter->formatDiff($entity->lastRun, $this->dateTime->getRequestTime(), ['granularity' => 1]);
+    if ($importer->getLastRun()) {
+      $data['last'] = $this->dateFormatter->formatDiff($importer->getLastRun(), $this->dateTime->getRequestTime(), ['granularity' => 1]);
     }
 
     /** @var \Drupal\feeds_migrate\FeedsMigrateExecutable $migration */
-    $migration = $entity->getExecutable();
+    $migration = $importer->getExecutable();
     $data['count'] = $migration->getCreatedCount();
 
     $row = [
-      'class' => $entity->status() ? 'enabled' : 'disabled',
+      'class' => $importer->status() ? 'enabled' : 'disabled',
       'data' => $data + parent::buildRow($entity),
     ];
 
