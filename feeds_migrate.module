@@ -18,7 +18,7 @@ function feeds_migrate_cron() {
 
   /** @var FeedsMigrateImporter $importer */
   foreach (FeedsMigrateImporter::loadMultiple() as $importer) {
-    if ($importer->needsImported() && $queue->createItem($importer->id())) {
+    if ($importer->needsImport() && $queue->createItem($importer->id())) {
       // Add timestamp to avoid queueing item more than once.
       $importer->setLastRun($request_time);
       $importer->save();
