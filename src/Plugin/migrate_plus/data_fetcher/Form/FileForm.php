@@ -4,6 +4,7 @@ namespace Drupal\feeds_migrate\Plugin\migrate_plus\data_fetcher\Form;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\file\Entity\File;
 
 /**
  * The configuration form for the file migrate data fetcher plugin.
@@ -22,15 +23,27 @@ class FileForm extends DataFetcherFormPluginBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $entity */
-    $entity = $this->entity;
-    $source = $entity->get('source');
+    $source = $this->entity->get('source');
 
     $form['directory'] = [
       '#type' => 'textfield',
       '#title' => $this->t('File Upload Directory'),
       // @todo move this to defaultConfiguration
       '#default_value' => $source['data_fetcher']['directory'] ?: 'public://migrate',
+      '#access' => $this->getContext() === self::CONTEXT_MIGRATION,
+    ];
+
+    $form['urls'] = [
+      '#type' => 'managed_file',
+      '#title' => $this->t('File Upload'),
+      '#default_value' => $source['urls'] ?: NULL,
+      '#upload_validators' => [
+        // @todo add validation based on data parser?
+        'file_validate_extensions' => ['xml csv json'],
+      ],
+      '#upload_location' => $source['data_fetcher']['directory'] ?: 'public://migrate',
+      '#required' => TRUE,
+      '#access' => $this->getContext() === self::CONTEXT_IMPORTER,
     ];
 
     return $form;
@@ -39,8 +52,38 @@ class FileForm extends DataFetcherFormPluginBase {
   /**
    * {@inheritdoc}
    */
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
+    if ($this->getContext() === self::CONTEXT_IMPORTER) {
+      $fids = $form_state->getValue('urls');
+
+      if (empty($fids)) {
+        $form_state->setErrorByName('urls', $this->t('File is required'));
+        return;
+      }
+
+      // Save the uploaded file.
+      if ($file = File::load(reset($fids))) {
+        $file->setPermanent();
+        $file->save();
+      }
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
     $entity->source['data_fetcher']['directory'] = $form_state->getValue('directory');
+
+    // Handle file uploads.
+    $fids = $form_state->getValue(['urls']);
+    if ($form_state->isSubmitted() && !empty($fids)) {
+      foreach ($fids as $fid) {
+        $file = File::load($fid);
+        $file_uri = $file->getFileUri();
+        $entity->source['urls'][] = $file_uri;
+      }
+    }
   }
 
 }

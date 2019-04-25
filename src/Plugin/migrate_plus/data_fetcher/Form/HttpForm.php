@@ -29,7 +29,7 @@ class HttpForm extends DataFetcherFormPluginBase {
     $form['urls'] = [
       '#type' => 'textfield',
       '#title' => $this->t('File Location (single location only)'),
-      '#default_value' => $source['urls'] ?: 'public://migrate/data.xml',
+      '#default_value' => $source['urls'] ?: '',
     ];
 
     return $form;

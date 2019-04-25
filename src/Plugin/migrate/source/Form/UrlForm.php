@@ -141,7 +141,7 @@ class UrlForm extends SourceFormPluginBase {
 
       if ($plugin && $this->formFactory->hasForm($plugin, 'option')) {
         $option_form_state = SubformState::createForSubform($form[$type . '_wrapper']['options'], $form, $form_state);
-        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->entity);
+        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->entity, $this->getContext());
         $form[$type . '_wrapper']['options'] += $option_form->buildConfigurationForm([], $option_form_state);
       }
 
@@ -154,7 +154,7 @@ class UrlForm extends SourceFormPluginBase {
 
       if ($plugin && $this->formFactory->hasForm($plugin, 'configuration')) {
         $config_form_state = SubformState::createForSubform($form[$type . '_wrapper']['configuration'], $form, $form_state);
-        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->entity);
+        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->entity, $this->getContext());
         $form[$type . '_wrapper']['configuration'] += $config_form->buildConfigurationForm([], $config_form_state);
       }
 
@@ -168,20 +168,20 @@ class UrlForm extends SourceFormPluginBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state) {
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
     // Allow plugins to validate their settings.
     foreach ($this->getPlugins() as $type => $plugin_id) {
       $plugin = $this->loadMigratePlugin($type, $plugin_id);
 
       if ($plugin && isset($form[$type . '_wrapper']['option']) && $this->formFactory->hasForm($plugin, 'option')) {
         $option_form_state = SubformState::createForSubform($form[$type . '_wrapper']['options'], $form, $form_state);
-        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->entity);
+        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->entity, $this->getContext());
         $option_form->validateConfigurationForm($form[$type . '_wrapper']['option'], $option_form_state);
       }
 
       if ($plugin && isset($form[$type . '_wrapper']['configuration']) && $this->formFactory->hasForm($plugin, 'configuration')) {
         $config_form_state = SubformState::createForSubform($form[$type . '_wrapper']['configuration'], $form, $form_state);
-        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->entity);
+        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->entity, $this->getContext());
         $config_form->validateConfigurationForm($form[$type . '_wrapper']['configuration'], $config_form_state);
       }
     }
@@ -205,13 +205,13 @@ class UrlForm extends SourceFormPluginBase {
       $plugin = $this->loadMigratePlugin($type, $plugin_id);
       if ($plugin && isset($form[$type . '_wrapper']['options']) && $this->formFactory->hasForm($plugin, 'option')) {
         $option_form_state = SubformState::createForSubform($form[$type . '_wrapper']['options'], $form, $form_state);
-        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->entity);
+        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->entity, $this->getContext());
         $option_form->copyFormValuesToEntity($entity, $form[$type . '_wrapper']['options'], $option_form_state);
       }
 
       if ($plugin && isset($form[$type . '_wrapper']['configuration']) && $this->formFactory->hasForm($plugin, 'configuration')) {
         $config_form_state = SubformState::createForSubform($form[$type . '_wrapper']['configuration'], $form, $form_state);
-        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->entity);
+        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->entity, $this->getContext());
         $config_form->copyFormValuesToEntity($entity, $form[$type . '_wrapper']['configuration'], $config_form_state);
       }
     }
@@ -221,11 +221,13 @@ class UrlForm extends SourceFormPluginBase {
    * Load the Migrate plugin for a given type.
    *
    * @param string $type
-   *  The type of Migration Plugin (e.g. data_fetcher, data_parser).
+   *   The type of Migration Plugin (e.g. data_fetcher, data_parser).
    * @param string $id
-   *  The id of the plugin.
+   *   The id of the plugin.
    *
    * @return object|null
+   *   The loaded migrate plugin, or NULL.
+   *
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
   protected function loadMigratePlugin($type, $id) {
