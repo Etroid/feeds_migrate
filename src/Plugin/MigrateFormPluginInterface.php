@@ -14,6 +14,16 @@ use Drupal\migrate_plus\Entity\MigrationInterface;
 interface MigrateFormPluginInterface extends ContainerInjectionInterface {
 
   /**
+   * Indicates that a form is displayed in the context of a migration.
+   */
+  const CONTEXT_MIGRATION = 'migration';
+
+  /**
+   * Indicates that a form is displayed in the context of an importer.
+   */
+  const CONTEXT_IMPORTER = 'importer';
+
+  /**
    * Sets the migration entity for this plugin.
    *
    * @param \Drupal\migrate_plus\Entity\MigrationInterface $entity
@@ -30,7 +40,27 @@ interface MigrateFormPluginInterface extends ContainerInjectionInterface {
   public function setPlugin(PluginInspectionInterface $plugin);
 
   /**
-   * Form constructor.
+   * Gets the context for the this plugin.
+   *
+   * @return string
+   *   The context in which this plugin form is being displayed. Can be one of:
+   *   -  self::CONTEXT_MIGRATION: 'migration'.
+   *   -  self::CONTEXT_IMPORTER: 'importer'.
+   */
+  public function getContext();
+
+  /**
+   * Sets the context for the this plugin.
+   *
+   * @param string $context
+   *   The context in which this plugin form is being displayed. Can be one of:
+   *   -  self::CONTEXT_MIGRATION: 'migration'.
+   *   -  self::CONTEXT_IMPORTER: 'importer'.
+   */
+  public function setContext(string $context);
+
+  /**
+   * Build the plugin configuration form.
    *
    * @param array $form
    *   An associative array containing the structure of the form.
@@ -43,7 +73,7 @@ interface MigrateFormPluginInterface extends ContainerInjectionInterface {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state);
 
   /**
-   * Form validation handler.
+   * Validation handler for the plugin configuration form.
    *
    * @param array $form
    *   An associative array containing the structure of the form.

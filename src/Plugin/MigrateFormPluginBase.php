@@ -41,6 +41,17 @@ abstract class MigrateFormPluginBase implements MigrateFormPluginInterface {
    */
   protected $entity;
 
+
+  /**
+   * The context for the this plugin.
+   *
+   * @var string
+   *   The context in which this plugin form is being displayed. Can be one of:
+   *   -  self::CONTEXT_MIGRATION: 'migration'.
+   *   -  self::CONTEXT_IMPORTER: 'importer'.
+   */
+  protected $context;
+
   /**
    * MigratePluginFormBase constructor.
    *
@@ -72,6 +83,20 @@ abstract class MigrateFormPluginBase implements MigrateFormPluginInterface {
    */
   public function setEntity(MigrationInterface $entity) {
     $this->entity = $entity;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getContext() {
+    return $this->context;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setContext(string $context) {
+    $this->context = $context;
   }
 
   /**

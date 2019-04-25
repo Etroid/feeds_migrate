@@ -67,11 +67,13 @@ class MigrateFormPluginFactory {
    *   The type of form to create. See ::hasForm above for possible types.
    * @param \Drupal\migrate_plus\Entity\MigrationInterface|null $migration
    *   The migration context in which the plugin will run.
+   * @param string $context
+   *   The context in which the form plugin will be displayed.
    *
    * @return \Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface
    *   A form for the plugin.
    */
-  public function createInstance(PluginInspectionInterface $plugin, $operation, MigrationInterface $migration) {
+  public function createInstance(PluginInspectionInterface $plugin, $operation, MigrationInterface $migration, $context) {
     $definition = $plugin->getPluginDefinition();
 
     // If the form specified is the plugin itself, use it directly.
@@ -91,6 +93,8 @@ class MigrateFormPluginFactory {
     $form_object->setPlugin($plugin);
     // Set migration entity.
     $form_object->setEntity($migration);
+    // Set context.
+    $form_object->setContext($context);
 
     return $form_object;
   }
