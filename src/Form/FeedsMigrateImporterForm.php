@@ -11,6 +11,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
 use Drupal\feeds_migrate\FeedsMigrateImporterInterface;
 use Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory;
+use Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface;
 use Drupal\migrate\Plugin\MigratePluginManagerInterface;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
 use Drupal\migrate_plus\Entity\Migration;
@@ -312,7 +313,7 @@ class FeedsMigrateImporterForm extends EntityForm {
 
         if ($plugin && $this->formFactory->hasForm($plugin, 'option')) {
           $option_form_state = SubformState::createForSubform($form[$type . '_wrapper']['options'], $form, $form_state);
-          $option_form = $this->formFactory->createInstance($plugin, 'option', $this->migration);
+          $option_form = $this->formFactory->createInstance($plugin, 'option', $this->migration, MigrateFormPluginInterface::CONTEXT_IMPORTER);
           $form[$type . '_wrapper']['options'] += $option_form->buildConfigurationForm([], $option_form_state);
         }
 
@@ -325,7 +326,7 @@ class FeedsMigrateImporterForm extends EntityForm {
 
         if ($plugin && $this->formFactory->hasForm($plugin, 'configuration')) {
           $config_form_state = SubformState::createForSubform($form[$type . '_wrapper']['configuration'], $form, $form_state);
-          $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->migration);
+          $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->migration, MigrateFormPluginInterface::CONTEXT_IMPORTER);
           $form[$type . '_wrapper']['configuration'] += $config_form->buildConfigurationForm([], $config_form_state);
         }
 
@@ -453,19 +454,19 @@ class FeedsMigrateImporterForm extends EntityForm {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     // Allow plugins to validate their settings.
-    if ($this->migration && $this->migration->id() === $this->entity->migrationId) {
+    if ($this->migration && $this->migration->id() === $this->entity->getMigrationId()) {
       foreach ($this->getPlugins() as $type => $plugin_id) {
         $plugin = $this->loadMigratePlugin($type, $plugin_id);
 
         if ($plugin && isset($form[$type . '_wrapper']['options']) && $this->formFactory->hasForm($plugin, 'option')) {
           $option_form_state = SubformState::createForSubform($form[$type . '_wrapper']['options'], $form, $form_state);
-          $option_form = $this->formFactory->createInstance($plugin, 'option', $this->migration);
+          $option_form = $this->formFactory->createInstance($plugin, 'option', $this->migration, MigrateFormPluginInterface::CONTEXT_IMPORTER);
           $option_form->validateConfigurationForm($form[$type . '_wrapper']['options'], $option_form_state);
         }
 
         if ($plugin && isset($form[$type . '_wrapper']['configuration']) && $this->formFactory->hasForm($plugin, 'configuration')) {
           $config_form_state = SubformState::createForSubform($form[$type . '_wrapper']['configuration'], $form, $form_state);
-          $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->migration);
+          $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->migration, MigrateFormPluginInterface::CONTEXT_IMPORTER);
           $config_form->validateConfigurationForm($form[$type . '_wrapper']['configuration'], $config_form_state);
         }
       }
@@ -498,13 +499,13 @@ class FeedsMigrateImporterForm extends EntityForm {
 
         if ($plugin && isset($form[$type . '_wrapper']['options']) && $this->formFactory->hasForm($plugin, 'option')) {
           $option_form_state = SubformState::createForSubform($form[$type . '_wrapper']['options'], $form, $form_state);
-          $option_form = $this->formFactory->createInstance($plugin, 'option', $this->migration);
+          $option_form = $this->formFactory->createInstance($plugin, 'option', $this->migration, MigrateFormPluginInterface::CONTEXT_IMPORTER);
           $option_form->copyFormValuesToEntity($this->migration, $form[$type . '_wrapper']['options'], $option_form_state);
         }
 
         if ($plugin && isset($form[$type . '_wrapper']['configuration']) && $this->formFactory->hasForm($plugin, 'configuration')) {
           $config_form_state = SubformState::createForSubform($form[$type . '_wrapper']['configuration'], $form, $form_state);
-          $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->migration);
+          $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->migration, MigrateFormPluginInterface::CONTEXT_IMPORTER);
           $config_form->copyFormValuesToEntity($this->migration, $form[$type . '_wrapper']['configuration'], $config_form_state);
         }
       }
