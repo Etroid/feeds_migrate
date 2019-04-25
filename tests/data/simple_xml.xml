@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <row>
+    <guid>1</guid>
+    <title>Lorem veniam</title>
+    <body>&lt;p&gt; Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt &lt;/p&gt; &lt;p&gt; ut laoreet dolore magna aliquam erat volutpat.&lt;/p&gt;</body>
+    <tags>Lorem, Azul</tags>
+    <image></image>
+    <Published>1</Published>
+    <Authored-by>MegaChriz</Authored-by>
+    <Authored-on>Apr 11 2018 - 16:18</Authored-on>
+  </row>
+  <row>
+    <guid>2</guid>
+    <title>Ut wisi enim ad minim veniam</title>
+    <body>Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat.</body>
+    <tags>Lorem, veniam</tags>
+    <image></image>
+    <Published>0</Published>
+    <Authored-by>irinaz</Authored-by>
+    <Authored-on>Apr 19 2018 -11:18</Authored-on>
+  </row>
+  <row>
+    <guid>3</guid>
+    <title>Lorem ipsum 2222</title>
+    <body>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.</body>
+    <tags>Lorem, Azul</tags>
+    <image>https://news-media.stanford.edu/wp-content/uploads/2018/04/17120540/chicago_3085.jpg</image>
+    <Published>0</Published>
+    <Authored-by>MegaChriz</Authored-by>
+    <Authored-on>Apr 10 2018 - 04:18</Authored-on>
+  </row>
+  <row>
+    <guid>4</guid>
+    <title>Ut 222 wisi enim ad minim veniam</title>
+    <body>Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat.</body>
+    <tags>Lorem, veniam</tags>
+    <image></image>
+    <Published>1</Published>
+    <Authored-by>irinaz</Authored-by>
+    <Authored-on>Apr 19 2018 - 04:18</Authored-on>
+  </row>
+</root>
