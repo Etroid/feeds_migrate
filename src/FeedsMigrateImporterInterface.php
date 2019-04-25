@@ -5,7 +5,7 @@ namespace Drupal\feeds_migrate;
 use Drupal\Core\Config\Entity\ConfigEntityInterface;
 
 /**
- * Provides an interface for defining  entities.
+ * Provides an interface for defining feeds migrate importer entities.
  */
 interface FeedsMigrateImporterInterface extends ConfigEntityInterface {
 
