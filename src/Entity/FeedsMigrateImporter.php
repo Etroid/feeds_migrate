@@ -10,7 +10,7 @@ use Drupal\migrate\MigrateMessage;
 use Drupal\migrate_plus\Entity\Migration;
 
 /**
- * Feeds Migrate Source configuration entity.
+ * Feeds Migrate Importer configuration entity.
  *
  * @ConfigEntityType(
  *   id = "feeds_migrate_importer",
