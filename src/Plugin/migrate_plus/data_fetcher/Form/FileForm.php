@@ -33,10 +33,27 @@ class FileForm extends DataFetcherFormPluginBase {
       '#access' => $this->getContext() === self::CONTEXT_MIGRATION,
     ];
 
+    $fids = [];
+    if (!empty($source['urls'])) {
+      foreach ($source['urls'] as $file_uri) {
+        if (!empty($file_uri)) {
+          /** @var \Drupal\file\FileInterface[] $file */
+          $files = \Drupal::entityTypeManager()
+            ->getStorage('file')
+            ->loadByProperties(['uri' => $file_uri]);
+          if (!empty($files)) {
+            /** @var \Drupal\file\FileInterface $file */
+            $file = reset($files);
+            $fids[] = $file->id();
+          }
+        }
+      }
+    }
+
     $form['urls'] = [
       '#type' => 'managed_file',
       '#title' => $this->t('File Upload'),
-      '#default_value' => $source['urls'] ?: NULL,
+      '#default_value' => $fids,
       '#upload_validators' => [
         // @todo add validation based on data parser?
         'file_validate_extensions' => ['xml csv json'],

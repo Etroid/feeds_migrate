@@ -2,6 +2,8 @@
 
 namespace Drupal\feeds_migrate\Plugin\feeds_migrate\mapping_field;
 
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Field\Entity\BaseFieldOverride;
 use Drupal\Core\Field\FieldConfigInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\feeds_migrate\MappingFieldFormBase;
@@ -22,9 +24,10 @@ class DefaultFieldForm extends MappingFieldFormBase {
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $mapping = $this->configuration;
+    /** @var \Drupal\Core\Field\FieldConfigInterface $field */
     $field = $mapping['#destination']['#field'] ?? FALSE;
 
-    if ($field && $field instanceof FieldConfigInterface) {
+    if ($field && !$field instanceof BaseFieldOverride) {
       return $this->buildContentFieldForm($form, $form_state, $field);
     }
 
@@ -63,6 +66,13 @@ class DefaultFieldForm extends MappingFieldFormBase {
         '#type' => 'textfield',
         '#title' => $this->t('Source'),
         '#default_value' => $mapping['#properties'][$property]['source'] ?? '',
+      ];
+
+      $checked = array_key_exists($mapping['#properties'][$property]['source'], $this->migration->source["ids"]);
+      $element['is_unique'] = [
+        '#type' => 'checkbox',
+        '#title' => $this->t('Unique Field'),
+        '#default_value' => $checked,
       ];
 
       $this->buildProcessPluginsConfigurationForm($element, $form_state);
@@ -122,22 +132,6 @@ class DefaultFieldForm extends MappingFieldFormBase {
     }
 
     return $field_properties;
-  }
-
-  /**
-   * Returns whether the field is a unique field in the migration source.
-   *
-   * @param array $form
-   *   An associative array containing the structure of the form.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The current state of the form.
-   *
-   * @return bool
-   *   TRUE if unique, FALSE if not.
-   */
-  public function isUnique(array &$form, FormStateInterface $form_state) {
-    $unique = $form_state->getValue('is_unique');
-    return $unique;
   }
 
 }
