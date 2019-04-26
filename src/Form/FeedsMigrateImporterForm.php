@@ -109,7 +109,7 @@ class FeedsMigrateImporterForm extends EntityForm {
   protected function prepareEntity() {
     // Initialize migration entity when editing an existing importer.
     if ($this->entity->getMigrationId()) {
-      $this->migration = Migration::load($this->entity->getMigrationId());
+      $this->migration = $this->entity->getMigration();
     }
   }
 
@@ -473,7 +473,7 @@ class FeedsMigrateImporterForm extends EntityForm {
     }
     // Save our migration entity.
     elseif ($this->entity->getMigrationId()) {
-      $this->migration = Migration::load($this->entity->getMigrationId());
+      $this->migration = $this->entity->getMigration();
     }
     else {
       $this->migration = NULL;
