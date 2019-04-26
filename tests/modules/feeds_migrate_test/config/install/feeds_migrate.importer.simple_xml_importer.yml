@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies: {  }
+id: simple_xml_importer
+label: 'Simple XML Importer'
+importFrequency: 0
+existing: leave
+keepOrphans: 0
+migrationId: simple_xml
+migrationConfig:
+  source:
+    plugin: url
+    data_fetcher_plugin: file
+    data_parser_plugin: simple_xml
+    data_fetcher:
+      directory: 'public://'
+    urls:
+      - 'public://simple_xml.xml'
+    item_selector: /root/row
+  destination:
+    plugin: 'entity:node'
+    default_bundle: article
