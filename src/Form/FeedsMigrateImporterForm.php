@@ -124,7 +124,7 @@ class FeedsMigrateImporterForm extends EntityForm {
 
     // Feeds migrate importer settings.
     $form['importer_settings'] = [
-      '#type' => 'details',
+      '#type' => 'fieldset',
       '#open' => TRUE,
       '#title' => $this->t('Importer settings'),
       '#tree' => FALSE,
@@ -192,7 +192,7 @@ class FeedsMigrateImporterForm extends EntityForm {
 
     // Settings on how to process existing entities.
     $form['processor_settings'] = [
-      '#type' => 'details',
+      '#type' => 'fieldset',
       '#open' => TRUE,
       '#title' => $this->t('Processor settings'),
       '#tree' => FALSE,
@@ -215,7 +215,7 @@ class FeedsMigrateImporterForm extends EntityForm {
 
     // Migration settings.
     $form['migration_settings'] = [
-      '#type' => 'details',
+      '#type' => 'fieldset',
       '#open' => TRUE,
       '#title' => $this->t('Migration settings'),
       '#tree' => FALSE,
@@ -352,10 +352,7 @@ class FeedsMigrateImporterForm extends EntityForm {
    * @todo move to a service class.
    */
   protected function getPlugins() {
-    $plugins = array_fill_keys([
-      'source',
-      'destination',
-    ], NULL);
+    $plugins = [];
 
     if ($this->migration) {
       // Source.

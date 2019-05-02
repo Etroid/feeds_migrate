@@ -88,7 +88,7 @@ class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImpor
    *
    * @var array
    */
-  protected $migrationConfig;
+  protected $migrationConfig = [];
 
   /**
    * The original migration entity.
@@ -195,9 +195,9 @@ class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImpor
       /* @var \Drupal\migrate_plus\Entity\MigrationInterface $altered_migration */
       $altered_migration = $this->migration = clone $this->getOriginalMigration();
 
-      $source = array_merge($this->originalMigration->get('source'), $this->migrationConfig['source']);
+      $source = array_merge($this->originalMigration->get('source'), $this->migrationConfig['source'] ?? []);
       $altered_migration->set('source', $source);
-      $destination = array_merge($this->originalMigration->get('destination'), $this->migrationConfig['destination']);
+      $destination = array_merge($this->originalMigration->get('destination'), $this->migrationConfig['destination'] ?? []);
       $altered_migration->set('destination', $destination);
     }
 

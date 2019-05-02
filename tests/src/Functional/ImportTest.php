@@ -38,8 +38,7 @@ class ImporterTest extends FeedsMigrateTestBase {
     }
     $this->nodeQuery = $this->container->get('entity_type.manager')
       ->getStorage('node')
-      ->getQuery()
-      ->condition('type', 'article', '=');
+      ->getQuery();
   }
 
   /**
@@ -54,6 +53,7 @@ class ImporterTest extends FeedsMigrateTestBase {
     $importer = 'simple_xml_importer';
     $url = "/admin/content/feeds-migrate/importer/{$importer}/import";
     $this->drupalGet($url);
+    $this->waitForBatchToFinish();
     $this->drupalGet('/admin/content');
     $import_count = $this->nodeQuery->count()->execute();
     $expected_count = 4;
@@ -64,6 +64,7 @@ class ImporterTest extends FeedsMigrateTestBase {
     $url = "/admin/content/feeds-migrate/importer/{$importer}/rollback";
     $this->drupalGet($url);
     $this->submitForm([], 'Confirm');
+    $this->waitForBatchToFinish();
     $rollback_count = $this->nodeQuery->count()->execute();
     $expected_count = 0;
     $this->assertEquals($expected_count, $rollback_count);

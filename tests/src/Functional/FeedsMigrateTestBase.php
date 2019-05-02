@@ -68,4 +68,12 @@ abstract class FeedsMigrateTestBase extends WebDriverTestBase {
     $this->drupalLogin($this->adminUser);
   }
 
+  /**
+   * Wait until the id="updateprogress" element is gone,
+   * or timeout after 3 minutes (180,000 ms).
+   */
+  public function waitForBatchToFinish() {
+    $this->getSession()->wait(180000, 'jQuery("#updateprogress").length === 0');
+  }
+
 }
