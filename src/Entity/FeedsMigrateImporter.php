@@ -44,7 +44,7 @@ use Drupal\migrate_plus\Entity\Migration;
  *   },
  *   links = {
  *     "canonical" = "/admin/content/feeds-migrate/{feeds_migrate_importer}",
- *     "edit-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}",
+ *     "edit-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/edit",
  *     "delete-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/delete",
  *     "enable" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/enable",
  *     "disable" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/disable",
