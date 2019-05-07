@@ -4,6 +4,7 @@ namespace Drupal\feeds_migrate\Plugin\migrate\source\Form;
 
 use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
@@ -101,10 +102,10 @@ class UrlForm extends SourceFormPluginBase {
       $form[$type . '_wrapper'] = [
         '#type' => 'details',
         '#group' => 'plugin_settings',
-        '#title' => ucwords($this->t($type)),
+        '#title' => ucwords($type),
         '#attributes' => [
           'id' => 'plugin_settings--' . $type,
-          'class' => ['feeds-plugin-inline']
+          'class' => ['feeds-plugin-inline'],
         ],
         '#weight' => $weight,
       ];
@@ -124,9 +125,10 @@ class UrlForm extends SourceFormPluginBase {
           '#options' => $options,
           '#default_value' => $plugin_id,
           '#ajax' => [
-            'callback' => [get_class($this), 'ajaxCallback'],
+            'callback' => '::ajaxCallback',
             'wrapper' => 'feeds-migration-ajax-wrapper',
           ],
+          '#limit_validation_errors' => [],
           '#plugin_type' => $type,
           '#parents' => ['migration', 'source', "{$type}_plugin"],
         ];
@@ -189,6 +191,14 @@ class UrlForm extends SourceFormPluginBase {
 
   /**
    * Sends an ajax response.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   *
+   * @return array
+   *   The form element to return.
    */
   public function ajaxCallback(array $form, FormStateInterface $form_state) {
     return $form['plugin_settings'];
