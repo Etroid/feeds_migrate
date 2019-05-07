@@ -41,8 +41,8 @@ abstract class FeedsMigrateTestBase extends WebDriverTestBase {
   /**
    * Whether config schemas should be validated.
    *
-   * @TODO temporarily sets schema validation to FALSE to get around an issue
-   * where dynamic config files are not validated correctly.
+   * Sets schema validation to FALSE to get around an issue where dynamic config
+   * files are not validated correctly.
    *
    * {@inheritdoc}
    */
@@ -69,8 +69,10 @@ abstract class FeedsMigrateTestBase extends WebDriverTestBase {
   }
 
   /**
-   * Wait until the id="updateprogress" element is gone,
-   * or timeout after 3 minutes (180,000 ms).
+   * Wait until the batch has finished processing.
+   *
+   * Wait until the id="updateprogress" element is gone, or timeout after 3
+   * minutes (180,000 ms).
    */
   public function waitForBatchToFinish() {
     $this->getSession()->wait(180000, 'jQuery("#updateprogress").length === 0');

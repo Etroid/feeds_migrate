@@ -29,7 +29,7 @@ class ImporterTest extends FeedsMigrateTestBase {
   public function setUp() {
     parent::setUp();
 
-    // Copy file in expected directory.
+    // Copy sample xml file to the expected file directory (i.e. public://).
     $this->sourceDir = __DIR__ . '/../../data/';
     $files = scandir($this->sourceDir);
     $files = array_diff($files, ['.', '..']);

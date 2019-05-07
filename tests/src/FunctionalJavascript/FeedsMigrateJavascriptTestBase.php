@@ -2,7 +2,9 @@
 
 namespace Drupal\Tests\feeds_migrate\FunctionalJavascript;
 
+use Drupal\feeds_migrate\Entity\FeedsMigrateImporter;
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
+use Drupal\migrate_plus\Entity\Migration;
 use Drupal\Tests\feeds_migrate\Traits\FeedsCommonTrait;
 use Drupal\Tests\Traits\Core\CronRunTrait;
 use Drupal\migrate_plus\Entity\MigrationGroup;
@@ -57,66 +59,45 @@ abstract class FeedsMigrateJavascriptTestBase extends WebDriverTestBase {
   }
 
   /**
-   * Fills and submits a form where the submit button is hidden in a dropbutton.
+   * Stubs a migration entity.
    *
-   * @param array $edit
-   *   Field data in an associative array. Changes the current input fields
-   *   (where possible) to the values indicated.
-   *
-   *   A checkbox can be set to TRUE to be checked and should be set to FALSE to
-   *   be unchecked.
-   * @param string $submit
-   *   Value of the submit button whose click is to be emulated. For example,
-   *   'Save'. The processing of the request depends on this value. For example,
-   *   a form may have one button with the value 'Save' and another button with
-   *   the value 'Delete', and execute different code depending on which one is
-   *   clicked.
-   * @param string $form_html_id
-   *   (optional) HTML ID of the form to be submitted. On some pages
-   *   there are many identical forms, so just using the value of the submit
-   *   button is not enough. For example: 'trigger-node-presave-assign-form'.
-   *   Note that this is not the Drupal $form_id, but rather the HTML ID of the
-   *   form, which is typically the same thing but with hyphens replacing the
-   *   underscores.
+   * @return \Drupal\migrate_plus\Entity\MigrationInterface
+   *   Stubbed out Migration Entity.
    */
-  protected function submitFormWithDropButton(array $edit, $submit, $form_html_id = NULL) {
-    $assert_session = $this->assertSession();
+  protected function createMigration() {
+    $migration = Migration::create([
+      'id' => 'migration_a',
+      'label' => 'Migration A',
+      'migration_group' => 'default',
+      'source' => [],
+      'destination' => [],
+      'process' => [],
+      'migration_tags' => [],
+      'migration_dependencies' => [],
+    ]);
+    return $migration;
+  }
 
-    // Get the form.
-    if (isset($form_html_id)) {
-      $form = $assert_session->elementExists('xpath', "//form[@id='$form_html_id']");
-      $submit_button = $assert_session->buttonExists($submit, $form);
-      $action = $form->getAttribute('action');
-    }
-    else {
-      $submit_button = $assert_session->buttonExists($submit);
-      $form = $assert_session->elementExists('xpath', './ancestor::form', $submit_button);
-      $action = $form->getAttribute('action');
-    }
-
-    // Edit the form values.
-    foreach ($edit as $name => $value) {
-      $field = $assert_session->fieldExists($name, $form);
-      $field->setValue($value);
-    }
-
-    // Submit form.
-    $this->prepareRequest();
-
-    // Click dropbutton and wait until the secondary action becomes visible.
-    $this->click('#edit-actions .dropbutton-toggle button');
-    $assert_session->waitForElementVisible('css', '#edit-actions .dropbutton-widget .secondary-action');
-
-    $submit_button->press();
-
-    // Ensure that any changes to variables in the other thread are picked up.
-    $this->refreshVariables();
-
-    // Check if there are any meta refresh redirects (like Batch API pages).
-    if ($this->checkForMetaRefresh()) {
-      // We are finished with all meta refresh redirects, so reset the counter.
-      $this->metaRefreshCount = 0;
-    }
+  /**
+   * Stubs an importer entity.
+   *
+   * @return \Drupal\feeds_migrate\FeedsMigrateImporterInterface
+   *   Stubbed out Importer Entity.
+   */
+  protected function createImporter() {
+    $importer = FeedsMigrateImporter::create([
+      'id' => 'importer_a',
+      'label' => 'Importer A',
+      'importFrequency' => -1,
+      'existing' => 'leave',
+      'keepOrphans' => FALSE,
+      'migrationId' => 'migration_a',
+      'migrationConfig' => [
+        'source' => [],
+        'destination' => [],
+      ],
+    ]);
+    return $importer;
   }
 
 }
