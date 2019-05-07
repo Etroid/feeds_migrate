@@ -3,6 +3,7 @@
 namespace Drupal\feeds_migrate\Form;
 
 use Drupal;
+use Drupal\Component\Utility\DiffArray;
 use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityInterface;
@@ -187,7 +188,7 @@ class FeedsMigrateImporterForm extends EntityForm {
       '#options' => $options,
       '#description' => $this->t('Choose how often the importer should run.'),
       '#default_value' => $this->entity->getImportFrequency(),
-      '#parents' => ['importPeriod'],
+      '#parents' => ['importFrequency'],
     ];
 
     // Settings on how to process existing entities.
@@ -206,11 +207,13 @@ class FeedsMigrateImporterForm extends EntityForm {
         FeedsMigrateImporterInterface::EXISTING_REPLACE => $this->t('Replace existing content'),
         FeedsMigrateImporterInterface::EXISTING_UPDATE => $this->t('Update existing content'),
       ],
+      '#parents' => ['existing'],
     ];
     $form['processor_settings']['keep_orphans'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Keep orphaned Items?'),
       '#default_value' => $this->entity->keepOrphans() ?: FALSE,
+      '#parents' => ['keepOrphans'],
     ];
 
     // Migration settings.
@@ -218,7 +221,6 @@ class FeedsMigrateImporterForm extends EntityForm {
       '#type' => 'fieldset',
       '#open' => TRUE,
       '#title' => $this->t('Migration settings'),
-      '#tree' => FALSE,
     ];
 
     // Source.
@@ -228,7 +230,7 @@ class FeedsMigrateImporterForm extends EntityForm {
       $options[$migration->id()] = $migration->label();
     }
 
-    $form['migration_settings']['migrationId'] = [
+    $form['migration_settings']['migration_id'] = [
       '#type' => 'select',
       '#title' => $this->t('Migration Source'),
       '#options' => $options,
@@ -241,10 +243,12 @@ class FeedsMigrateImporterForm extends EntityForm {
         'effect' => 'fade',
         'progress' => 'throbber',
       ],
+      '#limit_validation_errors' => [],
       '#required' => TRUE,
       '#attributes' => [
         'disabled' => !empty($this->entity->getMigrationId()),
       ],
+      '#parents' => ['migrationId'],
     ];
 
     // Configure migration plugins.
@@ -257,6 +261,7 @@ class FeedsMigrateImporterForm extends EntityForm {
     if ($this->migration) {
       $form['migration_settings']['wrapper']['plugin_settings'] = [
         '#type' => 'vertical_tabs',
+        '#parents' => ['plugin_settings'],
       ];
 
       $plugins = $this->getPlugins();
@@ -269,7 +274,7 @@ class FeedsMigrateImporterForm extends EntityForm {
         $form[$type . '_wrapper'] = [
           '#type' => 'details',
           '#group' => 'plugin_settings',
-          '#title' => ucwords($this->t($type)),
+          '#title' => ucwords($type),
           '#attributes' => [
             'id' => 'plugin_settings--' . $type,
             'class' => ['feeds-plugin-inline'],
@@ -439,6 +444,11 @@ class FeedsMigrateImporterForm extends EntityForm {
   /**
    * Callback for ajax requests.
    *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   *
    * @return array
    *   The form element to return.
    */
@@ -514,12 +524,12 @@ class FeedsMigrateImporterForm extends EntityForm {
    */
   public function save(array $form, FormStateInterface $form_state) {
     // Copy migration overwrites to the feeds migrate importer entity.
-    $migrationConfig = [
-      'source' => $this->migration->get('source'),
-      'destination' => $this->migration->get('destination'),
+    $original_migration = $this->entity->getOriginalMigration();
+    $migration_config = [
+      'source' => DiffArray::diffAssocRecursive($this->migration->get('source'), $original_migration->get('source')),
+      'destination' => DiffArray::diffAssocRecursive($this->migration->get('destination'), $original_migration->get('destination')),
     ];
-    $this->entity->set('migrationConfig', $migrationConfig);
-
+    $this->entity->set('migrationConfig', $migration_config);
     $status = parent::save($form, $form_state);
 
     // Redirect the user back to the listing route after the save operation.
