@@ -5,7 +5,7 @@ id: simple_xml_importer
 label: 'Simple XML Importer'
 importFrequency: 0
 existing: leave
-keepOrphans: 0
+keepOrphans: false
 migrationId: simple_xml
 migrationConfig:
   source:
