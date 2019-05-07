@@ -16,7 +16,7 @@ entity.feeds_migrate_importer.add_form:
     _permission: 'administer feeds migrate importers'
 
 entity.feeds_migrate_importer.edit_form:
-  path: '/admin/content/feeds-migrate/importer/{feeds_migrate_importer}'
+  path: '/admin/content/feeds-migrate/importer/{feeds_migrate_importer}/edit'
   defaults:
     _entity_form: 'feeds_migrate_importer.edit'
     _title: 'Edit Importer'
