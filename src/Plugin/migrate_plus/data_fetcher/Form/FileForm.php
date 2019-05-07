@@ -4,6 +4,7 @@ namespace Drupal\feeds_migrate\Plugin\migrate_plus\data_fetcher\Form;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
 use Drupal\file\Entity\File;
 
 /**
@@ -29,7 +30,7 @@ class FileForm extends DataFetcherFormPluginBase {
       '#type' => 'textfield',
       '#title' => $this->t('File Upload Directory'),
       // @todo move this to defaultConfiguration
-      '#default_value' => $source['data_fetcher']['directory'] ?: 'public://migrate',
+      '#default_value' => $source['data_fetcher_directory'] ?: 'public://migrate',
       '#access' => $this->getContext() === self::CONTEXT_MIGRATION,
     ];
 
@@ -58,9 +59,10 @@ class FileForm extends DataFetcherFormPluginBase {
         // @todo add validation based on data parser?
         'file_validate_extensions' => ['xml csv json'],
       ],
-      '#upload_location' => $source['data_fetcher']['directory'] ?: 'public://migrate',
+      '#upload_location' => $source['data_fetcher_directory'] ?: 'public://migrate',
       '#required' => TRUE,
       '#access' => $this->getContext() === self::CONTEXT_IMPORTER,
+      '#multiple' => TRUE,
     ];
 
     return $form;
@@ -71,17 +73,16 @@ class FileForm extends DataFetcherFormPluginBase {
    */
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
     if ($this->getContext() === self::CONTEXT_IMPORTER) {
-      $fids = $form_state->getValue('urls');
+      if (!empty($fids)) {
+        $fids = $form_state->getValue('urls', []);
+        // @todo Use $this->entityTypeManager->getStorage('file') instead
+        $files = File::loadMultiple($fids);
 
-      if (empty($fids)) {
-        $form_state->setErrorByName('urls', $this->t('File is required'));
-        return;
-      }
-
-      // Save the uploaded file.
-      if ($file = File::load(reset($fids))) {
-        $file->setPermanent();
-        $file->save();
+        // Save the uploaded files.
+        foreach ($files as $file) {
+          $file->setPermanent();
+          $file->save();
+        }
       }
     }
   }
@@ -90,13 +91,16 @@ class FileForm extends DataFetcherFormPluginBase {
    * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
-    $entity->source['data_fetcher']['directory'] = $form_state->getValue('directory');
+    // Handle file upload directory.
+    $entity->source['data_fetcher_directory'] = $form_state->getValue('directory');
 
     // Handle file uploads.
-    $fids = $form_state->getValue(['urls']);
-    if ($form_state->isSubmitted() && !empty($fids)) {
-      foreach ($fids as $fid) {
-        $file = File::load($fid);
+    unset($entity->source['urls']);
+    $fids = $form_state->getValue('urls');
+    // @todo Use $this->entityTypeManager->getStorage('file') instead
+    if (!empty($fids)) {
+      $files = File::loadMultiple($fids);
+      foreach ($files as $file) {
         $file_uri = $file->getFileUri();
         $entity->source['urls'][] = $file_uri;
       }

@@ -39,7 +39,6 @@ class HttpForm extends DataFetcherFormPluginBase {
    * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
-    // The urls property goes right into source, not under data_fetcher.
     $entity->source['urls'] = $form_state->getValue('urls');
   }
 
