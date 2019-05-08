@@ -382,6 +382,7 @@ class MigrationMappingFormBase extends EntityForm {
         ];
       }
     }
+    $source['fields'] = $fields;
     $entity->set('source', $source);
   }
 
