@@ -60,8 +60,7 @@ class FileForm extends DataFetcherFormPluginBase {
         'file_validate_extensions' => ['xml csv json'],
       ],
       '#upload_location' => $source['data_fetcher_directory'] ?: 'public://migrate',
-      '#required' => TRUE,
-      '#access' => $this->getContext() === self::CONTEXT_IMPORTER,
+      '#required' => $this->getContext() === self::CONTEXT_IMPORTER,
       '#multiple' => TRUE,
     ];
 

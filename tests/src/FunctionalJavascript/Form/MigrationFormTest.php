@@ -35,42 +35,46 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $content_type = $this->drupalCreateContentType();
 
     $this->drupalGet('/admin/structure/migrate/sources/add');
+    $page = $this->getSession()->getPage();
+    $assert_session = $this->assertSession();
 
     // Set label and wait for machine name element to appear.
-    $label = $this->assertSession()->fieldExists('migration[label]');
+    $label = $assert_session->fieldExists('migration[label]');
     $label->focus();
     $label->setValue('Migration A');
-    $this->assertSession()->waitForElementVisible('css', '#edit-migration-id');
+    $assert_session->waitForField('edit-migration-id');
 
     // Select 'url' for source.
-    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--source"]')->click();
-    $this->assertSession()->fieldExists('migration[source][plugin]');
-    $this->getSession()->getPage()->selectFieldOption('migration[source][plugin]', 'url');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $source_tab = $page->find('css', '[href="#plugin_settings--source"]');
+    $source_tab->click();
+    $source_plugin = $assert_session->fieldExists('migration[source][plugin]');
+    $source_plugin->selectOption('url');
 
     // Select 'http' for data fetcher.
-    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--data_fetcher"]')->click();
-    $this->assertSession()->fieldExists('migration[source][data_fetcher_plugin]');
-    $this->getSession()->getPage()->selectFieldOption('migration[source][data_fetcher_plugin]', 'http');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $data_fetcher_tab = $assert_session->waitForElementVisible('css', '[href="#plugin_settings--data_fetcher"]');
+    $data_fetcher_tab->click();
+    $data_fetcher_plugin = $assert_session->fieldExists('migration[source][data_fetcher_plugin]');
+    $data_fetcher_plugin->selectOption('http');
+    $data_fetcher_urls = $assert_session->waitForField('source_wrapper[configuration][data_fetcher_wrapper][configuration][urls]');
+    $data_fetcher_urls->setValue('https://test.com/api/items');
 
     // Select 'json' for data parser.
-    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--data_parser"]')->click();
-    $this->assertSession()->fieldExists('migration[source][data_parser_plugin]');
-    $this->getSession()->getPage()->selectFieldOption('migration[source][data_parser_plugin]', 'json');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $item_selector = $this->assertSession()->fieldExists('source_wrapper[configuration][data_parser_wrapper][configuration][item_selector]');
+    $data_parser_tab = $page->find('css', '[href="#plugin_settings--data_parser"]');
+    $data_parser_tab->click();
+    $data_parser_plugin = $assert_session->fieldExists('migration[source][data_parser_plugin]');
+    $data_parser_plugin->selectOption('json');
+    $item_selector = $assert_session->waitForField('source_wrapper[configuration][data_parser_wrapper][configuration][item_selector]');
     $item_selector->setValue('/');
 
     // Select 'entity:node' for destination, so a selector for bundle appears.
-    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--destination"]')->click();
-    $this->assertSession()->fieldExists('migration[destination][plugin]');
-    $this->getSession()->getPage()->selectFieldOption('migration[destination][plugin]', 'entity:node');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $destination_tab = $page->find('css', '[href="#plugin_settings--destination"]');
+    $destination_tab->click();
+    $destination_plugin = $assert_session->fieldExists('migration[destination][plugin]');
+    $destination_plugin->selectOption('entity:node');
 
     // Set bundle.
-    $this->assertSession()->fieldExists('destination_wrapper[options][default_bundle]');
-    $this->getSession()->getPage()->selectFieldOption('destination_wrapper[options][default_bundle]', $content_type->id());
+    $destination_bundle = $assert_session->waitForField('destination_wrapper[options][default_bundle]');
+    $destination_bundle->selectOption($content_type->id());
 
     // And submit the form.
     $this->submitForm([], 'Save');
@@ -80,6 +84,7 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $this->assertEquals('migration_a', $migration->id());
     $this->assertEquals('Migration A', $migration->label());
     $this->assertEquals('http', $migration->get('source')['data_fetcher_plugin']);
+    $this->assertEquals('https://test.com/api/items', $migration->get('source')['urls']);
     $this->assertEquals('json', $migration->get('source')['data_parser_plugin']);
     $this->assertEquals('entity:node', $migration->get('destination')['plugin']);
     $this->assertEquals($content_type->id(), $migration->get('destination')['default_bundle']);
@@ -96,42 +101,49 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $vocabulary = $this->createVocabulary();
 
     $this->drupalGet('/admin/structure/migrate/sources/add');
+    $page = $this->getSession()->getPage();
+    $assert_session = $this->assertSession();
 
     // Set label and wait for machine name element to appear.
-    $label = $this->assertSession()->fieldExists('migration[label]');
+    $label = $assert_session->fieldExists('migration[label]');
     $label->focus();
     $label->setValue('Migration B');
-    $this->assertSession()->waitForElementVisible('css', '#edit-migration-id');
+    $assert_session->waitForField('edit-migration-id');
 
     // Select 'url' for source.
-    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--source"]')->click();
-    $this->assertSession()->fieldExists('migration[source][plugin]');
-    $this->getSession()->getPage()->selectFieldOption('migration[source][plugin]', 'url');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $source_tab = $page->find('css', '[href="#plugin_settings--source"]');
+    $source_tab->click();
+    $source_plugin = $assert_session->fieldExists('migration[source][plugin]');
+    $source_plugin->selectOption('url');
 
-    // Select 'http' for data fetcher.
-    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--data_fetcher"]')->click();
-    $this->assertSession()->fieldExists('migration[source][data_fetcher_plugin]');
-    $this->getSession()->getPage()->selectFieldOption('migration[source][data_fetcher_plugin]', 'file');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    // Select 'file' for data fetcher.
+    $data_fetcher_tab = $assert_session->waitForElementVisible('css', '[href="#plugin_settings--data_fetcher"]');
+    $data_fetcher_tab->click();
+    $data_fetcher_plugin = $assert_session->fieldExists('migration[source][data_fetcher_plugin]');
+    $data_fetcher_plugin->selectOption('file');
+    $data_fetcher_dir = $assert_session->waitForField('source_wrapper[configuration][data_fetcher_wrapper][configuration][directory]');
+    $data_fetcher_dir->setValue('public://migrate');
 
-    // Select 'json' for data parser.
-    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--data_parser"]')->click();
-    $this->assertSession()->fieldExists('migration[source][data_parser_plugin]');
-    $this->getSession()->getPage()->selectFieldOption('migration[source][data_parser_plugin]', 'simple_xml');
+    // Select 'simple_xml' for data parser.
+    $data_parser_tab = $page->find('css', '[href="#plugin_settings--data_parser"]');
+    $data_parser_tab->click();
+    $data_parser_plugin = $assert_session->fieldExists('migration[source][data_parser_plugin]');
+    $data_parser_plugin->selectOption('simple_xml');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $item_selector = $this->assertSession()->fieldExists('source_wrapper[configuration][data_parser_wrapper][configuration][item_selector]');
+    $item_selector = $page->findField('source_wrapper[configuration][data_parser_wrapper][configuration][item_selector]');
     $item_selector->setValue('/');
 
-    // Select 'entity:taxonomy_term' for destination, so a selector for bundle appears.
-    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--destination"]')->click();
-    $this->assertSession()->fieldExists('migration[destination][plugin]');
-    $this->getSession()->getPage()->selectFieldOption('migration[destination][plugin]', 'entity:taxonomy_term');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    // Select 'entity:taxonomy_term' for destination, so a selector for bundle
+    // appears.
+    $destination_tab = $page->find('css', '[href="#plugin_settings--destination"]');
+    $destination_tab->click();
+    $destination_plugin = $assert_session->fieldExists('migration[destination][plugin]');
+    $destination_plugin->selectOption('entity:taxonomy_term');
 
     // Set bundle.
-    $this->assertSession()->fieldExists('destination_wrapper[options][default_bundle]');
-    $this->getSession()->getPage()->selectFieldOption('destination_wrapper[options][default_bundle]', $vocabulary->id());
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $destination_bundle = $page->findField('destination_wrapper[options][default_bundle]');
+    $destination_bundle->selectOption($vocabulary->label());
 
     // And submit the form.
     $this->submitForm([], 'Save');
@@ -141,7 +153,9 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $this->assertEquals('migration_b', $migration->id());
     $this->assertEquals('Migration B', $migration->label());
     $this->assertEquals('file', $migration->get('source')['data_fetcher_plugin']);
+    $this->assertEquals('public://migrate', $migration->get('source')['data_fetcher_directory']);
     $this->assertEquals('simple_xml', $migration->get('source')['data_parser_plugin']);
+    $this->assertEquals('/', $migration->get('source')['item_selector']);
     $this->assertEquals('entity:taxonomy_term', $migration->get('destination')['plugin']);
     $this->assertEquals($vocabulary->id(), $migration->get('destination')['default_bundle']);
 
@@ -176,21 +190,23 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     ]);
     $migration->save();
 
-    // Check if fields have the expected values.
     $this->drupalGet('/admin/structure/migrate/manage/default/migrations/migration_c/edit');
-    $session = $this->assertSession();
-    $session->fieldValueEquals('migration[label]', 'Migration C');
-    $session->fieldValueEquals('migration[source][data_fetcher_plugin]', 'http');
-    $session->fieldValueEquals('migration[source][data_parser_plugin]', 'simple_xml');
-    $session->fieldValueEquals('migration[destination][plugin]', 'entity:taxonomy_term');
-    $session->fieldValueEquals('destination_wrapper[options][default_bundle]', $vocabulary2->id());
+    $page = $this->getSession()->getPage();
+    $assert_session = $this->assertSession();
+
+    // Check if fields have the expected values.
+    $assert_session->fieldValueEquals('migration[label]', 'Migration C');
+    $assert_session->fieldValueEquals('migration[source][data_fetcher_plugin]', 'http');
+    $assert_session->fieldValueEquals('migration[source][data_parser_plugin]', 'simple_xml');
+    $assert_session->fieldValueEquals('migration[destination][plugin]', 'entity:taxonomy_term');
+    $assert_session->fieldValueEquals('destination_wrapper[options][default_bundle]', $vocabulary2->id());
 
     // Change destination to 'user'.
-    // Select 'entity:taxonomy_term' for destination, so a selector for bundle appears.
-    $this->getSession()->getPage()->find('css', '[href="#plugin_settings--destination"]')->click();
-    $this->assertSession()->fieldExists('migration[destination][plugin]');
-    $this->getSession()->getPage()->selectFieldOption('migration[destination][plugin]', 'entity:user');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $destination_tab = $page->find('css', '[href="#plugin_settings--destination"]');
+    $destination_tab->click();
+    $destination_plugin = $assert_session->fieldExists('migration[destination][plugin]');
+    $destination_plugin->selectOption('entity:user');
+    $assert_session->assertWaitOnAjaxRequest();
 
     $this->submitForm([], 'Save');
 
