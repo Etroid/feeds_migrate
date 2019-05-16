@@ -212,7 +212,11 @@ class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImpor
    */
   public function calculateDependencies() {
     $dependencies = parent::calculateDependencies();
-    // TODO add dependency on migration entity.
+    if ($this->originalMigration) {
+      // We should be able to use calculatePluginDependencies() here, but our
+      // migration plugin doesn't have a provider, so it falls apart.
+      $this->addDependency($this->originalMigration->getConfigDependencyKey(), $this->originalMigration->getConfigDependencyName());
+    }
     return $dependencies;
   }
 
