@@ -3,30 +3,12 @@
 namespace Drupal\feeds_migrate\Plugin;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;
-use Drupal\Core\DependencyInjection\ClassResolverInterface;
 use Drupal\migrate_plus\Entity\MigrationInterface;
 
 /**
  * Provides form discovery capabilities for plugins.
  */
 class MigrateFormPluginFactory {
-
-  /**
-   * The class resolver.
-   *
-   * @var \Drupal\Core\DependencyInjection\ClassResolverInterface
-   */
-  protected $classResolver;
-
-  /**
-   * Construct a new PluginFormFactory object.
-   *
-   * @param \Drupal\Core\DependencyInjection\ClassResolverInterface $class_resolver
-   *   The class resolver.
-   */
-  public function __construct(ClassResolverInterface $class_resolver) {
-    $this->classResolver = $class_resolver;
-  }
 
   /**
    * Returns whether or not the plugin implements a form for the given type.
@@ -49,13 +31,7 @@ class MigrateFormPluginFactory {
   public function hasForm(PluginInspectionInterface $plugin, $operation) {
     $definition = $plugin->getPluginDefinition();
 
-    if (empty($definition['feeds_migrate']['form'][$operation])) {
-      return FALSE;
-    }
-
-    $class = $definition['feeds_migrate']['form'][$operation];
-
-    return class_exists($class) && is_subclass_of($class, MigrateFormPluginInterface::class);
+    return !empty($definition['feeds_migrate']['form'][$operation]);
   }
 
   /**
@@ -63,40 +39,41 @@ class MigrateFormPluginFactory {
    *
    * @param \Drupal\Component\Plugin\PluginInspectionInterface $plugin
    *   The Feeds plugin.
+   * @param string $plugin_type
+   *   The type of plugin (e.g. source, process, destination etc...).
    * @param string $operation
    *   The type of form to create. See ::hasForm above for possible types.
    * @param \Drupal\migrate_plus\Entity\MigrationInterface|null $migration
    *   The migration context in which the plugin will run.
-   * @param string $context
-   *   The context in which the form plugin will be displayed.
    *
    * @return \Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface
    *   A form for the plugin.
+   *
+   * @throws \LogicException
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
-  public function createInstance(PluginInspectionInterface $plugin, $operation, MigrationInterface $migration, $context) {
+  public function createInstance(PluginInspectionInterface $plugin, string $plugin_type, string $operation, MigrationInterface $migration) {
     $definition = $plugin->getPluginDefinition();
+    $form_plugin_id = $definition['feeds_migrate']['form'][$operation];
 
     // If the form specified is the plugin itself, use it directly.
-    if (get_class($plugin) === ltrim($definition['feeds_migrate']['form'][$operation], '\\')) {
-      $form_object = $plugin;
+    if ($plugin->getPluginId() === $form_plugin_id) {
+      /** @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface $form_plugin */
+      $form_plugin = $plugin;
     }
     else {
-      $form_object = $this->classResolver->getInstanceFromDefinition($definition['feeds_migrate']['form'][$operation]);
+      /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
+      $manager = \Drupal::service("plugin.manager.feeds_migrate.migrate.{$plugin_type}_form");
+      /** @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface $form_plugin */
+      $form_plugin = $manager->createInstance($form_plugin_id, [], $plugin, $migration);
     }
 
     // Ensure the resulting object is a migrate plugin form.
-    if (!$form_object instanceof MigrateFormPluginInterface) {
-      throw new \LogicException($plugin->getPluginId(), sprintf('The "%s" plugin did not specify a valid "%s" form class, must implement \Drupal\Core\Plugin\MigrateFormPluginInterface', $plugin->getPluginId(), $operation));
+    if (!$form_plugin instanceof MigrateFormPluginInterface) {
+      throw new \LogicException($plugin->getPluginId(), sprintf('The "%s" plugin did not specify a valid "%s" form class, must implement \Drupal\feeds_migrate\PluginMigrateFormPluginInterface', $plugin->getPluginId(), $operation));
     }
 
-    // Set parent plugin.
-    $form_object->setPlugin($plugin);
-    // Set migration entity.
-    $form_object->setEntity($migration);
-    // Set context.
-    $form_object->setContext($context);
-
-    return $form_object;
+    return $form_plugin;
   }
 
 }
