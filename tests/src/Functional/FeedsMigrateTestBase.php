@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\feeds_migrate\Functional;
 
-use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\feeds_migrate\Traits\FeedsCommonTrait;
 use Drupal\Tests\Traits\Core\CronRunTrait;
@@ -10,7 +9,7 @@ use Drupal\Tests\Traits\Core\CronRunTrait;
 /**
  * Base class for feeds migrate functional tests.
  */
-abstract class FeedsMigrateTestBase extends WebDriverTestBase {
+abstract class FeedsMigrateTestBase extends BrowserTestBase {
 
   use CronRunTrait;
   use FeedsCommonTrait;
