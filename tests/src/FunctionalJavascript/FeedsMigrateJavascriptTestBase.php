@@ -2,12 +2,12 @@
 
 namespace Drupal\Tests\feeds_migrate\FunctionalJavascript;
 
-use Drupal\feeds_migrate\Entity\FeedsMigrateImporter;
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
 use Drupal\migrate_plus\Entity\Migration;
-use Drupal\Tests\feeds_migrate\Traits\FeedsCommonTrait;
-use Drupal\Tests\Traits\Core\CronRunTrait;
 use Drupal\migrate_plus\Entity\MigrationGroup;
+use Drupal\Tests\feeds_migrate\Traits\FeedsCommonTrait;
+use Drupal\Tests\feeds_migrate\Traits\FeedsCreationTrait;
+use Drupal\Tests\Traits\Core\CronRunTrait;
 
 /**
  * Base class for Feeds javascript tests.
@@ -16,6 +16,7 @@ abstract class FeedsMigrateJavascriptTestBase extends WebDriverTestBase {
 
   use CronRunTrait;
   use FeedsCommonTrait;
+  use FeedsCreationTrait;
 
   /**
    * {@inheritdoc}
@@ -56,48 +57,6 @@ abstract class FeedsMigrateJavascriptTestBase extends WebDriverTestBase {
       'id' => 'default',
       'label' => 'Default',
     ])->save();
-  }
-
-  /**
-   * Stubs a migration entity.
-   *
-   * @return \Drupal\migrate_plus\Entity\MigrationInterface
-   *   Stubbed out Migration Entity.
-   */
-  protected function createMigration() {
-    $migration = Migration::create([
-      'id' => 'migration_a',
-      'label' => 'Migration A',
-      'migration_group' => 'default',
-      'source' => [],
-      'destination' => [],
-      'process' => [],
-      'migration_tags' => [],
-      'migration_dependencies' => [],
-    ]);
-    return $migration;
-  }
-
-  /**
-   * Stubs an importer entity.
-   *
-   * @return \Drupal\feeds_migrate\FeedsMigrateImporterInterface
-   *   Stubbed out Importer Entity.
-   */
-  protected function createImporter() {
-    $importer = FeedsMigrateImporter::create([
-      'id' => 'importer_a',
-      'label' => 'Importer A',
-      'importFrequency' => -1,
-      'existing' => 'leave',
-      'keepOrphans' => FALSE,
-      'migrationId' => 'migration_a',
-      'migrationConfig' => [
-        'source' => [],
-        'destination' => [],
-      ],
-    ]);
-    return $importer;
   }
 
 }
