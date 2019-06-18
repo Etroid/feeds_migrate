@@ -270,13 +270,13 @@ class MigrationForm extends EntityForm {
 
       if ($plugin && isset($form[$plugin_type . '_wrapper']['options']) && $this->formFactory->hasForm($plugin, 'option')) {
         $option_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['options'], $form, $form_state);
-        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->entity);
+        $option_form = $this->formFactory->createInstance($plugin, $plugin_type, 'option', $this->entity);
         $option_form->validateConfigurationForm($form[$plugin_type . '_wrapper']['options'], $option_form_state);
       }
 
       if ($plugin && isset($form[$plugin_type . '_wrapper']['configuration']) && $this->formFactory->hasForm($plugin, 'configuration')) {
         $config_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['configuration'], $form, $form_state);
-        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $this->entity);
+        $config_form = $this->formFactory->createInstance($plugin, $plugin_type, 'configuration', $this->entity);
         $config_form->validateConfigurationForm($form[$plugin_type . '_wrapper']['configuration'], $config_form_state);
       }
     }
@@ -440,13 +440,13 @@ class MigrationForm extends EntityForm {
       $plugin = $this->loadMigratePlugin($plugin_type, $plugin_id);
       if ($plugin && isset($form[$plugin_type . '_wrapper']['options']) && $this->formFactory->hasForm($plugin, 'option')) {
         $option_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['options'], $form, $form_state);
-        $option_form = $this->formFactory->createInstance($plugin, $plugin_type,'option', $this->entity);
+        $option_form = $this->formFactory->createInstance($plugin, $plugin_type, 'option', $this->entity);
         $option_form->copyFormValuesToEntity($entity, $form[$plugin_type . '_wrapper']['options'], $option_form_state);
       }
 
       if ($plugin && isset($form[$plugin_type . '_wrapper']['configuration']) && $this->formFactory->hasForm($plugin, 'configuration')) {
         $config_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['configuration'], $form, $form_state);
-        $config_form = $this->formFactory->createInstance($plugin, $plugin_type,'configuration', $this->entity);
+        $config_form = $this->formFactory->createInstance($plugin, $plugin_type, 'configuration', $this->entity);
         $config_form->copyFormValuesToEntity($entity, $form[$plugin_type . '_wrapper']['configuration'], $config_form_state);
       }
     }
