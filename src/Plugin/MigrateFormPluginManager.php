@@ -2,9 +2,12 @@
 
 namespace Drupal\feeds_migrate\Plugin;
 
+use Drupal\Component\Plugin\Factory\DefaultFactory;
+use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
+use Drupal\migrate_plus\Entity\MigrationInterface;
 use Traversable;
 
 /**
@@ -66,6 +69,22 @@ class MigrateFormPluginManager extends DefaultPluginManager {
 
     // Default to core migrate plugins.
     return 'migrate';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function createInstance($plugin_id, array $configuration = [], PluginInspectionInterface $migrate_plugin = NULL, MigrationInterface $migration = NULL) {
+    $plugin_definition = $this->getDefinition($plugin_id);
+    $plugin_class = DefaultFactory::getPluginClass($plugin_id, $plugin_definition);
+    // If the plugin provides a factory method, pass the container to it.
+    if (is_subclass_of($plugin_class, 'Drupal\Core\Plugin\ContainerFactoryPluginInterface')) {
+      $plugin = $plugin_class::create(\Drupal::getContainer(), $configuration, $plugin_id, $plugin_definition, $migrate_plugin, $migration);
+    }
+    else {
+      $plugin = new $plugin_class($configuration, $plugin_id, $plugin_definition, $migrate_plugin, $migration);
+    }
+    return $plugin;
   }
 
 }
