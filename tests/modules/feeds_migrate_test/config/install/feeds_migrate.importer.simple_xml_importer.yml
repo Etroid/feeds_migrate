@@ -4,7 +4,7 @@ dependencies: {  }
 id: simple_xml_importer
 label: 'Simple XML Importer'
 importFrequency: 0
-existing: leave
+existing: skip
 keepOrphans: false
 migrationId: simple_xml
 migrationConfig:
