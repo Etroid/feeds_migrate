@@ -33,7 +33,16 @@ class FeedsMigrateImporterListBuilder extends ConfigEntityListBuilder {
   protected $dateTime;
 
   /**
-   * {@inheritdoc}
+   * Constructs a new FeedsMigrateImporterListBuilder object.
+   *
+   * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
+   *   The entity type definition.
+   * @param \Drupal\Core\Entity\EntityStorageInterface $storage
+   *   The entity storage class.
+   * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
+   *   The date Formatter service.
+   * @param \Drupal\Component\Datetime\TimeInterface $time
+   *   The time service.
    */
   public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, DateFormatterInterface $date_formatter, TimeInterface $time) {
     parent::__construct($entity_type, $storage);
