@@ -21,7 +21,7 @@ class ImporterTest extends FeedsMigrateTestBase {
     $files = scandir($this->resourcesPath());
     $files = array_diff($files, ['.', '..']);
     foreach ($files as $file) {
-      FileSystemInterface::copy($this->resourcesPath() . '/' . $file, 'public://', FileSystemInterface::EXISTS_REPLACE);
+      \Drupal::service('file_system')->copy($this->resourcesPath() . '/' . $file, 'public://', FileSystemInterface::EXISTS_REPLACE);
     }
   }
 
