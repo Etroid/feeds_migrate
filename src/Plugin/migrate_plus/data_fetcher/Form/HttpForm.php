@@ -9,9 +9,9 @@ use Drupal\Core\Form\FormStateInterface;
  * The configuration form for the file migrate data fetcher plugin.
  *
  * @MigrateForm(
- *   id = "http",
+ *   id = "http_form",
  *   title = @Translation("Http Fetcher Plugin Form"),
- *   form = "configuration",
+ *   form_type = "configuration",
  *   parent_id = "http",
  *   parent_type = "data_fetcher"
  * )
@@ -22,9 +22,7 @@ class HttpForm extends DataFetcherFormPluginBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $entity */
-    $entity = $this->entity;
-    $source = $entity->get('source');
+    $source = $this->migration->get('source');
 
     $form['urls'] = [
       '#type' => 'textfield',
