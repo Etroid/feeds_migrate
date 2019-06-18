@@ -218,7 +218,7 @@ class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImpor
    */
   public function needsImport() {
     $request_time = Drupal::time()->getRequestTime();
-    if ($this->importFrequency != -1 && ($this->getLastRun() + $this->importFrequency) <= $request_time) {
+    if ($this->importFrequency != FeedsMigrateImporterInterface::SCHEDULE_NEVER && ($this->getLastRun() + $this->importFrequency) <= $request_time) {
       return TRUE;
     }
 
@@ -235,8 +235,8 @@ class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImpor
     $migration_plugin = $migration_manager->createInstance($this->migrationId, $test->toArray());
     $messenger = new MigrateMessage();
 
-    if ($this->existing == 2) {
-      $this->$migration_plugin->getIdMap()->prepareUpdate();
+    if ($this->existing == FeedsMigrateImporterInterface::EXISTING_UPDATE) {
+      $this->{$migration_plugin}->getIdMap()->prepareUpdate();
     }
 
     return new FeedsMigrateExecutable($migration_plugin, $messenger);
