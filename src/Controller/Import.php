@@ -23,6 +23,13 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class Import extends ControllerBase {
 
   /**
+   * Manager for entity types.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
    * The migration plugin manager.
    *
    * @var \Drupal\migrate\Plugin\MigrationPluginManagerInterface
