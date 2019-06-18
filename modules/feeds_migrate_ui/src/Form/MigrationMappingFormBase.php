@@ -372,7 +372,7 @@ class MigrationMappingFormBase extends EntityForm {
     //      selector: title
     $fields = $source['fields'] ?: [];
     foreach ($process as $destination => $info) {
-      // The source field (get plugin) will be stored at the first line.
+      // The source field ("get" plugin) will be stored at the first line.
       $get = $info[0];
       if (!array_search($get['source'], array_column($fields, 'name')) !== FALSE) {
         $fields[] = [
