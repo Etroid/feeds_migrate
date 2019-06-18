@@ -9,9 +9,9 @@ use Drupal\Core\Form\FormStateInterface;
  * The configuration form for the json migrate data parser plugin.
  *
  * @MigrateForm(
- *   id = "json",
+ *   id = "json_form",
  *   title = @Translation("Json Data Parser Plugin Form"),
- *   form = "configuration",
+ *   form_type = "configuration",
  *   parent_id = "json",
  *   parent_type = "data_parser"
  * )
@@ -22,9 +22,7 @@ class JsonForm extends DataParserFormPluginBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $entity */
-    $entity = $this->entity;
-    $source = $entity->get('source');
+    $source = $this->migration->get('source');
 
     $form['item_selector'] = [
       '#type' => 'textfield',
