@@ -78,10 +78,15 @@ class FeedsMigrateImporterForm extends EntityForm {
    * FeedsMigrateImporterForm constructor.
    *
    * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_plugin_manager
+   *   Plugin manager for migration plugins.
    * @param \Drupal\migrate\Plugin\MigratePluginManagerInterface $source_plugin_manager
+   *   Plugin manager for source migrate plugins.
    * @param \Drupal\migrate\Plugin\MigratePluginManagerInterface $destination_plugin_manager
+   *   Plugin manager for destination migrate plugins.
    * @param \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory $form_factory
+   *   The form factory for migrate form plugins.
    * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
+   *   The date formatter service.
    */
   public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, MigratePluginManagerInterface $source_plugin_manager, MigratePluginManagerInterface $destination_plugin_manager, MigrateFormPluginFactory $form_factory, DateFormatterInterface $date_formatter) {
     $this->migrationPluginManager = $migration_plugin_manager;
