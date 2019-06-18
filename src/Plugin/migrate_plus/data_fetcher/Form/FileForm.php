@@ -70,17 +70,19 @@ class FileForm extends DataFetcherFormPluginBase {
    * {@inheritdoc}
    */
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
-      if (!empty($fids)) {
-        $fids = $form_state->getValue('urls', []);
-        // @todo Use $this->entityTypeManager->getStorage('file') instead
-        $files = File::loadMultiple($fids);
+    if (!empty($fids)) {
+      $fids = $form_state->getValue('urls', []);
+      /** @var \Drupal\file\FileInterface[] $file */
+      $files = $this->entityTypeManager
+        ->getStorage('file')
+        ->loadMultiple($fids);
 
-        // Save the uploaded files.
-        foreach ($files as $file) {
-          $file->setPermanent();
-          $file->save();
-        }
+      // Save the uploaded files.
+      foreach ($files as $file) {
+        $file->setPermanent();
+        $file->save();
       }
+    }
   }
 
   /**
@@ -93,9 +95,11 @@ class FileForm extends DataFetcherFormPluginBase {
     // Handle file uploads.
     unset($entity->source['urls']);
     $fids = $form_state->getValue('urls');
-    // @todo Use $this->entityTypeManager->getStorage('file') instead
     if (!empty($fids)) {
-      $files = File::loadMultiple($fids);
+      /** @var \Drupal\file\FileInterface[] $file */
+      $files = $this->entityTypeManager
+        ->getStorage('file')
+        ->loadMultiple($fids);
       foreach ($files as $file) {
         $file_uri = $file->getFileUri();
         $entity->source['urls'][] = $file_uri;

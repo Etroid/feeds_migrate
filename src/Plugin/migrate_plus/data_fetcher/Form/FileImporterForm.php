@@ -39,7 +39,7 @@ class FileImporterForm extends DataFetcherFormPluginBase {
       foreach ($source['urls'] as $file_uri) {
         if (!empty($file_uri)) {
           /** @var \Drupal\file\FileInterface[] $file */
-          $files = \Drupal::entityTypeManager()
+          $files = $this->entityTypeManager
             ->getStorage('file')
             ->loadByProperties(['uri' => $file_uri]);
           if (!empty($files)) {
@@ -73,8 +73,10 @@ class FileImporterForm extends DataFetcherFormPluginBase {
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
     if (!empty($fids)) {
       $fids = $form_state->getValue('urls', []);
-      // @todo Use $this->entityTypeManager->getStorage('file') instead
-      $files = File::loadMultiple($fids);
+      /** @var \Drupal\file\FileInterface[] $file */
+      $files = $this->entityTypeManager
+        ->getStorage('file')
+        ->loadMultiple($fids);
 
       // Save the uploaded files.
       foreach ($files as $file) {
@@ -91,9 +93,11 @@ class FileImporterForm extends DataFetcherFormPluginBase {
     // Handle file uploads.
     unset($entity->source['urls']);
     $fids = $form_state->getValue('urls');
-    // @todo Use $this->entityTypeManager->getStorage('file') instead
     if (!empty($fids)) {
-      $files = File::loadMultiple($fids);
+      /** @var \Drupal\file\FileInterface[] $file */
+      $files = $this->entityTypeManager
+        ->getStorage('file')
+        ->loadMultiple($fids);
       foreach ($files as $file) {
         $file_uri = $file->getFileUri();
         $entity->source['urls'][] = $file_uri;
