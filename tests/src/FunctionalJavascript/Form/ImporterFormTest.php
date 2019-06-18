@@ -68,7 +68,7 @@ class ImporterFormTest extends FeedsMigrateJavascriptTestBase {
     $this->assertTrue($migration->get('source')['data_fetcher_plugin'], $data_fetcher_plugin->getValue(), 'Data fetcher plugin matches with migration.');
 
     // Assert data fetcher 'File Location' is visible.
-    $data_fetcher_urls = $this->assertSession()->fieldExists('source_wrapper[configuration][data_fetcher_wrapper][configuration][urls]');
+    $data_fetcher_urls = $this->assertSession()->fieldExists('source_wrapper[importer][data_fetcher_wrapper][importer][urls]');
     // Field location should be empty.
     $this->assertTrue(empty($data_fetcher_urls->getValue()), 'File location is empty.');
     // Set the file location to an API endpoint.
@@ -154,7 +154,7 @@ class ImporterFormTest extends FeedsMigrateJavascriptTestBase {
     $session->fieldValueEquals('edit-migrationid', $importer->getMigrationId());
     $session->fieldValueEquals('migration[source][plugin]', $importer->getMigration()->get('source')['plugin']);
     $session->fieldValueEquals('migration[source][data_fetcher_plugin]', $importer->getMigration()->get('source')['data_fetcher_plugin']);
-    $session->fieldValueEquals('source_wrapper[configuration][data_fetcher_wrapper][configuration][urls]', $importer->getMigration()->get('source')['urls'][0]);
+    $session->fieldValueEquals('source_wrapper[importer][data_fetcher_wrapper][importer][urls]', $importer->getMigration()->get('source')['urls'][0]);
     $session->fieldValueEquals('migration[source][data_parser_plugin]', $importer->getMigration()->get('source')['data_parser_plugin']);
     $session->fieldValueEquals('migration[destination][plugin]', $importer->getMigration()->get('destination')['plugin']);
     $session->fieldValueEquals('destination_wrapper[options][default_bundle]', $importer->getMigration()->get('destination')['default_bundle']);
