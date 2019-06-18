@@ -22,7 +22,7 @@ interface FeedsMigrateImporterInterface extends ConfigEntityInterface {
   /**
    * Indicates that existing items should be left alone.
    */
-  const EXISTING_LEAVE = 'leave';
+  const EXISTING_SKIP = 'skip';
 
   /**
    * Indicates that existing items should be replaced.
@@ -55,7 +55,7 @@ interface FeedsMigrateImporterInterface extends ConfigEntityInterface {
    *
    * @return string
    *   One of the following:
-   *   - 'leave' => FeedsMigrateImporterInterface::EXISTING_LEAVE.
+   *   - 'skip' => FeedsMigrateImporterInterface::EXISTING_SKIP.
    *   - 'replace' => FeedsMigrateImporterInterface::EXISTING_REPLACE.
    *   - 'update' => FeedsMigrateImporterInterface::EXISTING_UPDATE.
    */
@@ -66,7 +66,7 @@ interface FeedsMigrateImporterInterface extends ConfigEntityInterface {
    *
    * @param string $existing
    *   One of the following:
-   *   - 'leave' => FeedsMigrateImporterInterface::EXISTING_LEAVE.
+   *   - 'skip' => FeedsMigrateImporterInterface::EXISTING_SKIP.
    *   - 'replace' => FeedsMigrateImporterInterface::EXISTING_REPLACE.
    *   - 'update' => FeedsMigrateImporterInterface::EXISTING_UPDATE.
    */
