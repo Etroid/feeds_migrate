@@ -27,7 +27,6 @@ services:
   # Migrate Plugin Factory.
   feeds_migrate.migrate_form_plugin_factory:
     class: Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory
-    arguments: ['@class_resolver']
 
   feeds_migrate.migration_entity_helper:
     class: Drupal\feeds_migrate\MigrationEntityHelperManager
