@@ -33,6 +33,7 @@ class MigrateForm extends Plugin {
    * Examples:
    *  - "configuration"
    *  - "option"
+   *  - "importer"
    *
    * @var string
    */
