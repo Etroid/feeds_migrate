@@ -11,9 +11,9 @@ use Drupal\file\Entity\File;
  * The configuration form for the file migrate data fetcher plugin.
  *
  * @MigrateForm(
- *   id = "file",
+ *   id = "file_form",
  *   title = @Translation("File Data Fetcher Plugin Form"),
- *   form = "configuration",
+ *   form_type = "configuration",
  *   parent_id = "file",
  *   parent_type = "data_fetcher"
  * )
@@ -24,14 +24,13 @@ class FileForm extends DataFetcherFormPluginBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    $source = $this->entity->get('source');
+    $source = $this->migration->get('source');
 
     $form['directory'] = [
       '#type' => 'textfield',
       '#title' => $this->t('File Upload Directory'),
       // @todo move this to defaultConfiguration
       '#default_value' => $source['data_fetcher_directory'] ?: 'public://migrate',
-      '#access' => $this->getContext() === self::CONTEXT_MIGRATION,
     ];
 
     $fids = [];
@@ -60,7 +59,7 @@ class FileForm extends DataFetcherFormPluginBase {
         'file_validate_extensions' => ['xml csv json'],
       ],
       '#upload_location' => $source['data_fetcher_directory'] ?: 'public://migrate',
-      '#required' => $this->getContext() === self::CONTEXT_IMPORTER,
+      '#required' => FALSE,
       '#multiple' => TRUE,
     ];
 
@@ -71,7 +70,6 @@ class FileForm extends DataFetcherFormPluginBase {
    * {@inheritdoc}
    */
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
-    if ($this->getContext() === self::CONTEXT_IMPORTER) {
       if (!empty($fids)) {
         $fids = $form_state->getValue('urls', []);
         // @todo Use $this->entityTypeManager->getStorage('file') instead
@@ -83,7 +81,6 @@ class FileForm extends DataFetcherFormPluginBase {
           $file->save();
         }
       }
-    }
   }
 
   /**
