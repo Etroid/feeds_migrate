@@ -2,62 +2,29 @@
 
 namespace Drupal\feeds_migrate\Plugin;
 
-use Drupal\Component\Plugin\PluginInspectionInterface;
-use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\migrate_plus\Entity\MigrationInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 
 /**
  * Interface for migrate plugins that have external configuration forms.
  */
-interface MigrateFormPluginInterface extends ContainerInjectionInterface {
+interface MigrateFormPluginInterface extends ContainerFactoryPluginInterface {
 
   /**
-   * Indicates that a form is displayed in the context of a migration.
+   * Indicates that the form is displayed in the context of a migration.
    */
-  const CONTEXT_MIGRATION = 'migration';
+  const FORM_TYPE_CONFIGURATION = 'configuration';
+
+  /**
+   * Indicates that the form is displayed directly below the plugin selector.
+   */
+  const FORM_TYPE_OPTION = 'option';
 
   /**
    * Indicates that a form is displayed in the context of an importer.
    */
-  const CONTEXT_IMPORTER = 'importer';
-
-  /**
-   * Sets the migration entity for this plugin.
-   *
-   * @param \Drupal\migrate_plus\Entity\MigrationInterface $entity
-   *   The migration Entity.
-   */
-  public function setEntity(MigrationInterface $entity);
-
-  /**
-   * Sets the plugin for this object.
-   *
-   * @param \Drupal\Component\Plugin\PluginInspectionInterface $plugin
-   *   The plugin.
-   */
-  public function setPlugin(PluginInspectionInterface $plugin);
-
-  /**
-   * Gets the context for the this plugin.
-   *
-   * @return string
-   *   The context in which this plugin form is being displayed. Can be one of:
-   *   -  self::CONTEXT_MIGRATION: 'migration'.
-   *   -  self::CONTEXT_IMPORTER: 'importer'.
-   */
-  public function getContext();
-
-  /**
-   * Sets the context for the this plugin.
-   *
-   * @param string $context
-   *   The context in which this plugin form is being displayed. Can be one of:
-   *   -  self::CONTEXT_MIGRATION: 'migration'.
-   *   -  self::CONTEXT_IMPORTER: 'importer'.
-   */
-  public function setContext(string $context);
+  const FORM_TYPE_IMPORTER = 'importer';
 
   /**
    * Build the plugin configuration form.
