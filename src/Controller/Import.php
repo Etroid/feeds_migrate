@@ -44,7 +44,12 @@ class Import extends ControllerBase {
   protected $message;
 
   /**
-   * {@inheritdoc}
+   * Constructs a new Importer object.
+   *
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager service.
+   * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_manager
+   *   The migration plugin manager.
    */
   public function __construct(EntityTypeManagerInterface $entity_type_manager, MigrationPluginManagerInterface $migration_manager) {
     $this->entityTypeManager = $entity_type_manager;
@@ -68,7 +73,11 @@ class Import extends ControllerBase {
    * @param \Drupal\feeds_migrate\FeedsMigrateImporterInterface $feeds_migrate_importer
    *   A Feeds Migrate Importer entity object.
    *
-   * @return int|null|\Symfony\Component\HttpFoundation\RedirectResponse
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   * @throws \Drupal\migrate\MigrateException
+   *   If the executable failed.
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   *   If the instance cannot be created, such as if the ID is invalid.
    */
   public function import(FeedsMigrateImporterInterface $feeds_migrate_importer) {
     $batch = $this->getBatch($feeds_migrate_importer);
@@ -83,7 +92,13 @@ class Import extends ControllerBase {
   }
 
   /**
+   * Retrieves the batch definition for a given importer.
+   *
    * @param \Drupal\feeds_migrate\FeedsMigrateImporterInterface $feeds_migrate_importer
+   *   The feeds migrate importer object.
+   *
+   * @return array
+   *   An associative array defining the batch.
    *
    * @throws \Drupal\Core\Entity\EntityStorageException
    * @throws \Drupal\migrate\MigrateException
@@ -152,11 +167,16 @@ class Import extends ControllerBase {
   }
 
   /**
-   * @param $success
-   * @param $results
-   * @param $operations
+   * Finished callback for import batches.
+   *
+   * @param bool $success
+   *   A boolean indicating whether the batch has completed successfully.
+   * @param array $results
+   *   The value set in $context['results'] by callback_batch_operation().
+   * @param array $operations
+   *   If $success is FALSE, contains the operations that remained unprocessed.
    */
-  public static function batchFinished($success, $results, $operations) {
+  public static function batchFinished(bool $success, array $results, array $operations) {
     $messenger = Drupal::messenger();
 
     if (empty($results)) {
