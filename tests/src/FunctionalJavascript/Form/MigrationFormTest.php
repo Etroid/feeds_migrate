@@ -84,7 +84,7 @@ class MigrationFormTest extends FeedsMigrateJavascriptTestBase {
     $this->assertEquals('migration_a', $migration->id());
     $this->assertEquals('Migration A', $migration->label());
     $this->assertEquals('http', $migration->get('source')['data_fetcher_plugin']);
-    $this->assertEquals('https://test.com/api/items', $migration->get('source')['urls']);
+    $this->assertEquals(['https://test.com/api/items'], $migration->get('source')['urls']);
     $this->assertEquals('json', $migration->get('source')['data_parser_plugin']);
     $this->assertEquals('entity:node', $migration->get('destination')['plugin']);
     $this->assertEquals($content_type->id(), $migration->get('destination')['default_bundle']);
