@@ -19,6 +19,13 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 class FeedsMigrateImporter extends QueueWorkerBase implements ContainerFactoryPluginInterface {
 
   /**
+   * Manager for entity types.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
