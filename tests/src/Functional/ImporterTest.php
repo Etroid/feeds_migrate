@@ -29,7 +29,7 @@ class ImporterTest extends FeedsMigrateTestBase {
    * Tests execution of import and rollback of an import.
    */
   public function testExecution() {
-    // Run Import using sample xml file. (see data/simple_xml.xml)
+    // Run Import using sample xml file. (see resources/simple_xml.xml)
     $importer = 'simple_xml_importer';
     $url = "/admin/content/feeds-migrate/importer/{$importer}/import";
     $this->drupalGet($url);
