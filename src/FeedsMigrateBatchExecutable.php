@@ -42,7 +42,8 @@ class FeedsMigrateBatchExecutable extends FeedsMigrateExecutable {
       $row = $source->current();
       $this->sourceIdValues = $row->getSourceIdValues();
 
-      $batch['operations'][] = [[$this, 'batchImportRow'], [$row]];
+      $batch['operations'][] = [[static::class, 'batchImportRow'], [$this->importer->id(), $row],
+      ];
 
       try {
         $source->next();
@@ -66,19 +67,29 @@ class FeedsMigrateBatchExecutable extends FeedsMigrateExecutable {
     }
 
     batch_set($batch);
-    return batch_process();
   }
 
   /**
    * Batch import a row.
    *
+   * @param string $importer_id
+   *   The id of the feeds migrate importer.
    * @param \Drupal\migrate\Row $row
    *   The row to be processed.
    * @param array $context
    *   The batch context.
+   *
+   * @throws \Drupal\migrate\MigrateException
+   *   If the executable failed.
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   *   If the instance cannot be created, such as if the ID is invalid.
    */
-  public function batchImportRow(Row $row, array &$context) {
-    $this->importRow($row);
+  public static function batchImportRow($importer_id, Row $row, array &$context) {
+    /** @var \Drupal\feeds_migrate\FeedsMigrateImporterInterface $feeds_migrate_importer */
+    $feeds_migrate_importer = \Drupal::service('entity_type.manager')->getStorage('feeds_migrate_importer')
+      ->load($importer_id);
+    $migrate_executable = $feeds_migrate_importer->getBatchExecutable();
+    $migrate_executable->importRow($row);
     $id_map = $row->getIdMap();
     $context['results'][$id_map['source_row_status']][] = $row;
   }

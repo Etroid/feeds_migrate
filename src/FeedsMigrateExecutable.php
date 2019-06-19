@@ -108,6 +108,7 @@ class FeedsMigrateExecutable extends MigrateExecutable {
    * {@inheritdoc}
    */
   public function __construct(FeedsMigrateImporterInterface $importer, MigrateMessageInterface $message, array $options = []) {
+    $this->importer = $importer;
     /* @var \Drupal\migrate\Plugin\MigrationPluginManager $migration_manager */
     $this->migrationPluginManager = Drupal::service('plugin.manager.migration');
     /** @var \Drupal\migrate\Plugin\MigrationInterface $migration_plugin */
