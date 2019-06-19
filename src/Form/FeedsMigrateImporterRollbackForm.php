@@ -6,6 +6,11 @@ use Drupal\Core\Entity\EntityConfirmFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 
+/**
+ * Class FeedsMigrateImporterRollbackForm.
+ *
+ * @package Drupal\feeds_migrate\Form
+ */
 class FeedsMigrateImporterRollbackForm extends EntityConfirmFormBase {
 
   /**
@@ -43,7 +48,7 @@ class FeedsMigrateImporterRollbackForm extends EntityConfirmFormBase {
     $entity->save();
 
     /** @var \Drupal\feeds_migrate\FeedsMigrateExecutable $migrate_executable */
-    $migrate_executable = $this->entity->getExecutable();
+    $migrate_executable = $entity->getExecutable();
     $migrate_executable->rollback();
     $form_state->setRedirectUrl($this->getCancelUrl());
   }
