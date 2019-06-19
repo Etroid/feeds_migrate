@@ -138,22 +138,23 @@ function feeds_migrate_migrate_process_info_alter(array &$plugins) {
  * Implements hook_form_FORM_ID_alter().
  */
 function feeds_migrate_form_migration_delete_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  /** @var Drupal\migrate_plus\Entity\MigrationInterface $migration */
   $migration = $form_state->getBuildInfo()['callback_object']->getEntity();
   // See which feeds migrate importers use this migration.
-  $num_feeds_migrate_importer_dependencies = 0;
+  $dependency_count = 0;
   /** @var \Drupal\Core\Config\ConfigManagerInterface $config_manager */
   $config_manager = \Drupal::service('config.manager');
   $dependents = $config_manager->findConfigEntityDependentsAsEntities('config', [$migration->getConfigDependencyName()]);
   foreach ($dependents as $dependent) {
     if ($dependent->getEntityType()->id() == 'feeds_migrate_importer') {
-      $num_feeds_migrate_importer_dependencies++;
+      $dependency_count++;
     }
   }
-  // If there are any dependent imports, don't allow the delte.
-  if ($num_feeds_migrate_importer_dependencies) {
+  // If there are any dependent imports, don't allow the delete.
+  if ($dependency_count) {
     $form = [];
     $caption = '<p>' . \Drupal::translation()
-        ->formatPlural($num_feeds_migrate_importer_dependencies, '%type is used by 1 feeds migrate importer on your site. You can not remove this migration until you have removed the feeds migrate importer that uses this migration.', '%type is used by @count feeds migrate importers on your site. You can not remove this migration until you have removed the feeds migrate importers that use this migration.', ['%type' => $migration->label()]) . '</p>';
+        ->formatPlural($dependency_count, '%type is used by 1 feeds migrate importer on your site. You can not remove this migration until you have removed the feeds migrate importer that uses this migration.', '%type is used by @count feeds migrate importers on your site. You can not remove this migration until you have removed the feeds migrate importers that use this migration.', ['%type' => $migration->label()]) . '</p>';
     $form['description'] = ['#markup' => $caption];
   }
 }
