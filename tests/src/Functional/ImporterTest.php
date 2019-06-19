@@ -33,19 +33,15 @@ class ImporterTest extends FeedsMigrateTestBase {
     $importer = 'simple_xml_importer';
     $url = "/admin/content/feeds-migrate/importer/{$importer}/import";
     $this->drupalGet($url);
-    $this->waitForBatchToFinish();
-    $this->drupalGet('/admin/content');
-    $expected_count = 4;
-    $this->assertNodeCount($expected_count);
+    $this->submitForm([], 'Import');
+    $this->assertNodeCount(4);
 
     // Roll back the operation.
     $importer = 'simple_xml_importer';
     $url = "/admin/content/feeds-migrate/importer/{$importer}/rollback";
     $this->drupalGet($url);
     $this->submitForm([], 'Confirm');
-    $this->waitForBatchToFinish();
-    $expected_count = 0;
-    $this->assertNodeCount($expected_count);
+    $this->assertNodeCount(0);
   }
 
 }
