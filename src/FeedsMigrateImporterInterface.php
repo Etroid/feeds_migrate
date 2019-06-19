@@ -145,6 +145,19 @@ interface FeedsMigrateImporterInterface extends ConfigEntityInterface {
   public function needsImport();
 
   /**
+   * Get the altered migrate batch executable object that can run the import.
+   *
+   * @return \Drupal\feeds_migrate\FeedsMigrateExecutable
+   *   The batch executable to run the import.
+   *
+   * @throws \Drupal\migrate\MigrateException
+   *   If the executable failed.
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   *   If the instance cannot be created, such as if the ID is invalid.
+   */
+  public function getBatchExecutable();
+
+  /**
    * Get the altered migrate executable object that can run the import.
    *
    * @return \Drupal\feeds_migrate\FeedsMigrateExecutable

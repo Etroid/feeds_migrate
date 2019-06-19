@@ -4,6 +4,7 @@ namespace Drupal\feeds_migrate\Entity;
 
 use Drupal;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
+use Drupal\feeds_migrate\FeedsMigrateBatchExecutable;
 use Drupal\feeds_migrate\FeedsMigrateExecutable;
 use Drupal\feeds_migrate\FeedsMigrateImporterInterface;
 use Drupal\migrate\MigrateMessage;
@@ -23,6 +24,7 @@ use Drupal\migrate_plus\Entity\Migration;
  *       "delete" = "Drupal\feeds_migrate\Form\FeedsMigrateImporterDeleteForm",
  *       "enable" = "Drupal\feeds_migrate\Form\FeedsMigrateImporterEnableForm",
  *       "disable" = "Drupal\feeds_migrate\Form\FeedsMigrateImporterDisableForm",
+ *       "import" = "Drupal\feeds_migrate\Form\FeedsMigrateImporterImportForm",
  *       "rollback" = "Drupal\feeds_migrate\Form\FeedsMigrateImporterRollbackForm"
  *     },
  *   },
@@ -44,12 +46,13 @@ use Drupal\migrate_plus\Entity\Migration;
  *   },
  *   links = {
  *     "canonical" = "/admin/content/feeds-migrate/{feeds_migrate_importer}",
+ *     "add-form" = "/admin/content/feeds-migrate/add",
  *     "edit-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/edit",
  *     "delete-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/delete",
- *     "enable" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/enable",
- *     "disable" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/disable",
- *     "import" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/import",
- *     "rollback" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/rollback"
+ *     "enable-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/enable",
+ *     "disable-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/disable",
+ *     "import-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/import",
+ *     "rollback-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/rollback"
  *   }
  * )
  */
@@ -228,18 +231,17 @@ class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImpor
   /**
    * {@inheritdoc}
    */
-  public function getExecutable() {
-    /* @var \Drupal\migrate\Plugin\MigrationPluginManager $migration_manager */
-    $migration_manager = Drupal::service('plugin.manager.migration');
-    $test = $this->getMigration();
-    $migration_plugin = $migration_manager->createInstance($this->migrationId, $test->toArray());
+  public function getBatchExecutable() {
     $messenger = new MigrateMessage();
+    return new FeedsMigrateBatchExecutable($this, $messenger);
+  }
 
-    if ($this->existing == FeedsMigrateImporterInterface::EXISTING_UPDATE) {
-      $this->{$migration_plugin}->getIdMap()->prepareUpdate();
-    }
-
-    return new FeedsMigrateExecutable($migration_plugin, $messenger);
+  /**
+   * {@inheritdoc}
+   */
+  public function getExecutable() {
+    $messenger = new MigrateMessage();
+    return new FeedsMigrateExecutable($this, $messenger);
   }
 
 }
