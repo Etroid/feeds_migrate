@@ -43,7 +43,7 @@ trait FeedsCreationTrait {
       'id' => 'importer_a',
       'label' => 'Importer A',
       'importFrequency' => -1,
-      'existing' => 'leave',
+      'existing' => 'skip',
       'keepOrphans' => FALSE,
       'migrationId' => 'migration_a',
       'migrationConfig' => [
