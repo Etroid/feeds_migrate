@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\feeds\Form;
+namespace Drupal\feeds_migrate\Form;
 
 use Drupal\Core\Entity\EntityConfirmFormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -40,7 +40,6 @@ class FeedsMigrateImporterImportForm extends EntityConfirmFormBase {
     /** @var \Drupal\feeds_migrate\FeedsMigrateBatchExecutable $migrate_batch_executable */
     $migrate_batch_executable = $this->entity->getBatchExecutable();
     $migrate_batch_executable->batchImport();
-    $form_state->setRedirectUrl($this->getCancelUrl());
   }
 
 }
