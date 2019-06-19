@@ -105,7 +105,7 @@ class ImporterFormTest extends FeedsMigrateJavascriptTestBase {
     // should be the same as the original migration configuration.
     $assert_migration_config = [
       'source' => [
-        'urls' => 'http://news.com/api/articles',
+        'urls' => ['http://news.com/api/articles'],
       ],
       'destination' => [],
     ];
