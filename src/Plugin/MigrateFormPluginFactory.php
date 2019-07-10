@@ -70,7 +70,7 @@ class MigrateFormPluginFactory {
 
     // Ensure the resulting object is a migrate plugin form.
     if (!$form_plugin instanceof MigrateFormPluginInterface) {
-      throw new \LogicException($plugin->getPluginId(), sprintf('The "%s" plugin did not specify a valid "%s" form class, must implement \Drupal\feeds_migrate\PluginMigrateFormPluginInterface', $plugin->getPluginId(), $operation));
+      throw new \LogicException($plugin->getPluginId(), sprintf('The "%s" plugin did not specify a valid "%s" form class, must implement \Drupal\feeds_migrate\MigrateFormPluginInterface', $plugin->getPluginId(), $operation));
     }
 
     return $form_plugin;

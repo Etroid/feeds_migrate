@@ -194,7 +194,7 @@ class MigrationForm extends EntityForm {
       $form[$plugin_type . '_wrapper'] = [
         '#type' => 'details',
         '#group' => 'plugin_settings',
-        '#title' => ucwords($this->t($plugin_type)),
+        '#title' => ucfirst($plugin_type),
         '#attributes' => [
           'id' => 'plugin_settings--' . $plugin_type,
           'class' => ['feeds-plugin-inline']

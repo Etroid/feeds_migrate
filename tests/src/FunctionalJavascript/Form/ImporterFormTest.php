@@ -72,7 +72,7 @@ class ImporterFormTest extends FeedsMigrateJavascriptTestBase {
     // Field location should be empty.
     $this->assertTrue(empty($data_fetcher_urls->getValue()), 'File location is empty.');
     // Set the file location to an API endpoint.
-    $data_fetcher_urls->setValue('http://news.com/api/articles');
+    $data_fetcher_urls->setValue('http://www.example.com');
 
     // Assert data parser configuration matches up with our migration.
     $data_parser_tab = $page->find('css', '[href="#plugin_settings--data_parser"]');
@@ -105,7 +105,7 @@ class ImporterFormTest extends FeedsMigrateJavascriptTestBase {
     // should be the same as the original migration configuration.
     $assert_migration_config = [
       'source' => [
-        'urls' => ['http://news.com/api/articles'],
+        'urls' => ['http://www.example.com'],
       ],
       'destination' => [],
     ];
@@ -136,7 +136,7 @@ class ImporterFormTest extends FeedsMigrateJavascriptTestBase {
       'source' => [
         'data_fetcher_plugin' => 'http',
         'urls' => [
-          'https://www.news.co.jp/api/articles',
+          'https://www.example.com',
         ],
       ],
       'destination' => [],
