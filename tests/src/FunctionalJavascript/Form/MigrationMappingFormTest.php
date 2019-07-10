@@ -92,7 +92,7 @@ class MigrationMappingFormTest extends FeedsMigrateJavascriptTestBase {
   }
 
   /**
-   * Tests deleing an existing mapping.
+   * Tests deleting an existing mapping.
    */
   public function testDeleteMigrationMapping() {
     $this->drupalGet('/admin/structure/migrate/sources/example_migration/mapping/title/delete');

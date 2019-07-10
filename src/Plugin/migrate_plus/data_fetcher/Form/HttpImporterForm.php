@@ -6,17 +6,17 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * The configuration form for the file migrate data fetcher plugin.
+ * The importer form for the file migrate data fetcher plugin.
  *
  * @MigrateForm(
- *   id = "http_form",
- *   title = @Translation("Http Fetcher Plugin Form"),
- *   form_type = "configuration",
+ *   id = "http_importer_form",
+ *   title = @Translation("Http Fetcher Plugin Importer Form"),
+ *   form_type = "importer",
  *   parent_id = "http",
  *   parent_type = "data_fetcher"
  * )
  */
-class HttpForm extends DataFetcherFormPluginBase {
+class HttpImporterForm extends DataFetcherFormPluginBase {
 
   /**
    * {@inheritdoc}

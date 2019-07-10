@@ -1,13 +1,5 @@
 services:
-  plugin.manager.feeds_migrate.authentication_form:
-    class: Drupal\feeds_migrate\AuthenticationFormPluginManager
-    parent: default_plugin_manager
-  plugin.manager.feeds_migrate.data_fetcher_form:
-    class: Drupal\feeds_migrate\DataFetcherFormPluginManager
-    parent: default_plugin_manager
-  plugin.manager.feeds_migrate.data_parser_form:
-    class: Drupal\feeds_migrate\DataParserPluginManager
-    parent: default_plugin_manager
+  # Feeds Migrate mapping field plugin manager.
   plugin.manager.feeds_migrate.mapping_field_form:
     class: Drupal\feeds_migrate\MappingFieldFormManager
     parent: default_plugin_manager
@@ -35,7 +27,6 @@ services:
   # Migrate Plugin Factory.
   feeds_migrate.migrate_form_plugin_factory:
     class: Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory
-    arguments: ['@class_resolver']
 
   feeds_migrate.migration_entity_helper:
     class: Drupal\feeds_migrate\MigrationEntityHelperManager

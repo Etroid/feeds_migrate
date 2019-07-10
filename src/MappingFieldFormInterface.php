@@ -63,7 +63,7 @@ interface MappingFieldFormInterface extends PluginFormInterface, ContainerFactor
 
   /**
    * Returns the mapping for this field based on the configuration form.
-   * 
+   *
    * @param array $form
    *   An associative array containing the structure of the form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state

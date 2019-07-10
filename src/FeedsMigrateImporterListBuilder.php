@@ -18,9 +18,37 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class FeedsMigrateImporterListBuilder extends ConfigEntityListBuilder {
 
+  /**
+   * The date formatter service.
+   *
+   * @var \Drupal\Core\Datetime\DateFormatterInterface
+   */
   protected $dateFormatter;
 
+  /**
+   * The time service.
+   *
+   * @var \Drupal\Component\Datetime\TimeInterface
+   */
   protected $dateTime;
+
+  /**
+   * Constructs a new FeedsMigrateImporterListBuilder object.
+   *
+   * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
+   *   The entity type definition.
+   * @param \Drupal\Core\Entity\EntityStorageInterface $storage
+   *   The entity storage class.
+   * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
+   *   The date Formatter service.
+   * @param \Drupal\Component\Datetime\TimeInterface $time
+   *   The time service.
+   */
+  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, DateFormatterInterface $date_formatter, TimeInterface $time) {
+    parent::__construct($entity_type, $storage);
+    $this->dateFormatter = $date_formatter;
+    $this->dateTime = $time;
+  }
 
   /**
    * {@inheritdoc}
@@ -32,15 +60,6 @@ class FeedsMigrateImporterListBuilder extends ConfigEntityListBuilder {
       $container->get('date.formatter'),
       $container->get('datetime.time')
     );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, DateFormatterInterface $date_formatter, TimeInterface $time) {
-    parent::__construct($entity_type, $storage);
-    $this->dateFormatter = $date_formatter;
-    $this->dateTime = $time;
   }
 
   /**
@@ -60,8 +79,10 @@ class FeedsMigrateImporterListBuilder extends ConfigEntityListBuilder {
    * {@inheritdoc}
    */
   public function buildRow(EntityInterface $entity) {
+    /** @var \Drupal\feeds_migrate\Entity\FeedsMigrateImporter $importer */
+    $importer = $entity;
     /** @var \Drupal\migrate_plus\Entity\Migration $migration */
-    $migration = Migration::load($entity->source);
+    $migration = Migration::load($importer->getMigrationId());
 
     $data = [
       'label' => $entity->label(),
@@ -70,16 +91,16 @@ class FeedsMigrateImporterListBuilder extends ConfigEntityListBuilder {
       'count' => 0,
     ];
 
-    if ($entity->lastRan) {
-      $data['last'] = $this->dateFormatter->formatDiff($entity->lastRan, $this->dateTime->getRequestTime(), ['granularity' => 1]);
+    if ($importer->getLastRun()) {
+      $data['last'] = $this->dateFormatter->formatDiff($importer->getLastRun(), $this->dateTime->getRequestTime(), ['granularity' => 1]);
     }
 
     /** @var \Drupal\feeds_migrate\FeedsMigrateExecutable $migration */
-    $migration = $entity->getExecutable();
+    $migration = $importer->getExecutable();
     $data['count'] = $migration->getCreatedCount();
 
     $row = [
-      'class' => $entity->status() ? 'enabled' : 'disabled',
+      'class' => $importer->status() ? 'enabled' : 'disabled',
       'data' => $data + parent::buildRow($entity),
     ];
 
@@ -94,12 +115,12 @@ class FeedsMigrateImporterListBuilder extends ConfigEntityListBuilder {
     $operations['import'] = [
       'title' => t('Import'),
       'weight' => -10,
-      'url' => $this->ensureDestination($entity->toUrl('import')),
+      'url' => $this->ensureDestination($entity->toUrl('import-form')),
     ];
     $operations['rollback'] = [
       'title' => t('Rollback'),
       'weight' => -9,
-      'url' => $this->ensureDestination($entity->toUrl('rollback')),
+      'url' => $this->ensureDestination($entity->toUrl('rollback-form')),
     ];
     return $operations;
   }

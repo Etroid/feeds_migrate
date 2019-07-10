@@ -2,13 +2,16 @@
 
 namespace Drupal\feeds_migrate\Entity;
 
+use Drupal;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
+use Drupal\feeds_migrate\FeedsMigrateBatchExecutable;
 use Drupal\feeds_migrate\FeedsMigrateExecutable;
 use Drupal\feeds_migrate\FeedsMigrateImporterInterface;
 use Drupal\migrate\MigrateMessage;
+use Drupal\migrate_plus\Entity\Migration;
 
 /**
- * Feeds Migrate Source configuration entity.
+ * Feeds Migrate Importer configuration entity.
  *
  * @ConfigEntityType(
  *   id = "feeds_migrate_importer",
@@ -21,6 +24,7 @@ use Drupal\migrate\MigrateMessage;
  *       "delete" = "Drupal\feeds_migrate\Form\FeedsMigrateImporterDeleteForm",
  *       "enable" = "Drupal\feeds_migrate\Form\FeedsMigrateImporterEnableForm",
  *       "disable" = "Drupal\feeds_migrate\Form\FeedsMigrateImporterDisableForm",
+ *       "import" = "Drupal\feeds_migrate\Form\FeedsMigrateImporterImportForm",
  *       "rollback" = "Drupal\feeds_migrate\Form\FeedsMigrateImporterRollbackForm"
  *     },
  *   },
@@ -29,86 +33,178 @@ use Drupal\migrate\MigrateMessage;
  *   entity_keys = {
  *     "id" = "id",
  *     "label" = "label",
- *     "status" = "status",
+ *     "status" = "status"
+ *   },
+ *   config_export = {
+ *     "id",
+ *     "label",
+ *     "importFrequency",
+ *     "existing",
+ *     "keepOrphans",
+ *     "migrationId",
+ *     "migrationConfig"
  *   },
  *   links = {
  *     "canonical" = "/admin/content/feeds-migrate/{feeds_migrate_importer}",
- *     "edit-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}",
+ *     "add-form" = "/admin/content/feeds-migrate/add",
+ *     "edit-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/edit",
  *     "delete-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/delete",
- *     "enable" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/enable",
- *     "disable" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/disable",
- *     "import" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/import",
- *     "rollback" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/rollback"
+ *     "enable-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/enable",
+ *     "disable-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/disable",
+ *     "import-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/import",
+ *     "rollback-form" = "/admin/content/feeds-migrate/{feeds_migrate_importer}/rollback"
  *   }
  * )
  */
 class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImporterInterface {
 
   /**
-   * The Asset Injector ID.
+   * The frequency at which this importer should be executed.
+   *
+   * @var int
+   */
+  protected $importFrequency;
+
+  /**
+   * Indicates how existing content should be processed.
    *
    * @var string
    */
-  public $id;
+  protected $existing;
 
   /**
-   * The Js Injector label.
+   * Indicates if orphaned content should be kept.
+   *
+   * @var bool
+   */
+  protected $keepOrphans;
+
+  /**
+   * The migration ID.
    *
    * @var string
    */
-  public $label;
+  protected $migrationId;
 
   /**
-   * Migration source mapping ID.
+   * Migration Config.
    *
-   * @var string
+   * @var array
    */
-  public $source;
-
-  public $orphans;
-
-  public $importPeriod;
-
-  public $existing;
-
-  public $dataFetcherSettings;
-
-  public $authSettings;
-
-  public $lastRan = 0;
+  protected $migrationConfig = [];
 
   /**
-   * @var \Drupal\migrate\Plugin\Migration
+   * The original migration entity.
+   *
+   * @var \Drupal\migrate_plus\Entity\MigrationInterface
+   *   The migration entity object before configuration alterations.
+   */
+  protected $originalMigration;
+
+  /**
+   * The migration entity.
+   *
+   * @var \Drupal\migrate_plus\Entity\MigrationInterface
+   *   The migration entity object after configuration alterations.
    */
   protected $migration;
 
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $values, $entity_type) {
-    parent::__construct($values, $entity_type);
-    if (!empty($this->source)) {
-      /** @var \Drupal\migrate\Plugin\MigrationPluginManager $migration_manager */
-      $migration_manager = \Drupal::service('plugin.manager.migration');
-
-      /** @var \Drupal\migrate\Plugin\MigrationInterface $migration */
-      $migrations = $migration_manager->createInstances($this->source);
-      $this->migration = reset($migrations);
-    }
+  public function getImportFrequency() {
+    return $this->importFrequency;
   }
 
   /**
-   * @param string $plugin_id
-   *   Data fetcher form plugin id.
-   *
-   * @return mixed|null
-   *   Settings if configured.
+   * {@inheritdoc}
    */
-  public function getFetcherSettings($plugin_id) {
-    if (!empty($this->dataFetcherSettings[$plugin_id])) {
-      return $this->dataFetcherSettings[$plugin_id];
+  public function setImportFrequency(int $importFrequency) {
+    $this->importFrequency = $importFrequency;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getExisting() {
+    return $this->existing;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setExisting(string $existing) {
+    $this->existing = $existing;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function keepOrphans() {
+    return $this->keepOrphans;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setKeepOrphans(bool $keep_orphans) {
+    $this->keepOrphans = $keep_orphans;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getLastRun() {
+    return Drupal::state()->get('feeds_migrate_importer.' . $this->id() . '.last_run', 0);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setLastRun(int $last_run) {
+    Drupal::state()->set('feeds_migrate_importer.' . $this->id() . '.last_run', $last_run);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getMigrationId() {
+    return $this->migrationId;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setMigrationId(string $id) {
+    $this->migrationId = $id;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getOriginalMigration() {
+    if (!isset($this->originalMigration)) {
+      $this->originalMigration = Migration::load($this->migrationId);
     }
-    return NULL;
+
+    return $this->originalMigration;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getMigration() {
+    if (!isset($this->migration)) {
+      /* @var \Drupal\migrate_plus\Entity\MigrationInterface $altered_migration */
+      $altered_migration = $this->migration = clone $this->getOriginalMigration();
+
+      $source = array_merge($this->originalMigration->get('source'), $this->migrationConfig['source'] ?? []);
+      $altered_migration->set('source', $source);
+      $destination = array_merge($this->originalMigration->get('destination'), $this->migrationConfig['destination'] ?? []);
+      $altered_migration->set('destination', $destination);
+    }
+
+    return $this->migration;
   }
 
   /**
@@ -121,73 +217,31 @@ class FeedsMigrateImporter extends ConfigEntityBase implements FeedsMigrateImpor
   }
 
   /**
-   * If the priodic import should be executed.
-   *
-   * @return bool
-   *   True if it should be ran on cron.
+   * {@inheritdoc}
    */
-  public function needsImported() {
-    $request_time = \Drupal::time()->getRequestTime();
-    if ($this->importPeriod != -1 && ($this->lastRan + $this->importPeriod) <= $request_time) {
+  public function needsImport() {
+    $request_time = Drupal::time()->getRequestTime();
+    if ($this->importFrequency != FeedsMigrateImporterInterface::SCHEDULE_NEVER && ($this->getLastRun() + $this->importFrequency) <= $request_time) {
       return TRUE;
     }
+
+    return FALSE;
   }
 
   /**
-   * Get the altered migrate executable object that can run the import.
-   *
-   * @return \Drupal\feeds_migrate\FeedsMigrateExecutable
-   *   The object that can import.
-   *
-   * @throws \Drupal\migrate\MigrateException
-   *   If the executable failed.
+   * {@inheritdoc}
+   */
+  public function getBatchExecutable() {
+    $messenger = new MigrateMessage();
+    return new FeedsMigrateBatchExecutable($this, $messenger);
+  }
+
+  /**
+   * {@inheritdoc}
    */
   public function getExecutable() {
-    $this->alterFetcher();
-    if (\Drupal::moduleHandler()->moduleExists('key')) {
-      $this->alterAuthentication();
-    }
     $messenger = new MigrateMessage();
-    if ($this->existing == 2) {
-      $this->migration->getIdMap()->prepareUpdate();
-    }
-    return new FeedsMigrateExecutable($this->migration, $messenger);
-  }
-
-  /**
-   * Alter the data fetcher from the configured plugin.
-   */
-  protected function alterFetcher() {
-    $fetcher_plugins = \Drupal::service('plugin.manager.feeds_migrate.data_fetcher_form');
-    $source_configuration = $this->migration->getSourceConfiguration();
-
-    foreach ($fetcher_plugins->getDefinitions() as $definition) {
-      if ($definition['parent'] == $source_configuration['data_fetcher_plugin']) {
-        /** @var \Drupal\feeds_migrate\DataFetcherFormInterface $fetcher_instance */
-        $fetcher_instance = $fetcher_plugins->createInstance($definition['id']);
-        $fetcher_instance->alterMigration($this, $this->migration);
-      }
-    }
-  }
-
-  /**
-   * Alter the authentication method from the configured plugin.
-   */
-  protected function alterAuthentication() {
-    $source_configuration = $this->migration->getSourceConfiguration();
-
-    if (empty($source_configuration['authentication']['plugin'])) {
-      return;
-    }
-
-    $auth_plugins = \Drupal::service('plugin.manager.feeds_migrate.authentication_form');
-    foreach ($auth_plugins->getDefinitions() as $definition) {
-      if ($definition['parent'] == $source_configuration['authentication']['plugin']) {
-        /** @var \Drupal\feeds_migrate\AuthenticationFormInterface $auth_instance */
-        $auth_instance = $auth_plugins->createInstance($definition['id']);
-        $auth_instance->alterMigration($this, $this->migration);
-      }
-    }
+    return new FeedsMigrateExecutable($this, $messenger);
   }
 
 }

@@ -2,35 +2,32 @@
 
 namespace Drupal\feeds_migrate\Plugin;
 
-use Drupal\Component\Plugin\PluginInspectionInterface;
-use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\migrate_plus\Entity\MigrationInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 
 /**
  * Interface for migrate plugins that have external configuration forms.
  */
-interface MigrateFormPluginInterface extends ContainerInjectionInterface {
+interface MigrateFormPluginInterface extends ContainerFactoryPluginInterface {
 
   /**
-   * Sets the migration entity for this plugin.
-   *
-   * @param \Drupal\migrate_plus\Entity\MigrationInterface $entity
-   *   The migration Entity.
+   * Indicates that the form is displayed in the context of a migration.
    */
-  public function setEntity(MigrationInterface $entity);
+  const FORM_TYPE_CONFIGURATION = 'configuration';
 
   /**
-   * Sets the plugin for this object.
-   *
-   * @param \Drupal\Component\Plugin\PluginInspectionInterface $plugin
-   *   The plugin.
+   * Indicates that the form is displayed directly below the plugin selector.
    */
-  public function setPlugin(PluginInspectionInterface $plugin);
+  const FORM_TYPE_OPTION = 'option';
 
   /**
-   * Form constructor.
+   * Indicates that a form is displayed in the context of an importer.
+   */
+  const FORM_TYPE_IMPORTER = 'importer';
+
+  /**
+   * Build the plugin configuration form.
    *
    * @param array $form
    *   An associative array containing the structure of the form.
@@ -43,7 +40,7 @@ interface MigrateFormPluginInterface extends ContainerInjectionInterface {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state);
 
   /**
-   * Form validation handler.
+   * Validation handler for the plugin configuration form.
    *
    * @param array $form
    *   An associative array containing the structure of the form.
