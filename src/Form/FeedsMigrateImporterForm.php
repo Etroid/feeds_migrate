@@ -2,15 +2,18 @@
 
 namespace Drupal\feeds_migrate\Form;
 
+use Drupal;
+use Drupal\Component\Utility\DiffArray;
 use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Entity\EntityForm;
-use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Queue\QueueFactory;
-use Drupal\Core\Url;
-use Drupal\feeds_migrate\AuthenticationFormPluginManager;
-use Drupal\feeds_migrate\DataFetcherFormPluginManager;
+use Drupal\Core\Form\SubformState;
 use Drupal\feeds_migrate\FeedsMigrateImporterInterface;
+use Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory;
+use Drupal\migrate\Plugin\MigratePluginManagerInterface;
+use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
 use Drupal\migrate_plus\Entity\Migration;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -22,47 +25,97 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class FeedsMigrateImporterForm extends EntityForm {
 
   /**
+   * The feeds importer entity.
+   *
+   * @var \Drupal\feeds_migrate\FeedsMigrateImporterInterface
+   */
+  protected $entity;
+
+  /**
+   * Plugin manager for migration plugins.
+   *
+   * @var \Drupal\migrate\Plugin\MigrationPluginManagerInterface
+   */
+  protected $migrationPluginManager;
+
+  /**
+   * Plugin manager for source plugins.
+   *
+   * @var \Drupal\migrate\Plugin\MigratePluginManagerInterface
+   */
+  protected $sourcePluginManager;
+
+  /**
+   * Plugin manager for destination plugins.
+   *
+   * @var \Drupal\migrate\Plugin\MigratePluginManagerInterface
+   */
+  protected $destinationPluginManager;
+
+  /**
+   * The form factory.
+   *
+   * @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory
+   */
+  protected $formFactory;
+
+  /**
+   * Date formatter.
+   *
    * @var \Drupal\Core\Datetime\DateFormatterInterface
    */
   protected $dateFormatter;
 
   /**
-   * @var \Drupal\feeds_migrate\AuthenticationFormPluginManager
+   * Migration entity.
+   *
+   * @var \Drupal\migrate_plus\Entity\MigrationInterface
    */
-  protected $authPluginManager;
+  protected $migration;
 
   /**
-   * @var \Drupal\feeds_migrate\DataFetcherFormPluginManager
+   * FeedsMigrateImporterForm constructor.
+   *
+   * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_plugin_manager
+   *   Plugin manager for migration plugins.
+   * @param \Drupal\migrate\Plugin\MigratePluginManagerInterface $source_plugin_manager
+   *   Plugin manager for source migrate plugins.
+   * @param \Drupal\migrate\Plugin\MigratePluginManagerInterface $destination_plugin_manager
+   *   Plugin manager for destination migrate plugins.
+   * @param \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory $form_factory
+   *   The form factory for migrate form plugins.
+   * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
+   *   The date formatter service.
    */
-  protected $dataFetcherPluginManager;
-
-  /**
-   * @var \Drupal\Core\Queue\QueueFactory
-   */
-  protected $queueFactory;
+  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, MigratePluginManagerInterface $source_plugin_manager, MigratePluginManagerInterface $destination_plugin_manager, MigrateFormPluginFactory $form_factory, DateFormatterInterface $date_formatter) {
+    $this->migrationPluginManager = $migration_plugin_manager;
+    $this->sourcePluginManager = $source_plugin_manager;
+    $this->destinationPluginManager = $destination_plugin_manager;
+    $this->formFactory = $form_factory;
+    $this->dateFormatter = $date_formatter;
+  }
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('plugin.manager.feeds_migrate.authentication_form'),
-      $container->get('plugin.manager.feeds_migrate.data_fetcher_form'),
-      $container->get('date.formatter'),
-      $container->get('queue'),
-      $container->get('module_handler')
+      $container->get('plugin.manager.migration'),
+      $container->get('plugin.manager.migrate.source'),
+      $container->get('plugin.manager.migrate.destination'),
+      $container->get('feeds_migrate.migrate_form_plugin_factory'),
+      $container->get('date.formatter')
     );
   }
 
   /**
    * {@inheritdoc}
    */
-  public function __construct(AuthenticationFormPluginManager $auth_plugins, DataFetcherFormPluginManager $data_fetcher_plugins, DateFormatterInterface $date_formatter, QueueFactory $queue, ModuleHandlerInterface $module_handler) {
-    $this->authPluginManager = $auth_plugins;
-    $this->dataFetcherPluginManager = $data_fetcher_plugins;
-    $this->dateFormatter = $date_formatter;
-    $this->queueFactory = $queue;
-    $this->moduleHandler = $module_handler;
+  protected function prepareEntity() {
+    // Initialize migration entity when editing an existing importer.
+    if ($this->entity->getMigrationId()) {
+      $this->migration = $this->entity->getMigration();
+    }
   }
 
   /**
@@ -70,60 +123,51 @@ class FeedsMigrateImporterForm extends EntityForm {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildForm($form, $form_state);
-    $entity = $this->entity;
 
-    $form['label'] = [
+    // SubFormStates work best when form tree structure is preserved.
+    $form['#tree'] = TRUE;
+
+    // Feeds migrate importer settings.
+    $form['importer_settings'] = [
+      '#type' => 'fieldset',
+      '#open' => TRUE,
+      '#title' => $this->t('Importer settings'),
+      '#tree' => FALSE,
+    ];
+    $form['importer_settings']['label'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Label'),
       '#maxlength' => 255,
-      '#default_value' => $entity->label(),
+      '#default_value' => $this->entity->label(),
       '#description' => $this->t('Label for the @type.', [
-        '@type' => $entity->getEntityType()->getLabel(),
+        '@type' => $this->entity->getEntityType()->getLabel(),
       ]),
       '#required' => TRUE,
+      '#parents' => ['label'],
     ];
 
-    $form['id'] = [
+    $entity_class = $this->entity->getEntityType()->getClass();
+    $form['importer_settings']['id'] = [
       '#type' => 'machine_name',
-      '#default_value' => $entity->id(),
+      '#default_value' => $this->entity->id(),
+      '#disabled' => !$this->entity->isNew(),
+      '#maxlength' => EntityTypeInterface::BUNDLE_MAX_LENGTH,
       '#machine_name' => [
-        'exists' => '\\' . $entity->getEntityType()->getClass() . '::load',
+        'exists' => '\\' . $entity_class . '::load',
         'replace_pattern' => '[^a-z0-9_]+',
         'replace' => '_',
+        'source' => ['importer_settings', 'label'],
       ],
-      '#disabled' => !$entity->isNew(),
-    ];
-
-    $sources = [];
-    $fetcher_types = [];
-    /** @var Migration $migration */
-    foreach (Migration::loadMultiple() as $migration) {
-      $sources[$migration->id()] = $migration->label();
-      $fetcher_types[$migration->source['data_fetcher_plugin']][]['value'] = $migration->id();
-    }
-    $form['source'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Migration Source'),
-      '#options' => $sources,
-      '#default_value' => $entity->source,
       '#required' => TRUE,
-      '#attributes' => [
-        'disabled' => !empty($entity->source),
-      ],
+      '#parents' => ['id'],
     ];
 
-    $form['plugin_settings'] = [
-      '#type' => 'vertical_tabs',
-      '#weight' => 99,
+    // Define import period intervals.
+    $options = [
+      FeedsMigrateImporterInterface::SCHEDULE_NEVER => $this->t('Off'),
+      FeedsMigrateImporterInterface::SCHEDULE_CONTINUOUSLY => $this->t('As often as possible'),
     ];
-    $form['period_settings'] = [
-      '#type' => 'details',
-      '#group' => 'plugin_settings',
-      '#title' => $this->t('Settings'),
-      '#tree' => FALSE,
-    ];
-
-    $times = [
+    $intervals = [
       900,
       1800,
       3600,
@@ -135,166 +179,367 @@ class FeedsMigrateImporterForm extends EntityForm {
       604800,
       2419200,
     ];
-    $times = array_combine($times, $times);
-    foreach ($times as &$time) {
-      $time = $this->dateFormatter->formatInterval($time);
-      $time = $this->t('Every @time', ['@time' => $time]);
+    $intervals = array_combine($intervals, $intervals);
+    foreach ($intervals as $interval) {
+      $options[$interval] = $this->t('Every @time', [
+        '@time' => $this->dateFormatter->formatInterval($interval),
+      ]);
     }
 
-    $additonal_options = [
-      FeedsMigrateImporterInterface::SCHEDULE_NEVER => $this->t('Off'),
-      FeedsMigrateImporterInterface::SCHEDULE_CONTINUOUSLY => $this->t('As often as possible'),
+    $form['importer_settings']['import_frequency'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Import frequency'),
+      '#options' => $options,
+      '#description' => $this->t('Choose how often the importer should run.'),
+      '#default_value' => $this->entity->getImportFrequency(),
+      '#parents' => ['importFrequency'],
     ];
 
-    $form['period_settings']['importPeriod'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Import period'),
-      '#options' => $additonal_options + $times,
-      '#description' => $this->t('Choose how often a importer should run.'),
-      '#default_value' => $entity->importPeriod,
-    ];
+    // Settings on how to process existing entities.
     $form['processor_settings'] = [
-      '#type' => 'details',
-      '#group' => 'plugin_settings',
-      '#title' => $this->t('Processor Settings'),
+      '#type' => 'fieldset',
+      '#open' => TRUE,
+      '#title' => $this->t('Processor settings'),
       '#tree' => FALSE,
     ];
     $form['processor_settings']['existing'] = [
       '#type' => 'radios',
       '#title' => $this->t('Update Existing Content'),
-      '#default_value' => $entity->existing ?: 0,
+      '#default_value' => $this->entity->getExisting() ?: FeedsMigrateImporterInterface::EXISTING_SKIP,
       '#options' => [
-        0 => $this->t('Do not update existing content'),
-        1 => $this->t('Replace existing content'),
-        2 => $this->t('Update existing content'),
+        FeedsMigrateImporterInterface::EXISTING_SKIP => $this->t('Do not update existing content'),
+        FeedsMigrateImporterInterface::EXISTING_REPLACE => $this->t('Replace existing content'),
+        FeedsMigrateImporterInterface::EXISTING_UPDATE => $this->t('Update existing content'),
       ],
+      '#parents' => ['existing'],
     ];
-    $form['processor_settings']['orphans'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Orphaned Items'),
-      '#default_value' => $entity->orphans ?: '__keep',
-      '#options' => [
-        '_keep' => $this->t('Keep'),
-        '_delete' => $this->t('Delete'),
-      ],
+    $form['processor_settings']['keep_orphans'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Keep orphaned Items?'),
+      '#default_value' => $this->entity->keepOrphans() ?: FALSE,
+      '#parents' => ['keepOrphans'],
     ];
 
-    $this->buildDataFetcherForms($form, $form_state);
-    $this->buildAuthForms($form, $form_state);
+    // Migration settings.
+    $form['migration_settings'] = [
+      '#type' => 'fieldset',
+      '#open' => TRUE,
+      '#title' => $this->t('Migration settings'),
+    ];
+
+    // Source.
+    $options = [];
+    /** @var \Drupal\Core\Entity\EntityInterface $migration */
+    foreach (Migration::loadMultiple() as $migration) {
+      $options[$migration->id()] = $migration->label();
+    }
+
+    $form['migration_settings']['migration_id'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Migration Source'),
+      '#options' => $options,
+      '#default_value' => $this->entity->getMigrationId(),
+      "#empty_option" => t('- Select Migration -'),
+      '#ajax' => [
+        'callback' => '::ajaxCallback',
+        'event' => 'change',
+        'wrapper' => 'feeds-migration-ajax-wrapper',
+        'effect' => 'fade',
+        'progress' => 'throbber',
+      ],
+      '#limit_validation_errors' => [],
+      '#required' => TRUE,
+      '#attributes' => [
+        'disabled' => !empty($this->entity->getMigrationId()),
+      ],
+      '#parents' => ['migrationId'],
+    ];
+
+    // Configure migration plugins.
+    $form['migration_settings']['wrapper'] = [
+      '#type' => 'container',
+      '#prefix' => '<div id="feeds-migration-ajax-wrapper">',
+      '#suffix' => '</div>',
+    ];
+
+    if ($this->migration) {
+      $form['migration_settings']['wrapper']['plugin_settings'] = [
+        '#type' => 'vertical_tabs',
+        '#parents' => ['plugin_settings'],
+      ];
+
+      $plugins = $this->getPlugins();
+      $weight = 0;
+      foreach ($plugins as $plugin_type => $plugin_id) {
+        $plugin = $this->loadMigratePlugin($plugin_type, $plugin_id);
+        $options = $this->getPluginOptionsList($plugin_type);
+        natcasesort($options);
+
+        $form[$plugin_type . '_wrapper'] = [
+          '#type' => 'details',
+          '#group' => 'plugin_settings',
+          '#title' => ucwords($plugin_type),
+          '#attributes' => [
+            'id' => 'plugin_settings--' . $plugin_type,
+            'class' => ['feeds-plugin-inline'],
+          ],
+          '#weight' => $weight,
+        ];
+
+        if (count($options) === 1) {
+          $form[$plugin_type . '_wrapper']['id'] = [
+            '#type' => 'value',
+            '#attributes' => ['disabled' => TRUE],
+            '#value' => $plugin_id,
+            '#plugin_type' => $plugin_type,
+            '#parents' => ['migration', $plugin_type, 'plugin'],
+          ];
+        }
+        else {
+          $form[$plugin_type . '_wrapper']['id'] = [
+            '#type' => 'select',
+            '#attributes' => ['disabled' => TRUE],
+            '#title' => $this->t('@type plugin', ['@type' => ucfirst($plugin_type)]),
+            '#options' => $options,
+            '#default_value' => $plugin_id,
+            '#ajax' => [
+              'callback' => '::ajaxCallback',
+              'event' => 'change',
+              'wrapper' => 'feeds-migration-ajax-wrapper',
+              'effect' => 'fade',
+              'progress' => 'throbber',
+            ],
+            '#plugin_type' => $plugin_type,
+            '#parents' => ['migration', $plugin_type, 'plugin'],
+          ];
+        }
+
+        // This is the small form that appears directly under the plugin
+        // dropdown.
+        $form[$plugin_type . '_wrapper']['options'] = [
+          '#type' => 'container',
+          '#prefix' => '<div id="feeds-migration-plugin-' . $plugin_type . '-options">',
+          '#suffix' => '</div>',
+        ];
+
+        if ($plugin && $this->formFactory->hasForm($plugin, 'option')) {
+          $option_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['options'], $form, $form_state);
+          $option_form = $this->formFactory->createInstance($plugin, $plugin_type, 'option', $this->migration);
+          $form[$plugin_type . '_wrapper']['options'] += $option_form->buildConfigurationForm([], $option_form_state);
+        }
+
+        // Configuration form for the plugin.
+        $form[$plugin_type . '_wrapper']['importer'] = [
+          '#type' => 'container',
+          '#prefix' => '<div id="feeds-migration-plugin-' . $plugin_type . '-importer">',
+          '#suffix' => '</div>',
+        ];
+
+        if ($plugin && $this->formFactory->hasForm($plugin, 'importer')) {
+          $config_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['importer'], $form, $form_state);
+          $config_form = $this->formFactory->createInstance($plugin, $plugin_type, 'importer', $this->migration);
+          $form[$plugin_type . '_wrapper']['importer'] += $config_form->buildConfigurationForm([], $config_form_state);
+        }
+
+        // Increment weight by 5 to allow other plugins to insert additional
+        // settings as vertical tabs.
+        // @see Drupal\feeds_migrate\Plugin\migrate\source\Form\UrlForm
+        $weight += 5;
+      }
+    }
+
     return $form;
   }
 
   /**
-   * @param $form
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * Returns a list of plugins on the migration, listed per type.
    *
-   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   * Would be nice to instantiate data parser plugin here but this will cause
+   * issues with us needing a real readable source.
+   *
+   * @return array
+   *   A list of plugins, listed per type.
+   *
+   * @todo move to a service class.
    */
-  protected function buildDataFetcherForms(&$form, FormStateInterface $form_state) {
-    $form['dataFetcherSettings'] = [
-      '#type' => 'details',
-      '#group' => 'plugin_settings',
-      '#title' => $this->t('Data Fetcher Settings'),
-      '#description' => $this->t('Select a migration source to configure the fetcher'),
-      '#tree' => TRUE,
-    ];
+  protected function getPlugins() {
+    $plugins = [];
 
-    /** @var Migration $migration */
-    foreach (Migration::loadMultiple() as $migration) {
-      $fetcher_types[$migration->source['data_fetcher_plugin']][]['value'] = $migration->id();
+    if ($this->migration) {
+      // Source.
+      $source = $this->migration->get('source');
+      if (isset($source['plugin'])) {
+        $plugins['source'] = $source['plugin'];
+      }
+
+      // Destination.
+      $destination = $this->migration->get('destination');
+      if (isset($destination['plugin'])) {
+        $plugins['destination'] = $destination['plugin'];
+      }
     }
 
-    foreach ($this->dataFetcherPluginManager->getDefinitions() as $id => $data_fetcher) {
-      $plugin = $this->dataFetcherPluginManager->createInstance($id);
-      $element = $plugin->buildForm($form['dataFetcherSettings'], $form_state);
-
-      $element += [
-        '#type' => 'container',
-        '#states' => [
-          'visible' => [
-            ':input[name="source"]' => $fetcher_types[$id],
-          ],
-        ],
-      ];
-
-      $form['dataFetcherSettings'][$id] = $element;
-    }
+    return $plugins;
   }
 
   /**
-   * @param $form
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * Load a Migrate Plugin based on type and id.
+   *
+   * @param string $type
+   *   The type of migrate plugin.
+   * @param string $plugin_id
+   *   The plugin identifier.
+   *
+   * @return object|null
+   *   The plugin, or NULL if type is not supported.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
-  protected function buildAuthForms(&$form, FormStateInterface $form_state) {
-    if (!$this->moduleHandler->moduleExists('key')) {
-      return;
-    }
-    $form['authSettings'] = [
-      '#type' => 'details',
-      '#group' => 'plugin_settings',
-      '#title' => $this->t('Authentication Settings'),
-      '#tree' => TRUE,
-    ];
+  protected function loadMigratePlugin($type, $plugin_id) {
+    /** @var \Drupal\migrate\Plugin\MigrationInterface $migration */
+    $migration = $this->migrationPluginManager->createInstance($this->migration->id(), $this->migration->toArray());
+    $plugin = NULL;
 
-    $form['authSettings']['auth_type'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Authentication Type'),
-      '#options' => [],
-      '#empty_option' => $this->t('- None -'),
-      '#default_value' => key($this->entity->authSettings ?: []),
-    ];
+    switch ($type) {
+      case 'source':
+        $plugin = $this->sourcePluginManager->createInstance($plugin_id, $migration->get('source'), $migration);
+        break;
 
-    foreach ($this->authPluginManager->getDefinitions() as $id => $authentication) {
-      $plugin = $this->authPluginManager->createInstance($id);
-      $element = $plugin->buildForm($form['authSettings'], $form_state);
-      $element += [
-        '#type' => 'container',
-        '#states' => [
-          'visible' => [
-            ':input[name*="auth_type"]' => ['value' => $id],
-          ],
-        ],
-      ];
-      $form['authSettings'][$id] = $element;
-      $form['authSettings']['auth_type']['#options'][$id] = $authentication['title'];
+      case 'destination':
+        $plugin = $this->destinationPluginManager->createInstance($plugin_id, $migration->get('destination'), $migration);
+        break;
     }
 
+    return $plugin;
+  }
+
+  /**
+   * Returns list of possible options for a certain plugin type.
+   *
+   * @param string $plugin_type
+   *   The plugin type to return possible values for.
+   *
+   * @return array
+   *   A list of choosable plugins.
+   *
+   * @todo move to a service class.
+   */
+  protected function getPluginOptionsList($plugin_type) {
+    switch ($plugin_type) {
+      case 'source':
+      case 'destination':
+        $manager = Drupal::service("plugin.manager.migrate.$plugin_type");
+        break;
+
+      default:
+        return [];
+    }
+
+    $options = [];
+    foreach ($manager->getDefinitions() as $id => $definition) {
+      // Filter out empty and null plugins.
+      if (in_array($id, ['null', 'empty'])) {
+        continue;
+      }
+      $options[$id] = isset($definition['label']) ? $definition['label'] : $id;
+    }
+
+    return $options;
+  }
+
+  /**
+   * Callback for ajax requests.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   *
+   * @return array
+   *   The form element to return.
+   */
+  public function ajaxCallback(array $form, FormStateInterface $form_state) {
+    return $form['migration_settings']['wrapper'];
   }
 
   /**
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    parent::validateForm($form, $form_state);
-    $auth_type = $form_state->getValue(['authSettings', 'auth_type']);
-    if (empty($auth_type)) {
-      $form_state->setValue('authSettings', []);
+    // Allow plugins to validate their settings.
+    if ($this->migration && $this->migration->id() === $this->entity->getMigrationId()) {
+      foreach ($this->getPlugins() as $plugin_type => $plugin_id) {
+        $plugin = $this->loadMigratePlugin($plugin_type, $plugin_id);
+
+        if ($plugin && isset($form[$plugin_type . '_wrapper']['options']) && $this->formFactory->hasForm($plugin, 'option')) {
+          $option_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['options'], $form, $form_state);
+          $option_form = $this->formFactory->createInstance($plugin, $plugin_type, 'option', $this->migration);
+          $option_form->validateConfigurationForm($form[$plugin_type . '_wrapper']['options'], $option_form_state);
+        }
+
+        if ($plugin && isset($form[$plugin_type . '_wrapper']['importer']) && $this->formFactory->hasForm($plugin, 'importer')) {
+          $config_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['importer'], $form, $form_state);
+          $config_form = $this->formFactory->createInstance($plugin, $plugin_type, 'importer', $this->migration);
+          $config_form->validateConfigurationForm($form[$plugin_type . '_wrapper']['importer'], $config_form_state);
+        }
+      }
+    }
+    // Save our migration entity.
+    elseif ($this->entity->getMigrationId()) {
+      $this->migration = $this->entity->getMigration();
     }
     else {
-      $auth_settings = $form_state->getValue('authSettings');
-      $form_state->setValue('authSettings', [$auth_type => $auth_settings[$auth_type]]);
-
-      /** @var \Drupal\feeds_migrate\AuthenticationFormInterface $plugin */
-      $plugin = $this->authPluginManager->createInstance($auth_type);
-      $plugin->validateForm($form, $form_state);
+      $this->migration = NULL;
     }
+  }
 
-    $migration = Migration::load($form_state->getValue('source'));
+  /**
+   * {@inheritdoc}
+   */
+  public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
+    parent::copyFormValuesToEntity($entity, $form, $form_state);
 
-    $fetcher_type = $migration->source['data_fetcher_plugin'];
-    $fetcher_settings = $form_state->getValue('dataFetcherSettings');
-    $form_state->setValue('dataFetcherSettings', [$fetcher_type => $fetcher_settings[$fetcher_type]]);
+    // Allow plugins to set values on the migration entity.
+    if ($this->migration && $this->migration->id() === $this->entity->getMigrationId()) {
+      // Map values from form directly to migration entity where possible.
+      $values = $form_state->getValue('migration');
+      foreach ($values as $key => $value) {
+        $this->migration->set($key, $value);
+      }
 
-    $plugin = $this->dataFetcherPluginManager->createInstance($fetcher_type);
-    $plugin->validateForm($form, $form_state);
+      foreach ($this->getPlugins() as $plugin_type => $plugin_id) {
+        $plugin = $this->loadMigratePlugin($plugin_type, $plugin_id);
+
+        if ($plugin && isset($form[$plugin_type . '_wrapper']['options']) && $this->formFactory->hasForm($plugin, 'option')) {
+          $option_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['options'], $form, $form_state);
+          $option_form = $this->formFactory->createInstance($plugin, $plugin_type, 'option', $this->migration);
+          $option_form->copyFormValuesToEntity($this->migration, $form[$plugin_type . '_wrapper']['options'], $option_form_state);
+        }
+
+        if ($plugin && isset($form[$plugin_type . '_wrapper']['importer']) && $this->formFactory->hasForm($plugin, 'importer')) {
+          $config_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['importer'], $form, $form_state);
+          $config_form = $this->formFactory->createInstance($plugin, $plugin_type, 'importer', $this->migration);
+          $config_form->copyFormValuesToEntity($this->migration, $form[$plugin_type . '_wrapper']['importer'], $config_form_state);
+        }
+      }
+    }
   }
 
   /**
    * {@inheritdoc}
    */
   public function save(array $form, FormStateInterface $form_state) {
-    $form_state->setRedirectUrl(Url::fromRoute('entity.feeds_migrate_importer.collection'));
-    return parent::save($form, $form_state);
+    // Copy migration overwrites to the feeds migrate importer entity.
+    $original_migration = $this->entity->getOriginalMigration();
+    $migration_config = [
+      'source' => DiffArray::diffAssocRecursive($this->migration->get('source'), $original_migration->get('source')),
+      'destination' => DiffArray::diffAssocRecursive($this->migration->get('destination'), $original_migration->get('destination')),
+    ];
+    $this->entity->set('migrationConfig', $migration_config);
+    $status = parent::save($form, $form_state);
+
+    // Redirect the user back to the listing route after the save operation.
+    $form_state->setRedirect('entity.feeds_migrate_importer.collection');
   }
 
 }

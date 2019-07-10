@@ -8,22 +8,25 @@ feeds_migrate.importer.*:
     label:
       type: label
       label: "Label"
-    source:
-      type: string
-      label: "Migration Source"
-    importPeriod:
+    importFrequency:
       type: integer
-      label: "Import periodicity"
+      label: "Import frequency"
     existing:
-      type: integer
-      label: "Existing items"
-    orphans:
       type: string
-      label: "Orphaned Items"
-    dataFetcherSettings:
-      type: sequence
-    authSettings:
-      type: sequence
-    lastRan:
-      type: integer
-      label: "Queued up for cron"
+      label: "Existing content"
+    keepOrphans:
+      type: boolean
+      label: "Keep orphaned Items"
+    migrationId:
+      type: string
+      label: 'Migration ID'
+    migrationConfig:
+      type: mapping
+      label: "Migration configuration"
+      mapping:
+        source:
+          type: ignore
+          label: 'Source'
+        destination:
+          type: ignore
+          label: 'Destination'

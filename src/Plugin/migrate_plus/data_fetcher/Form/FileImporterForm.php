@@ -8,17 +8,17 @@ use Drupal\Core\Render\Element;
 use Drupal\file\Entity\File;
 
 /**
- * The configuration form for the file migrate data fetcher plugin.
+ * The importer form for the file migrate data fetcher plugin.
  *
  * @MigrateForm(
- *   id = "file_form",
- *   title = @Translation("File Data Fetcher Plugin Form"),
- *   form_type = "configuration",
+ *   id = "file_importer_form",
+ *   title = @Translation("File Data Fetcher Plugin Importer Form"),
+ *   form_type = "importer",
  *   parent_id = "file",
  *   parent_type = "data_fetcher"
  * )
  */
-class FileForm extends DataFetcherFormPluginBase {
+class FileImporterForm extends DataFetcherFormPluginBase {
 
   /**
    * {@inheritdoc}
@@ -28,6 +28,7 @@ class FileForm extends DataFetcherFormPluginBase {
 
     $form['directory'] = [
       '#type' => 'textfield',
+      '#attributes' => ['disabled' => TRUE],
       '#title' => $this->t('File Upload Directory'),
       // @todo move this to defaultConfiguration
       '#default_value' => $source['data_fetcher_directory'] ?: 'public://migrate',
@@ -38,7 +39,7 @@ class FileForm extends DataFetcherFormPluginBase {
       foreach ($source['urls'] as $file_uri) {
         if (!empty($file_uri)) {
           /** @var \Drupal\file\FileInterface[] $file */
-          $files = \Drupal::entityTypeManager()
+          $files = $this->entityTypeManager
             ->getStorage('file')
             ->loadByProperties(['uri' => $file_uri]);
           if (!empty($files)) {
@@ -59,7 +60,7 @@ class FileForm extends DataFetcherFormPluginBase {
         'file_validate_extensions' => ['xml csv json'],
       ],
       '#upload_location' => $source['data_fetcher_directory'] ?: 'public://migrate',
-      '#required' => FALSE,
+      '#required' => TRUE,
       '#multiple' => TRUE,
     ];
 
@@ -89,9 +90,6 @@ class FileForm extends DataFetcherFormPluginBase {
    * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
-    // Handle file upload directory.
-    $entity->source['data_fetcher_directory'] = $form_state->getValue('directory');
-
     // Handle file uploads.
     unset($entity->source['urls']);
     $fids = $form_state->getValue('urls');

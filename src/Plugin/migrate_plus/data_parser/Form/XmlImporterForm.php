@@ -6,17 +6,17 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * The configuration form for the json migrate data parser plugin.
+ * The importer form for the json migrate data parser plugin.
  *
  * @MigrateForm(
- *   id = "simple_xml_form",
- *   title = @Translation("Simple Xml Data Parser Plugin Form"),
- *   form_type = "configuration",
- *   parent_id = "simple_xml",
+ *   id = "xml_importer_form",
+ *   title = @Translation("Xml Data Parser Plugin Importer Form"),
+ *   form_type = "importer",
+ *   parent_id = "xml",
  *   parent_type = "data_parser"
  * )
  */
-class SimpleXmlForm extends DataParserFormPluginBase {
+class XmlImporterForm extends DataParserFormPluginBase {
 
   /**
    * {@inheritdoc}
@@ -26,7 +26,7 @@ class SimpleXmlForm extends DataParserFormPluginBase {
 
     $form['item_selector'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Simple XML Item Selector'),
+      '#title' => $this->t('XML Item Selector'),
       '#default_value' => $source['item_selector'] ?: '',
       '#required' => TRUE,
     ];

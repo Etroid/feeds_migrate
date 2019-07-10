@@ -10,9 +10,9 @@ use Drupal\feeds_migrate\Plugin\MigrateFormPluginBase;
  * The configuration form for entity destinations.
  *
  * @MigrateForm(
- *   id = "default_value",
+ *   id = "default_value_form",
  *   title = @Translation("Default Value Process Plugin Form"),
- *   form = "configuration",
+ *   form_type = "configuration",
  *   parent_id = "default_value",
  *   parent_type = "process"
  * )

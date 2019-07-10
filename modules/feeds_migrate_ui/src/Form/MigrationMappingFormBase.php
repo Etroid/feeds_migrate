@@ -332,6 +332,10 @@ class MigrationMappingFormBase extends EntityForm {
    * {@inheritdoc}
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
+    // @todo similar to MigrationForm and FeedsMigrateImporterForm, let's move
+    //       the copyFormValuesToEntity logic to the form plugin itself so they can
+    //       set values. This will simplify the logic.
+
     // Add the mapping to the process section.
     $mapping = $this->mapping;
     $process = $entity->get('process') ?: [];
@@ -341,6 +345,7 @@ class MigrationMappingFormBase extends EntityForm {
     $entity->set('process', $process);
 
     // Add the unique values to the source section.
+    // @todo add support for fields with multiple properties
     $source = $entity->get('source');
     $ids = $source['ids'] ?: [];
     if ($this->unique) {
@@ -365,26 +370,20 @@ class MigrationMappingFormBase extends EntityForm {
     //      name: title
     //      label: Title
     //      selector: title
-
     $fields = $source['fields'] ?: [];
-    $foundField = FALSE;
-    foreach ($fields as $field) {
-      if ($field['name'] == $mapping['source']) {
-        $foundField = TRUE;
-        break;
+    foreach ($process as $destination => $info) {
+      // The source field ("get" plugin) will be stored at the first line.
+      $get = $info[0];
+      if (!array_search($get['source'], array_column($fields, 'name')) !== FALSE) {
+        $fields[] = [
+          'name' => $get['source'],
+          'label' => $get['source'],
+          'selector' => $get['source'],
+        ];
       }
     }
-    if (!$foundField) {
-      $newField = [
-        'name' => $mapping['source'],
-        'label' => $mapping['source'],
-        'selector' => $mapping['source'],
-      ];
-      $fields[] = $newField;
-      $source['fields'] = $fields;
-      $entity->set('source', $source);
-
-    }
+    $source['fields'] = $fields;
+    $entity->set('source', $source);
   }
 
   /**

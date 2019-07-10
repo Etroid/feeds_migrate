@@ -5,22 +5,22 @@
  * feeds_migrate.module
  */
 
+use Drupal\Core\Config\Entity\ConfigDependencyManager;
 use Drupal\feeds_migrate\Entity\FeedsMigrateImporter;
 use Drupal\migrate\Plugin\migrate\destination\EntityContentBase;
-use \Drupal\feeds_migrate\Plugin\migrate\destination\Form\EntityContentOptionForm;
 
 /**
  * Implements hook_cron().
  */
 function feeds_migrate_cron() {
-  $request_time = \Drupal::time()->getRequestTime();
-  $queue = \Drupal::queue('feeds_migrate_importer');
+  $request_time = Drupal::time()->getRequestTime();
+  $queue = Drupal::queue('feeds_migrate_importer');
 
   /** @var FeedsMigrateImporter $importer */
   foreach (FeedsMigrateImporter::loadMultiple() as $importer) {
-    if ($importer->needsImported() && $queue->createItem($importer->id())) {
+    if ($importer->needsImport() && $queue->createItem($importer->id())) {
       // Add timestamp to avoid queueing item more than once.
-      $importer->lastRan = $request_time;
+      $importer->setLastRun($request_time);
       $importer->save();
     }
   }
@@ -33,15 +33,15 @@ function feeds_migrate_cron() {
  */
 function feeds_migrate_migrate_source_info_alter(array &$plugins) {
   /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.source_form');
+  $manager = Drupal::service('plugin.manager.feeds_migrate.migrate.source_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each source form plugin and attach it to its parent_id plugin.
   foreach ($form_plugins as $form_plugin) {
     $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
-    $type = $form_plugin['type'] ?? 'configuration';
+    $type = $form_plugin['form_type'] ?? 'configuration';
     if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
-      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
+      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['id'];
     }
   }
 }
@@ -53,15 +53,15 @@ function feeds_migrate_migrate_source_info_alter(array &$plugins) {
  */
 function feeds_migrate_data_fetcher_info_alter(array &$plugins) {
   /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.data_fetcher_form');
+  $manager = Drupal::service('plugin.manager.feeds_migrate.migrate.data_fetcher_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each data_fetcher form plugin and attach it to its parent plugin.
   foreach ($form_plugins as $form_plugin) {
     $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
-    $type = $form_plugin['type'] ?? 'configuration';
+    $type = $form_plugin['form_type'] ?? 'configuration';
     if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
-      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
+      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['id'];
     }
   }
 }
@@ -73,15 +73,15 @@ function feeds_migrate_data_fetcher_info_alter(array &$plugins) {
  */
 function feeds_migrate_data_parser_info_alter(array &$plugins) {
   /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.data_parser_form');
+  $manager = Drupal::service('plugin.manager.feeds_migrate.migrate.data_parser_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each data_parser form plugin and attach it to its parent plugin.
   foreach ($form_plugins as $form_plugin) {
     $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
-    $type = $form_plugin['type'] ?? 'configuration';
+    $type = $form_plugin['form_type'] ?? 'configuration';
     if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
-      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
+      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['id'];
     }
   }
 }
@@ -96,20 +96,20 @@ function feeds_migrate_migrate_destination_info_alter(array &$plugins) {
   foreach ($plugins as &$plugin) {
     if ($plugin['class'] == EntityContentBase::class || is_subclass_of($plugin['class'], EntityContentBase::class)) {
       // Specify option form class for content entity destinations.
-      $plugin['feeds_migrate']['form']['option'] = EntityContentOptionForm::class;
+      $plugin['feeds_migrate']['form']['option'] = 'entity_content_option_form';
     }
   }
 
   /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.destination_form');
+  $manager = Drupal::service('plugin.manager.feeds_migrate.migrate.destination_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each destination form plugin and attach it to its parent plugin.
   foreach ($form_plugins as $form_plugin) {
     $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
-    $type = $form_plugin['type'] ?? 'configuration';
+    $type = $form_plugin['form_type'] ?? 'configuration';
     if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
-      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
+      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['id'];
     }
   }
 }
@@ -121,15 +121,40 @@ function feeds_migrate_migrate_destination_info_alter(array &$plugins) {
  */
 function feeds_migrate_migrate_process_info_alter(array &$plugins) {
   /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
-  $manager = \Drupal::service('plugin.manager.feeds_migrate.migrate.process_form');
+  $manager = Drupal::service('plugin.manager.feeds_migrate.migrate.process_form');
   $form_plugins = $manager->getDefinitions();
 
   // Iterate over each process form plugin and attach it to its parent plugin.
   foreach ($form_plugins as $form_plugin) {
     $parent_plugin_id = $form_plugin['parent_id'] ?? FALSE;
-    $type = $form_plugin['type'] ?? 'configuration';
+    $type = $form_plugin['form_type'] ?? 'configuration';
     if ($parent_plugin_id && $type && array_key_exists($parent_plugin_id, $plugins)) {
-      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['class'];
+      $plugins[$parent_plugin_id]['feeds_migrate']['form'][$type] = $form_plugin['id'];
     }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function feeds_migrate_form_migration_delete_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  /** @var Drupal\migrate_plus\Entity\MigrationInterface $migration */
+  $migration = $form_state->getBuildInfo()['callback_object']->getEntity();
+  // See which feeds migrate importers use this migration.
+  $dependency_count = 0;
+  /** @var \Drupal\Core\Config\ConfigManagerInterface $config_manager */
+  $config_manager = \Drupal::service('config.manager');
+  $dependents = $config_manager->findConfigEntityDependentsAsEntities('config', [$migration->getConfigDependencyName()]);
+  foreach ($dependents as $dependent) {
+    if ($dependent->getEntityType()->id() == 'feeds_migrate_importer') {
+      $dependency_count++;
+    }
+  }
+  // If there are any dependent imports, don't allow the delete.
+  if ($dependency_count) {
+    $form = [];
+    $caption = '<p>' . \Drupal::translation()
+        ->formatPlural($dependency_count, '%type is used by 1 feeds migrate importer on your site. You can not remove this migration until you have removed the feeds migrate importer that uses this migration.', '%type is used by @count feeds migrate importers on your site. You can not remove this migration until you have removed the feeds migrate importers that use this migration.', ['%type' => $migration->label()]) . '</p>';
+    $form['description'] = ['#markup' => $caption];
   }
 }

@@ -1,0 +1,7 @@
+type: module
+name: Feeds Migrate Test
+description: 'Test module for Feeds Migrate tests.'
+package: Testing
+core: 8.x
+dependencies:
+  - feeds_migrate:feeds_migrate

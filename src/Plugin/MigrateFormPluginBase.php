@@ -6,8 +6,8 @@ use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Plugin\PluginBase;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
 use Drupal\migrate_plus\Entity\MigrationInterface;
 use ReflectionClass;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -15,63 +15,56 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Base class for migrate plugins that have external configuration forms.
  */
-abstract class MigrateFormPluginBase implements MigrateFormPluginInterface {
+abstract class MigrateFormPluginBase extends PluginBase implements MigrateFormPluginInterface {
 
   use StringTranslationTrait;
   use DependencySerializationTrait;
 
   /**
-   * Plugin manager for migration plugins.
+   * The migrate plugin this form plugin is for.
    *
-   * @var \Drupal\migrate\Plugin\MigrationPluginManagerInterface
+   * @var \Drupal\Component\Plugin\PluginInspectionInterface
    */
-  protected $migrationPluginManager;
+  protected $migratePlugin;
 
   /**
-   * The migrate plugin.
-   *
-   * @var object
-   */
-  protected $plugin;
-
-  /**
-   * The migration entity.
+   * The migration.
    *
    * @var \Drupal\migrate_plus\Entity\MigrationInterface
    */
-  protected $entity;
+  protected $migration;
 
   /**
    * MigratePluginFormBase constructor.
    *
-   * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_plugin_manager
-   *   The plugin manager for config entity-based migrations.
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin ID for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
+   * @param \Drupal\Component\Plugin\PluginInspectionInterface $migrate_plugin
+   *   The migrate plugin instance this form plugin is for.
+   * @param \Drupal\migrate_plus\Entity\MigrationInterface $migration
+   *   The migration entity.
    */
-  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager) {
-    $this->migrationPluginManager = $migration_plugin_manager;
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, PluginInspectionInterface $migrate_plugin, MigrationInterface $migration) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->migratePlugin = $migrate_plugin;
+    $this->migration = $migration;
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container) {
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition, PluginInspectionInterface $migrate_plugin = NULL, MigrationInterface $migration = NULL) {
     return new static(
-      $container->get('plugin.manager.migration')
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $migrate_plugin,
+      $migration
     );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setPlugin(PluginInspectionInterface $plugin) {
-    $this->plugin = $plugin;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setEntity(MigrationInterface $entity) {
-    $this->entity = $entity;
   }
 
   /**
@@ -111,13 +104,13 @@ abstract class MigrateFormPluginBase implements MigrateFormPluginInterface {
    * @throws \ReflectionException
    */
   protected function getSetting($key) {
-    if (!empty($this->plugin)) {
+    if (!empty($this->migratePlugin)) {
       // Get configuration from plugin. We need to use reflection here as there
       // are no public methods to retrieve the plugin's configuration.
-      $class = new ReflectionClass(get_class($this->plugin));
+      $class = new ReflectionClass(get_class($this->migratePlugin));
       $property = $class->getProperty('configuration');
       $property->setAccessible(TRUE);
-      $configuration = $property->getValue($this->plugin);
+      $configuration = $property->getValue($this->migratePlugin);
 
       if (isset($configuration[$key])) {
         return $configuration[$key];

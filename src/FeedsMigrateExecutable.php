@@ -2,6 +2,11 @@
 
 namespace Drupal\feeds_migrate;
 
+use Drupal;
+use Drupal\migrate\Event\MigrateEvents;
+use Drupal\migrate\Event\MigrateImportEvent;
+use Drupal\migrate\Event\MigrateMapDeleteEvent;
+use Drupal\migrate\Event\MigrateMapSaveEvent;
 use Drupal\migrate\Event\MigratePostRowSaveEvent;
 use Drupal\migrate\Event\MigratePreRowSaveEvent;
 use Drupal\migrate\Event\MigrateRollbackEvent;
@@ -9,21 +14,31 @@ use Drupal\migrate\Event\MigrateRowDeleteEvent;
 use Drupal\migrate\MigrateException;
 use Drupal\migrate\MigrateExecutable;
 use Drupal\migrate\MigrateMessageInterface;
-use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\migrate\MigrateSkipRowException;
 use Drupal\migrate\Plugin\MigrateIdMapInterface;
-use Drupal\migrate\Event\MigrateEvents;
+use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\migrate\Row;
 use Drupal\migrate_plus\Event\MigrateEvents as MigratePlusEvents;
-use Drupal\migrate\Event\MigrateMapSaveEvent;
-use Drupal\migrate\Event\MigrateMapDeleteEvent;
-use Drupal\migrate\Event\MigrateImportEvent;
 use Drupal\migrate_plus\Event\MigratePrepareRowEvent;
 
 /**
  * Defines a migrate executable class for drush.
  */
 class FeedsMigrateExecutable extends MigrateExecutable {
+
+  /**
+   * Plugin manager for migration plugins.
+   *
+   * @var \Drupal\migrate\Plugin\MigrationPluginManagerInterface
+   */
+  protected $migrationPluginManager;
+
+  /**
+   * The configuration of the feeds migrate importer.
+   *
+   * @var \Drupal\feeds_migrate\FeedsMigrateImporterInterface
+   */
+  protected $importer;
 
   /**
    * Counters of map statuses.
@@ -92,8 +107,19 @@ class FeedsMigrateExecutable extends MigrateExecutable {
   /**
    * {@inheritdoc}
    */
-  public function __construct(MigrationInterface $migration, MigrateMessageInterface $message, array $options = []) {
-    parent::__construct($migration, $message);
+  public function __construct(FeedsMigrateImporterInterface $importer, MigrateMessageInterface $message, array $options = []) {
+    $this->importer = $importer;
+    /* @var \Drupal\migrate\Plugin\MigrationPluginManager $migration_manager */
+    $this->migrationPluginManager = Drupal::service('plugin.manager.migration');
+    /** @var \Drupal\migrate\Plugin\MigrationInterface $migration_plugin */
+    $migration_plugin = $this->migrationPluginManager->createInstance($importer->getMigrationId(), $importer->getMigration()->toArray());
+
+    parent::__construct($migration_plugin, $message);
+
+    if ($importer->getExisting() == FeedsMigrateImporterInterface::EXISTING_UPDATE) {
+      $importer->{$migration_plugin}->getIdMap()->prepareUpdate();
+    }
+
     if (isset($options['limit'])) {
       $this->itemLimit = $options['limit'];
     }
@@ -395,8 +421,10 @@ class FeedsMigrateExecutable extends MigrateExecutable {
   }
 
   /**
-   * @param \Drupal\migrate\Plugin\MigrationInterface $migration
+   * Import a single row.
+   *
    * @param \Drupal\migrate\Row $row
+   *   The row to be processed.
    */
   public function importRow(Row $row) {
     $id_map = $this->migration->getIdMap();
@@ -458,7 +486,10 @@ class FeedsMigrateExecutable extends MigrateExecutable {
   }
 
   /**
+   * Retrieve the migration.
+   *
    * @return \Drupal\migrate\Plugin\MigrationInterface
+   *   The migration to execute.
    */
   public function getMigration() {
     return $this->migration;
