@@ -1,0 +1,14 @@
+entity.migration.preview:
+  path: '/admin/structure/migrate/manage/{migration_group}/migrations/{migration}/preview'
+  defaults:
+    _controller: '\Drupal\migrate_preview\Controller\MigrationController::preview'
+    _title: 'Preview'
+    _migrate_group: true
+  requirements:
+    _permission: 'administer migrations'
+  options:
+    parameters:
+      migration:
+        type: entity:migration
+      migration_group:
+        type: entity:migration_group

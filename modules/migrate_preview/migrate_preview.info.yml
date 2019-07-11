@@ -1,0 +1,8 @@
+name: 'Migrate preview'
+description: 'Displays a preview of a migration.'
+core: 8.x
+type: module
+package: 'Migration'
+dependencies:
+  - drupal:migrate
+  - migrate_tools:migrate_tools
