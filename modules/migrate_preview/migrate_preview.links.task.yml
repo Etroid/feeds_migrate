@@ -1,0 +1,5 @@
+entity.migration.overview_preview:
+  title: Preview
+  route_name: entity.migration.preview
+  parent_id: entity.migration.overview
+  weight: 2.5
