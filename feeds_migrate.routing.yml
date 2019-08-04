@@ -1,4 +1,4 @@
-# AssetInjectorCsss routing definition
+# Feeds Migrate routing definition
 entity.feeds_migrate_importer.collection:
   path: '/admin/content/feeds-migrate'
   defaults:

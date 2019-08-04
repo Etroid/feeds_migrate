@@ -4,6 +4,7 @@ namespace Drupal\feeds_migrate;
 
 use Drupal\Component\Plugin\Factory\DefaultFactory;
 use Drupal\Component\Plugin\FallbackPluginManagerInterface;
+use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Entity\EntityFieldManager;
 use Drupal\Core\Extension\ModuleHandlerInterface;
