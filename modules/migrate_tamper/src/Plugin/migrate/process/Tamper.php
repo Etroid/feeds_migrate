@@ -2,7 +2,10 @@
 
 namespace Drupal\migrate_tamper\Plugin\migrate\process;
 
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface;
 use Drupal\migrate\MigrateExecutableInterface;
 use Drupal\migrate\MigrateSkipProcessException;
 use Drupal\migrate\MigrateSkipRowException;
@@ -24,7 +27,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   deriver = "Drupal\migrate_tamper\Plugin\Derivative\TamperProcessPluginDeriver"
  * )
  */
-class Tamper extends ProcessPluginBase implements ContainerFactoryPluginInterface {
+class Tamper extends ProcessPluginBase implements ContainerFactoryPluginInterface, MigrateFormPluginInterface {
 
   /**
    * The tamper plugin manager.
@@ -98,6 +101,27 @@ class Tamper extends ProcessPluginBase implements ContainerFactoryPluginInterfac
    */
   public function multiple() {
     return $this->multiple;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+    return [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
+    // @TODO
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
+    // @TODO
   }
 
   /**

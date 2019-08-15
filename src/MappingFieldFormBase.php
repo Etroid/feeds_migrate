@@ -197,7 +197,7 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
       ],
     ];
 
-    foreach ($plugins as $delta => $plugin_id) {
+    foreach ($plugins as $plugin_id => $label) {
       $plugin = $this->processPluginManager->createInstance($plugin_id);
       $plugin_form_type = $this->getPluginDefinition()['form_type'] ?? MigrateFormPluginInterface::FORM_TYPE_CONFIGURATION;
 
@@ -215,10 +215,10 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
         $form['process'][$plugin_id][$plugin_form_type]['weight'] = [
           '#type' => 'weight',
           '#title' => $this->t('Weight for @process_name', [
-            '@process_name' => $plugin_id,
+            '@process_name' => $label,
           ]),
           '#title_display' => 'invisible',
-          '#default_value' => $delta,
+          '#default_value' => $plugin_id,
           '#attributes' => [
             'class' => [
               'table-sort-weight',

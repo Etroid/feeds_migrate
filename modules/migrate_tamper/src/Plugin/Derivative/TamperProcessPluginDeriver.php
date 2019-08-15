@@ -49,6 +49,7 @@ class TamperProcessPluginDeriver extends DeriverBase implements ContainerDeriver
       $this->derivatives[$tamper_id]['handle_multiples'] = $tamper_definition['handle_multiples'];
       $this->derivatives[$tamper_id]['provider'] = $tamper_definition['provider'];
       $this->derivatives[$tamper_id]['tamper_plugin_id'] = $tamper_id;
+      $this->derivatives[$tamper_id]['feeds_migrate']['form']['configuration'] = 'tamper:' . $tamper_id;
     }
     return $this->derivatives;
   }
