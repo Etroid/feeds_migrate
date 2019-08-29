@@ -23,7 +23,10 @@ class DefaultValueForm extends MigrateFormPluginBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    return [];
+    return [
+      '#type' => 'textfield',
+      '#title' => $this->t('Value'),
+    ];
   }
 
   /**

@@ -107,7 +107,13 @@ class Tamper extends ProcessPluginBase implements ContainerFactoryPluginInterfac
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    return [];
+    // @todo replace with source definition from migration.
+    // @see ::getSourceDefinitionFromMigrateExecutable()
+    $tamper = $this->tamperManager->createInstance($this->pluginDefinition['tamper_plugin_id'], $this->configuration + [
+      'source_definition' => new SourceDefinition([]),
+    ]);
+
+    return $tamper->buildConfigurationForm($form, $form_state);
   }
 
   /**
