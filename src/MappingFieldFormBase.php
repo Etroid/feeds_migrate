@@ -162,9 +162,18 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
   }
 
   /**
-   * {@inheritdoc}
+   * Every field (property) can add one or many migration process plugins to
+   * prepare the data before it is stored.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   *
+   * @return array
+   *   The form structure.
    */
-  public function buildProcessPluginsConfigurationForm(array &$form, FormStateInterface $form_state) {
+  protected function buildProcessPluginsConfigurationForm(array &$form, FormStateInterface $form_state) {
     // The process plugin table, with config forms for each instance.
     $form['process'] = [
       '#tree' => TRUE,
