@@ -3,21 +3,20 @@
 namespace Drupal\feeds_migrate;
 
 use Drupal\Component\Plugin\Exception\PluginException;
-use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
+use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldTypePluginManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
 use Drupal\Core\Plugin\PluginBase;
 use Drupal\Core\Serialization\Yaml;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Drupal\feeds_migrate\Plugin\MigrateFormPluginBase;
 use Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory;
 use Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface;
-use Drupal\migrate_plus\Entity\MigrationInterface;
 use Drupal\migrate\Plugin\MigrateProcessInterface;
+use Drupal\migrate_plus\Entity\MigrationInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -59,11 +58,21 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
   protected $formFactory;
 
   /**
-   * The destination field or key.
+   * The destination field definition.
    *
-   * @var \Drupal\Core\Field\FieldDefinitionInterface|string
+   * @var \Drupal\Core\Field\FieldDefinitionInterface
    */
-  protected $destination;
+  protected $destinationField;
+
+  /**
+   * The destination key.
+   *
+   * This is filled out when we are not migrating into a standard Drupal field
+   * instance (e.g. table column name, virtual field etc...)
+   *
+   * @var string
+   */
+  protected $destinationKey;
 
   /**
    * Constructs a mapping field form base.
@@ -90,7 +99,9 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
     $this->processPluginManager = $process_plugin_manager;
     $this->formFactory = $form_factory;
 
-    $this->destination = $this->configuration['#destination']['field'] ?? $this->configuration['#destination']['key'];
+    // Set some properties.
+    $this->destinationField = $this->configuration['#destination']['#field'];
+    $this->destinationKey = $this->configuration['#destination']['key'];
     $this->configuration = NestedArray::mergeDeep($this->defaultConfiguration(), $configuration);
   }
 
@@ -119,9 +130,9 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
       'is_unique' => FALSE,
     ];
 
-    if ($this->destination instanceof FieldDefinitionInterface) {
+    if (isset($this->destinationField) && $this->destinationField instanceof FieldDefinitionInterface) {
       $config = [];
-      $field_properties = $this->getFieldProperties($this->destination);
+      $field_properties = $this->getFieldProperties($this->destinationField);
       foreach ($field_properties as $property => $info) {
         $config[$property][] = $default_config;
       }
@@ -180,28 +191,60 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $mapping = $this->configuration;
+    $field = $this->destinationField;
 
-    $form = [
-      '#title' => $this->t('Mapping for %field.', ['%field' => $this->getLabel($mapping)]),
-      '#type' => 'details',
-      '#group' => 'plugin_settings',
-      '#open' => TRUE,
-    ];
+    // If the field has one or more properties, iterate over them and render
+    // a mapping form.
+    if (isset($this->destinationField) && $this->destinationField instanceof FieldDefinitionInterface) {
+      /** @var \Drupal\Core\TypedData\TypedDataInterface[] $field_properties */
+      $field_properties = $this->getFieldProperties($field);
+      foreach ($field_properties as $property => $info) {
+        $form['properties'][$property] = [
+          '#title' => $this->t('Mapping for field property %property.', ['%property' => $info->getName()]),
+          '#type' => 'details',
+          '#group' => 'plugin_settings',
+          '#open' => TRUE,
+        ];
 
-    $form['source'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Source'),
-      '#default_value' => $mapping['source'],
-    ];
+        $form['properties'][$property]['source'] = [
+          '#type' => 'textfield',
+          '#title' => $this->t('Source'),
+          '#default_value' => $mapping['#properties'][$property]['source'] ?? '',
+        ];
 
-    $checked = array_key_exists($mapping['source'], $this->migration->source["ids"]);
-    $form['is_unique'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Unique Field'),
-      '#default_value' => $checked,
-    ];
+        $checked = array_key_exists($this->configuration['source'], $this->migration->source["ids"]);
+        $form['properties'][$property]['is_unique'] = [
+          '#type' => 'checkbox',
+          '#title' => $this->t('Unique Field'),
+          '#default_value' => $checked,
+        ];
 
-    $this->buildProcessPluginsConfigurationForm($form, $form_state);
+        $form['properties'][$property] += $this->buildProcessPluginsConfigurationForm([], $form_state, $property);
+      }
+    }
+    else {
+      $form = [
+        '#title' => $this->t('Mapping for %field.', ['%field' => $this->getLabel($mapping)]),
+        '#type' => 'details',
+        '#group' => 'plugin_settings',
+        '#open' => TRUE,
+      ];
+
+      $form['source'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Source'),
+        '#default_value' => $mapping['source'],
+      ];
+
+      $checked = array_key_exists($mapping['source'], $this->migration->source["ids"]);
+      $form['is_unique'] = [
+        '#type' => 'checkbox',
+        '#title' => $this->t('Unique Field'),
+        '#default_value' => $checked,
+      ];
+
+      $form += $this->buildProcessPluginsConfigurationForm([], $form_state);
+    }
 
     return $form;
   }
@@ -214,13 +257,28 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
    *   An associative array containing the structure of the form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
+   * @param string $property
+   *   The field property to render the process plugin table for.
    *
    * @return array
    *   The form structure.
    */
-  protected function buildProcessPluginsConfigurationForm(array &$form, FormStateInterface $form_state) {
-    // The process plugin table, with config forms for each instance.
+  protected function buildProcessPluginsConfigurationForm(array $form, FormStateInterface $form_state, $property = NULL) {
+    // Generate a unique HTML id for AJAX callback.
+    $ajax_id = implode('-', [
+      'feeds-migration-mapping',
+      $property,
+      'ajax-wrapper',
+    ]);
+
     $form['process'] = [
+      '#type' => 'container',
+      '#prefix' => "<div id='$ajax_id'>",
+      '#suffix' => "</div>",
+    ];
+
+    // The process plugin table, with config forms for each instance.
+    $form['process']['plugins'] = [
       '#tree' => TRUE,
       '#type' => 'table',
       '#header' => [
@@ -238,12 +296,11 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
       ],
       '#empty' => $this->t('No process plugins have been added yet.'),
       '#sticky' => TRUE,
-      '#prefix' => '<div id="feeds-migrate-process-ajax-wrapper">',
-      '#suffix' => '</div>',
+
     ];
 
     // Selector for adding new process plugin instances.
-    $form['add'] = [
+    $form['process']['add'] = [
       '#type' => 'select',
       '#options' => $this->getProcessPlugins(),
       '#empty_option' => $this->t('- Select a process plugin -'),
@@ -252,32 +309,44 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
         'event' => 'change',
         'method' => 'replace',
         'callback' => [$this, 'ajaxCallback'],
-        'wrapper' => 'feeds-migrate-process-ajax-wrapper',
+        'wrapper' => $ajax_id,
       ],
     ];
 
     // Create the plugin configuration form for the plugin that has just been
     // selected.
     // @todo load config forms for existing plugins as well.
-    $plugin_id = $form_state->getValue('add');
+    if ($property) {
+      $plugin_id = $form_state->getValue(['properties', $property, 'process', 'add']);
+    }
+    else {
+      $plugin_id = $form_state->getValue(['process', 'add']);
+    }
     $plugin = $this->preparePlugin($plugin_id);
     if ($plugin) {
       $delta = 1;
-      $form['process'][$delta] = $this->buildProcessRow($form, $form_state, $plugin, $delta);
+      $form['process']['plugins'][$delta] = $this->buildProcessRow($form, $form_state, $plugin, $delta);
     }
+
+    return $form;
   }
 
   /**
-   * Builds a single process row.
+   * Builds a single process plugin row.
    *
    * @param array $form
-   *   The complete mapping form.
+   *   An associative array containing the structure of the form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The current state of the complete form.
+   *   The current state of the form.
    * @param \Drupal\migrate\Plugin\MigrateProcessInterface $plugin
-   *   The process plugin.
+   *   The migrate process plugin.
    * @param int $delta
    *   The index number of the process plugin.
+   *
+   * @return array
+   *   The built table row.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
   protected function buildProcessRow(array $form, FormStateInterface $form_state, MigrateProcessInterface $plugin, $delta) {
     $ajax_delta = -1;
@@ -370,7 +439,8 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
    *   The process plugin table.
    */
   public function ajaxCallback(array $form, FormStateInterface $form_state) {
-    return $form['mapping'][$this->configuration['source']]['process'];
+    $triggering_element = $form_state->getTriggeringElement();
+    return NestedArray::getValue($form, array_slice($triggering_element['#array_parents'], 0, -1));
   }
 
   /**
@@ -421,16 +491,18 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
    *
    * @param \Drupal\Core\Field\FieldDefinitionInterface $field
    *
-   * @return array
+   * @return \Drupal\Core\TypedData\TypedDataInterface[]
+   *   An array of property objects implementing the TypedDataInterface, keyed
+   *   by property name.
    */
-  protected function getFieldProperties($field) {
+  protected function getFieldProperties(FieldDefinitionInterface $field) {
     $field_properties = [];
 
     try {
       $item_instance = $this->fieldTypeManager->createInstance($field->getType(), [
         'name' => NULL,
         'parent' => NULL,
-        'field_definition' => $field
+        'field_definition' => $field,
       ]);
 
       $field_properties = $item_instance->getProperties();
