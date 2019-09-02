@@ -2,14 +2,16 @@
 
 namespace Drupal\feeds_migrate\Plugin;
 
+use Drupal\Component\Plugin\ConfigurableInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Plugin\PluginFormInterface;
 
 /**
  * Interface for migrate plugins that have external configuration forms.
  */
-interface MigrateFormPluginInterface extends ContainerFactoryPluginInterface {
+interface MigrateFormPluginInterface extends PluginFormInterface, ConfigurableInterface, ContainerFactoryPluginInterface {
 
   /**
    * Indicates that the form is displayed in the context of a migration.
@@ -61,6 +63,9 @@ interface MigrateFormPluginInterface extends ContainerFactoryPluginInterface {
    *   A nested array of form elements comprising the form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
+   *
+   * @deprecated This will be removed in favor ::getConfiguration.
+   * Plugins should not save its configuration directly on the parent entity.
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state);
 
