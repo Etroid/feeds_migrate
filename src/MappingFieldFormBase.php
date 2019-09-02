@@ -59,6 +59,13 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
   protected $formFactory;
 
   /**
+   * The destination field or key.
+   *
+   * @var \Drupal\Core\Field\FieldDefinitionInterface|string
+   */
+  protected $destination;
+
+  /**
    * Constructs a mapping field form base.
    *
    * @param array $configuration
@@ -82,6 +89,9 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
     $this->fieldTypeManager = $field_type_manager;
     $this->processPluginManager = $process_plugin_manager;
     $this->formFactory = $form_factory;
+
+    $this->destination = $this->configuration['#destination']['field'] ?? $this->configuration['#destination']['key'];
+    $this->configuration = NestedArray::mergeDeep($this->defaultConfiguration(), $configuration);
   }
 
   /**
@@ -97,6 +107,41 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
       $container->get('plugin.manager.field.field_type'),
       $container->get('feeds_migrate.migrate_form_plugin_factory')
     );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function defaultConfiguration() {
+    $config = $default_config = [
+      'source' => '',
+      'process' => [],
+      'is_unique' => FALSE,
+    ];
+
+    if ($this->destination instanceof FieldDefinitionInterface) {
+      $config = [];
+      $field_properties = $this->getFieldProperties($this->destination);
+      foreach ($field_properties as $property => $info) {
+        $config[$property][] = $default_config;
+      }
+    }
+
+    return $config;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getConfiguration() {
+    return $this->configuration;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setConfiguration(array $configuration) {
+    $this->configuration = $configuration;
   }
 
   /**
@@ -369,6 +414,32 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
   public function isUnique(array &$form, FormStateInterface $form_state) {
     $unique = $form_state->getValue('is_unique');
     return $unique;
+  }
+
+  /**
+   * Retrieve all field properties that are not calculated.
+   *
+   * @param \Drupal\Core\Field\FieldDefinitionInterface $field
+   *
+   * @return array
+   */
+  protected function getFieldProperties($field) {
+    $field_properties = [];
+
+    try {
+      $item_instance = $this->fieldTypeManager->createInstance($field->getType(), [
+        'name' => NULL,
+        'parent' => NULL,
+        'field_definition' => $field
+      ]);
+
+      $field_properties = $item_instance->getProperties();
+    }
+    catch (\Exception $e) {
+      // todo log error.
+    }
+
+    return $field_properties;
   }
 
   /**

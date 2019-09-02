@@ -2,6 +2,7 @@
 
 namespace Drupal\feeds_migrate;
 
+use Drupal\Component\Plugin\ConfigurableInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\PluginFormInterface;
@@ -11,7 +12,7 @@ use Drupal\Core\Plugin\PluginFormInterface;
  *
  * @package Drupal\feeds_migrate
  */
-interface MappingFieldFormInterface extends PluginFormInterface, ContainerFactoryPluginInterface {
+interface MappingFieldFormInterface extends PluginFormInterface, ConfigurableInterface, ContainerFactoryPluginInterface {
 
   /**
    * Get a mapping field's key.
