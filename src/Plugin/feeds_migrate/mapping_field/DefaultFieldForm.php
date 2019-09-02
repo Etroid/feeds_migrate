@@ -98,46 +98,4 @@ class DefaultFieldForm extends MappingFieldFormBase {
     return $mapping;
   }
 
-  /**
-   * Retrieve all field properties that are not calculated.
-   *
-   * @param \Drupal\Core\Field\FieldDefinitionInterface $field
-   *
-   * @return array
-   */
-  protected function getFieldProperties($field) {
-    $field_properties = [];
-
-    try {
-      $item_instance = $this->fieldTypeManager->createInstance($field->getType(), [
-        'name' => NULL,
-        'parent' => NULL,
-        'field_definition' => $field
-      ]);
-
-      $field_properties = $item_instance->getProperties();
-    }
-    catch (\Exception $e) {
-      // todo log error.
-    }
-
-    return $field_properties;
-  }
-
-  /**
-   * Returns whether the field is a unique field in the migration source.
-   *
-   * @param array $form
-   *   An associative array containing the structure of the form.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The current state of the form.
-   *
-   * @return bool
-   *   TRUE if unique, FALSE if not.
-   */
-  public function isUnique(array &$form, FormStateInterface $form_state) {
-    $unique = $form_state->getValue('is_unique');
-    return $unique;
-  }
-
 }
