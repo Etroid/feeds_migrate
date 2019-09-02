@@ -71,7 +71,7 @@ abstract class MigrateFormPluginBase extends PluginBase implements MigrateFormPl
    * {@inheritdoc}
    */
   public function defaultConfiguration() {
-    return [];
+    return ['plugin' => $this->pluginId];
   }
 
   /**
@@ -101,6 +101,17 @@ abstract class MigrateFormPluginBase extends PluginBase implements MigrateFormPl
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     // This function will replace copyFormValuesToEntity.
     // Saves the form state values in the plugin configuration.
+    // Apply submitted form state to configuration.
+    $values = $form_state->getValues();
+    foreach ($values as $key => $value) {
+      if (array_key_exists($key, $this->configuration)) {
+        $this->configuration[$key] = $value;
+      }
+      else {
+        // Remove from form state.
+        unset($values[$key]);
+      }
+    }
   }
 
   /**
