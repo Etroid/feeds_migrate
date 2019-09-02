@@ -21,19 +21,35 @@ class DefaultValueForm extends MigrateFormPluginBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @See \Drupal\migrate\Plugin\migrate\process\DefaultValue
    */
-  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    return [
-      '#type' => 'textfield',
-      '#title' => $this->t('Value'),
+  public function defaultConfiguration() {
+    return parent::defaultConfiguration() + [
+      'default_value' => NULL,
+      'strict' => FALSE,
     ];
   }
 
   /**
    * {@inheritdoc}
    */
-  public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
-    // @TODO
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+    $form['default_value'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Default value'),
+      '#description' => $this->t('The fixed default value to apply.'),
+      '#default_value' => $this->configuration['default_value'],
+    ];
+
+    $form['strict'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Use strict value checking'),
+      '#description' => $this->t('When checked, applies default value when input value is NULL.'),
+      '#default_value' => $this->configuration['strict'],
+    ];
+
+    return $form;
   }
 
 }
