@@ -8,11 +8,10 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
 use Drupal\Core\Url;
-use Drupal\feeds_migrate\Annotation\MigrateForm;
+use Drupal\feeds_migrate\MappingFieldFormManager;
 use Drupal\feeds_migrate\MigrationEntityHelperManager;
 use Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory;
 use Drupal\feeds_migrate\Plugin\PluginFormFactory;
-use Drupal\feeds_migrate\MappingFieldFormManager;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
 use Drupal\migrate_plus\Entity\MigrationInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -30,6 +29,8 @@ class MigrationMappingFormBase extends EntityForm {
   const CUSTOM_DESTINATION_KEY = '_custom';
 
   /**
+   * Migration Entity Helper Manager.
+   *
    * @var \Drupal\feeds_migrate\MigrationEntityHelperManager
    */
   protected $migrationEntityHelperManager;
