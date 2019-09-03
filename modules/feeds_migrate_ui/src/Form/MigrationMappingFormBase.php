@@ -321,6 +321,10 @@ class MigrationMappingFormBase extends EntityForm {
       $plugin_configuration = $form_plugin->getConfiguration();
 
       foreach ($plugin_configuration as $destination => $mapping) {
+        if (!isset($mapping['source'])) {
+          continue;
+        }
+
         // We always start with the get plugin to obtain the source value.
         $source = $mapping['source'];
         $process[$destination][] = [
