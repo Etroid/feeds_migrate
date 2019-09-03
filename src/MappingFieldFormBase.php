@@ -124,18 +124,22 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
    * {@inheritdoc}
    */
   public function defaultConfiguration() {
-    $config = $default_config = [
+    $config = [];
+    $default_config = [
       'source' => '',
-      'process' => [],
       'is_unique' => FALSE,
+      'process' => [],
     ];
 
     if (isset($this->destinationField) && $this->destinationField instanceof FieldDefinitionInterface) {
-      $config = [];
       $field_properties = $this->getFieldProperties($this->destinationField);
       foreach ($field_properties as $property => $info) {
-        $config[$property][] = $default_config;
+        $destination_key = implode('/', [$this->destinationKey, $property]);
+        $config[$destination_key] = $default_config;
       }
+    }
+    else {
+      $config[$this->destinationKey] = $default_config;
     }
 
     return $config;
@@ -282,8 +286,9 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
       '#tree' => TRUE,
       '#type' => 'table',
       '#header' => [
+        $this->t('Plugin ID'),
         $this->t('Label'),
-        $this->t('Settings'),
+        $this->t('Configuration'),
         $this->t('Weight'),
         $this->t('Remove'),
       ],
@@ -355,16 +360,20 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
 
     $row = ['#attributes' => ['class' => ['draggable', 'tabledrag-leaf']]];
 
+    $row['plugin_id'] = [
+      '#type' => 'hidden',
+      '#default_value' => $plugin->getPluginId(),
+    ];
     $row['label'] = [
       '#type' => 'textfield',
       '#default_value' => $plugin->getPluginDefinition()['label'],
     ];
-    $row['settings'] = [];
+    $row['configuration'] = [];
 
     if ($this->formFactory->hasForm($plugin, $plugin_form_type)) {
-      $config_form_state = SubformState::createForSubform($row['settings'], $form, $form_state);
+      $config_form_state = SubformState::createForSubform($row['configuration'], $form, $form_state);
       $config_form = $this->formFactory->createInstance($plugin, 'process', 'configuration', $this->migration);
-      $row['settings'] += $config_form->buildConfigurationForm([], $config_form_state);
+      $row['configuration'] += $config_form->buildConfigurationForm([], $config_form_state);
     }
 
     $row['weight'] = [
@@ -447,8 +456,6 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
    * {@inheritdoc}
    */
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
-    $mapping = $this->getConfigurationFormMapping($form, $form_state);
-
     // @todo iterate over all process plugins and execute
     //       validateConfigurationForm on them.
   }
@@ -457,33 +464,39 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
    * {@inheritdoc}
    */
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
-    $mapping = $this->getConfigurationFormMapping($form, $form_state);
+    $values = $form_state->getValues();
 
-    $unique = $this->isUnique($form, $form_state);
+    if (isset($values['properties'])) {
+      foreach ($values['properties'] as $property => $info) {
+        $destination_key = implode('/', [$this->destinationKey, $property]);
+        $this->configuration[$destination_key]['source'] = $info['source'];
+        $this->configuration[$destination_key]['is_unique'] = $info['is_unique'];
 
-    // @todo iterate over all process plugins and execute
-    //       submitConfigurationForm on them.
-  }
+        $process_plugins = $info['process']['plugins'];
+        foreach ($process_plugins as $delta => $plugin_info) {
+          // Load migrate process plugin.
+          $plugin_id = $plugin_info['plugin_id'];
+          $plugin = $this->preparePlugin($plugin_id);
 
-  /**
-   * {@inheritdoc}
-   */
-  public function getConfigurationFormMapping(array &$form, FormStateInterface $form_state) {
-    $mapping = [
-      'plugin' => 'get',
-      'source' => $form_state->getValue('source', NULL),
-      '#process' => [], // @todo get process lines from each plugin (i.e. tamper)
-    ];
+          // Find the plugin's form.
+          $form_plugin = $this->formFactory->createInstance($plugin, 'process', 'configuration', $this->migration);
+          $subform = &$form['properties'][$property]['process']['plugins'][$delta]['configuration'];
+          $subform_state = SubformState::createForSubform($subform, $form, $form_state);
+          // Have the plugin save its configuration.
+          $form_plugin->submitConfigurationForm($subform, $subform_state);
 
-    return $mapping;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function isUnique(array &$form, FormStateInterface $form_state) {
-    $unique = $form_state->getValue('is_unique');
-    return $unique;
+          // Retrieve the plugin configuration and save on the migration entity.
+          $plugin_configuration = $form_plugin->getConfiguration();
+          $this->configuration[$destination_key]['process'][] = $plugin_configuration;
+        }
+      }
+    }
+    else {
+      $destination_key = $this->destinationKey;
+      $this->configuration[$destination_key]['source'] = $values['source'];
+      $this->configuration[$destination_key]['is_unique'] = $values['is_unique'];
+      // @todo do the same for process plugins.
+    }
   }
 
   /**
