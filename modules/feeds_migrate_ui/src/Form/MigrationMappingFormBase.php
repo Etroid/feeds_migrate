@@ -307,84 +307,50 @@ class MigrationMappingFormBase extends EntityForm {
     /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
     $migration = $this->entity;
 
-    // Mapping Field Plugin validation.
-    if ($this->key) {
-      $plugin = $this->mappingFieldManager->getMappingFieldInstance($this->mapping, $migration);
-      $plugin_form_state = SubformState::createForSubform($form['mapping'][$this->key], $form, $form_state);
+    // Get migration configuration(s).
+    $source_config = $migration->get('source') ?: [];
+    $process_config = $migration->get('process') ?: [];
 
-      if ($plugin) {
-        $plugin->submitConfigurationForm($form, $plugin_form_state);
-        // Copy mapping values from plugin.
-        $mapping = $plugin->getConfigurationFormMapping($form, $plugin_form_state);
-        $mapping['#destination']['key'] = $this->key;
+    $form_plugin = $this->mappingFieldManager->getMappingFieldInstance($this->mapping, $migration);
+    if ($form_plugin) {
+      $subform = &$form['mapping'][$this->key];
+      $subform_state = SubformState::createForSubform($subform, $form, $form_state);
+      $form_plugin->submitConfigurationForm($subform, $subform_state);
 
-        $this->mapping = $mapping;
+      // Retrieve the mapping configuration and save on the migration entity.
+      $plugin_configuration = $form_plugin->getConfiguration();
 
-        // Copy unique value from plugin.
-        $unique = $plugin->isUnique($form, $plugin_form_state);
-        $this->unique = $unique;
-      }
-    }
-
-    parent::submitForm($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
-    // @todo similar to MigrationForm and FeedsMigrateImporterForm, let's move
-    //       the copyFormValuesToEntity logic to the form plugin itself so they can
-    //       set values. This will simplify the logic.
-
-    // Add the mapping to the process section.
-    $mapping = $this->mapping;
-    $process = $entity->get('process') ?: [];
-    $process = array_merge($process, $this->migrationEntityHelper()
-      ->processMapping($mapping));
-
-    $entity->set('process', $process);
-
-    // Add the unique values to the source section.
-    // @todo add support for fields with multiple properties
-    $source = $entity->get('source');
-    $ids = $source['ids'] ?: [];
-    if ($this->unique) {
-      // Is unique, make sure it's there.
-      if (!array_key_exists($mapping["source"], $ids)) {
-        // Doesn't exist, so add it.
-        $ids[$mapping["source"]] = ['type' => 'string'];
-      }
-    }
-    else {
-      // Is not unique, make sure it's not there.
-      if (array_key_exists($mapping["source"], $ids)) {
-        // Doesn't exist, so add it.
-        unset($ids[$mapping["source"]]);
-      }
-    }
-    $source['ids'] = $ids;
-
-    // Add the fields to the source section.
-    //    fields:
-    //      -
-    //      name: title
-    //      label: Title
-    //      selector: title
-    $fields = $source['fields'] ?: [];
-    foreach ($process as $destination => $info) {
-      // The source field ("get" plugin) will be stored at the first line.
-      $get = $info[0];
-      if (!array_search($get['source'], array_column($fields, 'name')) !== FALSE) {
-        $fields[] = [
-          'name' => $get['source'],
-          'label' => $get['source'],
-          'selector' => $get['source'],
+      foreach ($plugin_configuration as $destination => $mapping) {
+        // We always start with the get plugin to obtain the source value.
+        $source = $mapping['source'];
+        $process[$destination][] = [
+          'plugin' => 'get',
+          'source' => $source,
         ];
+        // Now merge in all process plugins.
+        $process[$destination] = array_merge($process[$destination], $mapping['process']);
+
+        // Save off field properties in source.
+        if (array_search($source, array_column($source_config['fields'], 'name')) === FALSE) {
+          $source_config['fields'][] = [
+            'name' => $source,
+            'label' => $source,
+            'selector' => $source,
+          ];
+        }
+
+        // Handle unique field values.
+        if ($mapping['is_unique']) {
+          $source_config['ids'][$source] = ['type' => 'string'];
+        }
+        else {
+          unset($source_config['ids'][$source]);
+        }
       }
     }
-    $source['fields'] = $fields;
-    $entity->set('source', $source);
+
+    $migration->set('source', $source_config);
+    $migration->set('process', $process_config);
   }
 
   /**
