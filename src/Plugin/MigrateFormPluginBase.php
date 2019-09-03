@@ -3,6 +3,7 @@
 namespace Drupal\feeds_migrate\Plugin;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;
+use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -52,6 +53,8 @@ abstract class MigrateFormPluginBase extends PluginBase implements MigrateFormPl
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->migratePlugin = $migrate_plugin;
     $this->migration = $migration;
+
+    $this->configuration = NestedArray::mergeDeep($this->defaultConfiguration(), $configuration);
   }
 
   /**
