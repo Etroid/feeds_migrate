@@ -151,7 +151,7 @@ abstract class UrlFormBase extends SourceFormPluginBase {
 
       if ($plugin && $this->formFactory->hasForm($plugin, 'option')) {
         $option_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['options'], $form, $form_state);
-        $option_form = $this->formFactory->createInstance($plugin, $plugin_type, 'option', $this->migration);
+        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->migration);
         $form[$plugin_type . '_wrapper']['options'] += $option_form->buildConfigurationForm([], $option_form_state);
       }
 
@@ -164,7 +164,7 @@ abstract class UrlFormBase extends SourceFormPluginBase {
 
       if ($plugin && $this->formFactory->hasForm($plugin, $plugin_form_type)) {
         $config_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper'][$plugin_form_type], $form, $form_state);
-        $config_form = $this->formFactory->createInstance($plugin, $plugin_type, $plugin_form_type, $this->migration);
+        $config_form = $this->formFactory->createInstance($plugin, $plugin_form_type, $this->migration);
         $form[$plugin_type . '_wrapper'][$plugin_form_type] += $config_form->buildConfigurationForm([], $config_form_state);
       }
 
@@ -187,13 +187,13 @@ abstract class UrlFormBase extends SourceFormPluginBase {
 
       if ($plugin && isset($form[$plugin_type . '_wrapper']['option']) && $this->formFactory->hasForm($plugin, 'option')) {
         $option_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['options'], $form, $form_state);
-        $option_form = $this->formFactory->createInstance($plugin, $plugin_type, 'option', $this->migration);
+        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->migration);
         $option_form->validateConfigurationForm($form[$plugin_type . '_wrapper']['option'], $option_form_state);
       }
 
       if ($plugin && isset($form[$plugin_type . '_wrapper'][$plugin_form_type]) && $this->formFactory->hasForm($plugin, $plugin_form_type)) {
         $config_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper'][$plugin_form_type], $form, $form_state);
-        $config_form = $this->formFactory->createInstance($plugin, $plugin_type, $plugin_form_type, $this->migration);
+        $config_form = $this->formFactory->createInstance($plugin, $plugin_form_type, $this->migration);
         $config_form->validateConfigurationForm($form[$plugin_type . '_wrapper'][$plugin_form_type], $config_form_state);
       }
     }
@@ -228,13 +228,13 @@ abstract class UrlFormBase extends SourceFormPluginBase {
 
       if ($plugin && isset($form[$plugin_type . '_wrapper']['options']) && $this->formFactory->hasForm($plugin, 'option')) {
         $option_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['options'], $form, $form_state);
-        $option_form = $this->formFactory->createInstance($plugin, $plugin_type, 'option', $this->migration);
+        $option_form = $this->formFactory->createInstance($plugin, 'option', $this->migration);
         $option_form->copyFormValuesToEntity($entity, $form[$plugin_type . '_wrapper']['options'], $option_form_state);
       }
 
       if ($plugin && isset($form[$plugin_type . '_wrapper'][$plugin_form_type]) && $this->formFactory->hasForm($plugin, $plugin_form_type)) {
         $config_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper'][$plugin_form_type], $form, $form_state);
-        $config_form = $this->formFactory->createInstance($plugin, $plugin_type, $plugin_form_type, $this->migration);
+        $config_form = $this->formFactory->createInstance($plugin, $plugin_form_type, $this->migration);
         $config_form->copyFormValuesToEntity($entity, $form[$plugin_type . '_wrapper'][$plugin_form_type], $config_form_state);
       }
     }
