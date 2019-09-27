@@ -4,10 +4,9 @@ namespace Drupal\feeds_migrate;
 
 use Drupal\Component\Plugin\Factory\DefaultFactory;
 use Drupal\Component\Plugin\FallbackPluginManagerInterface;
-use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Cache\CacheBackendInterface;
-use Drupal\Core\Entity\EntityFieldManager;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
 use Drupal\migrate_plus\Entity\MigrationInterface;
 
@@ -53,14 +52,11 @@ class MappingFieldFormManager extends DefaultPluginManager implements MappingFie
   /**
    * {@inheritdoc}
    */
-  public function getPluginIdFromMapping(array $mapping) {
-    if (!empty($mapping['#destination']['#field'])) {
+  public function getPluginIdFromField(FieldDefinitionInterface $field = NULL) {
+    if (!empty($field)) {
       $definitions = $this->getDefinitions();
-
-      /** @var \Drupal\Core\Field\FieldDefinitionInterface $destination_field */
-      $destination_field = $mapping['#destination']['#field'];
       foreach ($definitions as $plugin_id => $definition) {
-        if (in_array($destination_field->getType(), $definition['fields'])) {
+        if (in_array($field->getType(), $definition['fields'])) {
           return $plugin_id;
         }
       }
@@ -70,27 +66,12 @@ class MappingFieldFormManager extends DefaultPluginManager implements MappingFie
   }
 
   /**
-   * Get a migration mapping plugin instance for a given migration mapping.
-   *
-   * @param array $mapping
-   *   Associative array with a migration mapping keyed by destination field.
-   * @param \Drupal\migrate_plus\Entity\MigrationInterface $migration
-   *   The migration object.
-   *
-   * @return \Drupal\feeds_migrate\MappingFieldFormInterface
-   *   A migration mapping plugin instance
-   */
-  public function getMappingFieldInstance(array $mapping, MigrationInterface $migration) {
-    $plugin_id = $this->getPluginIdFromMapping($mapping);
-    return $this->createInstance($plugin_id, $mapping, $migration);
-  }
-
-  /**
    * {@inheritdoc}
    */
   public function createInstance($plugin_id, array $configuration = [], MigrationInterface $migration = NULL) {
     $plugin_definition = $this->getDefinition($plugin_id);
     $plugin_class = DefaultFactory::getPluginClass($plugin_id, $plugin_definition);
+
     // If the plugin provides a factory method, pass the container to it.
     if (is_subclass_of($plugin_class, 'Drupal\Core\Plugin\ContainerFactoryPluginInterface')) {
       $plugin = $plugin_class::create(\Drupal::getContainer(), $configuration, $plugin_id, $plugin_definition, $migration);
