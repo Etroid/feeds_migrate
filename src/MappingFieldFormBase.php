@@ -11,11 +11,9 @@ use Drupal\Core\Field\FieldTypePluginManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
 use Drupal\Core\Plugin\PluginBase;
-use Drupal\Core\Serialization\Yaml;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory;
 use Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface;
-use Drupal\migrate\Plugin\MigrateProcessInterface;
 use Drupal\migrate_plus\Entity\MigrationInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -58,6 +56,13 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
   protected $formFactory;
 
   /**
+   * Helper service for migration entity.
+   *
+   * @var \Drupal\feeds_migrate\MigrationHelper
+   */
+  protected $migrationHelper;
+
+  /**
    * The destination field definition.
    *
    * @var \Drupal\Core\Field\FieldDefinitionInterface
@@ -91,18 +96,21 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
    *   The manager for field types.
    * @param \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory $form_factory
    *   The factory for feeds migrate form plugins.
+   * @param \Drupal\feeds_migrate\MigrationHelper $migration_helper
+   *   Helper service for migration entity.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration, PluginManagerInterface $process_plugin_manager, FieldTypePluginManagerInterface $field_type_manager, MigrateFormPluginFactory $form_factory) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration, PluginManagerInterface $process_plugin_manager, FieldTypePluginManagerInterface $field_type_manager, MigrateFormPluginFactory $form_factory, MigrationHelper $migration_helper) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->migration = $migration;
     $this->fieldTypeManager = $field_type_manager;
     $this->processPluginManager = $process_plugin_manager;
     $this->formFactory = $form_factory;
+    $this->migrationHelper = $migration_helper;
 
     // Set some properties.
-    $this->destinationField = $this->configuration['#destination']['#field'];
-    $this->destinationKey = $this->configuration['#destination']['key'];
     $this->configuration = NestedArray::mergeDeep($this->defaultConfiguration(), $configuration);
+    $this->destinationField = $this->configuration['destination']['field'] ?? NULL;
+    $this->destinationKey = $this->configuration['destination']['key'] ?? NULL;
   }
 
   /**
@@ -116,7 +124,8 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
       $migration,
       $container->get('plugin.manager.migrate.process'),
       $container->get('plugin.manager.field.field_type'),
-      $container->get('feeds_migrate.migrate_form_plugin_factory')
+      $container->get('feeds_migrate.migrate_form_plugin_factory'),
+      $container->get('feeds_migrate.migration_helper')
     );
   }
 
@@ -126,6 +135,10 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
   public function defaultConfiguration() {
     $config = [];
     $default_config = [
+      'destination' => [
+        'key' => '',
+        'field' => NULL,
+      ],
       'source' => '',
       'is_unique' => FALSE,
       'process' => [],
@@ -134,8 +147,8 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
     if (isset($this->destinationField) && $this->destinationField instanceof FieldDefinitionInterface) {
       $field_properties = $this->getFieldProperties($this->destinationField);
       foreach ($field_properties as $property => $info) {
-        $destination_key = implode('/', [$this->destinationKey, $property]);
-        $config[$destination_key] = $default_config;
+        $config[$property] = $default_config;
+        $config[$property]['destination']['key'] = implode('/', [$this->destinationKey, $property]);
       }
     }
     else {
@@ -148,8 +161,12 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
   /**
    * {@inheritdoc}
    */
-  public function getConfiguration() {
-    return $this->configuration;
+  public function getConfiguration($property = NULL) {
+    if (!isset($property)) {
+      return $this->configuration;
+    }
+
+    return $this->configuration[$property];
   }
 
   /**
@@ -162,32 +179,53 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
   /**
    * {@inheritdoc}
    */
-  public function getKey(array $mapping) {
-    return $mapping['#destination']['key'];
-  }
+  public function getLabel($property = NULL) {
+    $label = ($this->destinationField) ? $this->destinationField->getLabel() : $this->destinationKey;
 
-  /**
-   * {@inheritdoc}
-   */
-  public function getLabel(array $mapping) {
-    /** @var \Drupal\Core\Field\FieldDefinitionInterface $mapping_field */
-    $mapping_field = $mapping['#destination']['field'] ?? FALSE;
-
-    return ($mapping_field) ? $mapping_field->getLabel() : $this->getKey($mapping);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getSummary(array $mapping, $property = NULL) {
     if ($property) {
-      $process = $mapping['#properties'][$property]['#process'] ?? [];
+      $label .= ' (' . $property . ')';
+    }
+
+    return $label;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSummary($property = NULL) {
+    $summary = '';
+    if ($property) {
+      $process = $this->configuration[$property]['process'] ?? [];
     }
     else {
-      $process = $mapping['#process'] ?? [];
+      $process = $this->configuration['process'] ?? [];
     }
 
-    return !empty($process) ? Yaml::encode($process) : '';
+    foreach ($process as $info) {
+      $plugin_id = $info['plugin'];
+      $plugin = $this->loadMigrateFormPlugin($plugin_id, $info);
+      $summary .= '<li>' . $plugin->getSummary() . '</li>';
+    }
+
+    return [
+      '#markup' => $summary,
+      '#prefix' => '<pre><ul>',
+      '#suffix' => '</ul><pre>',
+    ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDestinationKey() {
+    return $this->configuration['destination']['key'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDestinationField() {
+    return $this->configuration['destination']['field'];
   }
 
   /**
@@ -213,14 +251,13 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
         $form['properties'][$property]['source'] = [
           '#type' => 'textfield',
           '#title' => $this->t('Source'),
-          '#default_value' => $mapping['#properties'][$property]['source'] ?? '',
+          '#default_value' => $mapping[$property]['source'] ?? '',
         ];
 
-        $checked = array_key_exists($this->configuration['source'], $this->migration->source["ids"]);
         $form['properties'][$property]['is_unique'] = [
           '#type' => 'checkbox',
           '#title' => $this->t('Unique Field'),
-          '#default_value' => $checked,
+          '#default_value' => $mapping[$property]['is_unique'],
         ];
 
         $form['properties'][$property] += $this->buildProcessPluginsConfigurationForm([], $form_state, $property);
@@ -240,11 +277,10 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
         '#default_value' => $mapping['source'],
       ];
 
-      $checked = array_key_exists($mapping['source'], $this->migration->source["ids"]);
       $form['is_unique'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('Unique Field'),
-        '#default_value' => $checked,
+        '#default_value' => $mapping['is_unique'],
       ];
 
       $form += $this->buildProcessPluginsConfigurationForm([], $form_state);
@@ -274,6 +310,16 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
       $property,
       'ajax-wrapper',
     ]);
+    // Declare AJAX settings for process plugin table.
+    $ajax_settings = [
+      'event' => 'click',
+      'effect' => 'fade',
+      'progress' => 'throbber',
+      'callback' => [get_called_class(), 'ajaxCallback'],
+      'wrapper' => $ajax_id,
+    ];
+    // Load process plugins from configuration or form state.
+    $plugins = $this->loadProcessPlugins($form_state, $property);
 
     $form['process'] = [
       '#type' => 'container',
@@ -286,11 +332,10 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
       '#tree' => TRUE,
       '#type' => 'table',
       '#header' => [
-        $this->t('Plugin ID'),
-        $this->t('Label'),
+        $this->t('Plugin'),
         $this->t('Configuration'),
         $this->t('Weight'),
-        $this->t('Remove'),
+        $this->t('Operations'),
       ],
       '#tabledrag' => [
         [
@@ -300,37 +345,34 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
         ],
       ],
       '#empty' => $this->t('No process plugins have been added yet.'),
-      '#sticky' => TRUE,
-
+      '#default_value' => [],
     ];
 
     // Selector for adding new process plugin instances.
-    $form['process']['add'] = [
+    $form['process']['add']['plugin'] = [
       '#type' => 'select',
       '#options' => $this->getProcessPlugins(),
       '#empty_option' => $this->t('- Select a process plugin -'),
-      '#default_value' => [],
-      '#ajax' => [
-        'event' => 'change',
-        'method' => 'replace',
-        'callback' => [$this, 'ajaxCallback'],
-        'wrapper' => $ajax_id,
-      ],
+      '#default_value' => NULL,
     ];
 
-    // Create the plugin configuration form for the plugin that has just been
-    // selected.
-    // @todo load config forms for existing plugins as well.
-    if ($property) {
-      $plugin_id = $form_state->getValue(['properties', $property, 'process', 'add']);
-    }
-    else {
-      $plugin_id = $form_state->getValue(['process', 'add']);
-    }
-    $plugin = $this->preparePlugin($plugin_id);
-    if ($plugin) {
-      $delta = 1;
-      $form['process']['plugins'][$delta] = $this->buildProcessRow($form, $form_state, $plugin, $delta);
+    $form['process']['add']['button'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Add'),
+      '#context' => [
+        'action' => 'add',
+      ],
+      '#limit_validation_errors' => [],
+      '#submit' => [__CLASS__ . '::addProcessPluginSubmit'],
+      '#ajax' => $ajax_settings,
+    ];
+
+    // Build out table.
+    foreach ($plugins as $delta => $configuration) {
+      $plugin_id = $configuration['plugin'];
+      $plugin = $this->loadMigrateFormPlugin($plugin_id, $configuration);
+
+      $form['process']['plugins'][$delta] = $this->buildProcessRow($form, $form_state, $plugin, $delta, $property);
     }
 
     return $form;
@@ -343,113 +385,161 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
    *   An associative array containing the structure of the form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
-   * @param \Drupal\migrate\Plugin\MigrateProcessInterface $plugin
+   * @param \Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface $plugin
    *   The migrate process plugin.
    * @param int $delta
    *   The index number of the process plugin.
+   * @param string $property
+   *   The field property for this mapping.
    *
    * @return array
    *   The built table row.
-   *
-   * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
-  protected function buildProcessRow(array $form, FormStateInterface $form_state, MigrateProcessInterface $plugin, $delta) {
-    $ajax_delta = -1;
+  protected function buildProcessRow(array $form, FormStateInterface $form_state, MigrateFormPluginInterface $plugin, $delta, $property = NULL) {
     $plugin_id = $plugin->getPluginId();
-    $plugin_form_type = $this->getPluginDefinition()['form_type'] ?? MigrateFormPluginInterface::FORM_TYPE_CONFIGURATION;
+    $configuration = $plugin->getConfiguration();
 
-    $row = ['#attributes' => ['class' => ['draggable', 'tabledrag-leaf']]];
-
-    $row['plugin_id'] = [
-      '#type' => 'hidden',
-      '#default_value' => $plugin->getPluginId(),
+    // Generate a unique HTML id for AJAX callback.
+    $ajax_id = implode('-', [
+      'feeds-migration-mapping',
+      $property,
+      'ajax-wrapper',
+    ]);
+    // Declare AJAX settings for process plugin table.
+    $ajax_settings = [
+      'event' => 'click',
+      'effect' => 'fade',
+      'progress' => 'throbber',
+      'callback' => [get_called_class(), 'ajaxCallback'],
+      'wrapper' => $ajax_id,
     ];
-    $row['label'] = [
-      '#type' => 'textfield',
-      '#default_value' => $plugin->getPluginDefinition()['label'],
-    ];
-    $row['configuration'] = [];
 
-    if ($this->formFactory->hasForm($plugin, $plugin_form_type)) {
-      $config_form_state = SubformState::createForSubform($row['configuration'], $form, $form_state);
-      $config_form = $this->formFactory->createInstance($plugin, 'process', 'configuration', $this->migration);
-      $row['configuration'] += $config_form->buildConfigurationForm([], $config_form_state);
-    }
-
-    $row['weight'] = [
-      '#type' => 'weight',
-      '#title' => $this->t('Weight for @process_name', [
-        '@process_name' => $plugin_id,
-      ]),
-      '#title_display' => 'invisible',
-      '#default_value' => $plugin_id,
+    $row = [
       '#attributes' => [
-        'class' => [
-          'table-sort-weight',
+        'class' => ['draggable'],
+      ],
+      'label' => [
+        '#type' => 'label',
+        '#title' => $plugin->getPluginDefinition()['title'],
+      ],
+      'configuration' => [
+        '#type' => 'container',
+      ],
+      'weight' => [
+        '#type' => 'weight',
+        '#title' => $this->t('Weight for @process_name', [
+          '@process_name' => $plugin_id,
+        ]),
+        '#title_display' => 'invisible',
+        '#default_value' => $delta,
+        '#attributes' => [
+          'class' => [
+            'table-sort-weight',
+          ],
         ],
       ],
+      'operations' => [
+        '#type' => 'submit',
+        // We need a unique element name so we can reliably use
+        // $form_state->getTriggeringElement() in the submit callbacks.
+        '#name' => implode(',', ['feeds-migration-mapping-', $property, $delta]),
+        '#value' => $this->t('Remove'),
+        '#limit_validation_errors' => [],
+        '#submit' => [__CLASS__ . '::removeProcessPluginSubmit'],
+        '#context' => [
+          'action' => 'remove',
+          'delta' => $delta,
+        ],
+        '#ajax' => $ajax_settings,
+      ],
     ];
 
-    // @todo allow to remove a row. This is copied from
-    // \Drupal\feeds\Form\MappingForm::buildRow().
-    $default_button = [
-      '#ajax' => [
-        'callback' => '::ajaxCallback',
-        'wrapper' => 'feeds-migrate-process-ajax-wrapper',
-        'effect' => 'fade',
-        'progress' => 'none',
-      ],
-      '#delta' => $delta,
+    // Load process form plugin configuration.
+    $plugin_form_state = SubformState::createForSubform($row['configuration'], $form, $form_state);
+    $row['configuration']['plugin'] = [
+      '#type' => 'hidden',
+      '#value' => $configuration['plugin'],
     ];
-    if ($delta != $ajax_delta) {
-      $row['remove'] = $default_button + [
-        '#title' => $this->t('Remove'),
-        '#type' => 'checkbox',
-        '#default_value' => FALSE,
-        '#title_display' => 'invisible',
-        '#parents' => ['remove_mappings', $delta],
-        '#remove' => TRUE,
-      ];
-    }
-    else {
-      $row['remove']['#markup'] = '';
-    }
+    $row['configuration'] += $plugin->buildConfigurationForm([], $plugin_form_state);
 
     return $row;
   }
 
-  /**
-   * Prepares the process plugin.
-   *
-   * @param string $plugin_id
-   *   The id of the process plugin.
-   *
-   * @return \Drupal\migrate\Plugin\MigrateProcessInterface|null
-   *   The process plugin instance or null in case the process plugin could not
-   *   be instantiated.
-   */
-  protected function preparePlugin($plugin_id = NULL) {
-    if (empty($plugin_id)) {
-      return NULL;
-    }
+  /****************************************************************************/
+  // Callbacks.
+  /****************************************************************************/
 
-    try {
-      return $this->processPluginManager->createInstance($plugin_id);
-    }
-    catch (PluginException $e) {
-      $this->messenger()->addError($this->t('The specified plugin is invalid.'));
-    }
+  /**
+   * The form submit callback for adding a new column.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   */
+  public static function addProcessPluginSubmit(array &$form, FormStateInterface $form_state) {
+    $button = $form_state->getTriggeringElement();
+    $process_form =& NestedArray::getValue($form, array_slice($button['#array_parents'], 0, -2));
+    $plugins = $process_form['plugins'];
+    $values = $plugins['#value'];
+
+    // Add new plugin id.
+    $values[] = [
+      'configuration' => [
+        'plugin' => $process_form['add']['plugin']['#value'],
+      ],
+    ];
+
+    // Update plugin's #value.
+    $form_state->setValueForElement($plugins, $values);
+    NestedArray::setValue($form_state->getUserInput(), $plugins['#parents'], $values);
+
+    $form_state->setRebuild(TRUE);
   }
 
   /**
-   * Ajax callback for the process plugin table.
+   * The form submit callback for removing a column.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   */
+  public static function removeProcessPluginSubmit(array &$form, FormStateInterface $form_state) {
+    $button = $form_state->getTriggeringElement();
+    $delta = $button['#context']['delta'];
+    $plugins =& NestedArray::getValue($form, array_slice($button['#array_parents'], 0, -2));
+    $values = $plugins['#value'];
+
+    // Remove plugin from values.
+    unset($values[$delta]);
+    // Re-index values.
+    $values = array_values($values);
+
+    // Update plugin's #value.
+    $form_state->setValueForElement($plugins, $values);
+    NestedArray::setValue($form_state->getUserInput(), $plugins['#parents'], $values);
+
+    $form_state->setRebuild(TRUE);
+  }
+
+  /**
+   * The form ajax callback.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
    *
    * @return array
-   *   The process plugin table.
+   *   The form element to return.
    */
-  public function ajaxCallback(array $form, FormStateInterface $form_state) {
-    $triggering_element = $form_state->getTriggeringElement();
-    return NestedArray::getValue($form, array_slice($triggering_element['#array_parents'], 0, -1));
+  public static function ajaxCallback(array $form, FormStateInterface $form_state) {
+    $button = $form_state->getTriggeringElement();
+    $action = $button['#context']['action'] ?? NULL;
+    $parent_offset = $action === 'remove' ? -3 : -2;
+
+    return NestedArray::getValue($form, array_slice($button['#array_parents'], 0, $parent_offset));
   }
 
   /**
@@ -467,35 +557,50 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
     $values = $form_state->getValues();
 
     if (isset($values['properties'])) {
-      foreach ($values['properties'] as $property => $info) {
-        $destination_key = implode('/', [$this->destinationKey, $property]);
-        $this->configuration[$destination_key]['source'] = $info['source'];
-        $this->configuration[$destination_key]['is_unique'] = $info['is_unique'];
+      foreach ($values['properties'] as $property => $mapping) {
+        $destination_key = $mapping['destination']['key'];
+        $this->configuration[$destination_key]['source'] = $mapping['source'];
+        $this->configuration[$destination_key]['is_unique'] = $mapping['is_unique'];
 
-        $process_plugins = $info['process']['plugins'];
-        foreach ($process_plugins as $delta => $plugin_info) {
+        $process_plugins = $mapping['process']['plugins'];
+        foreach ($process_plugins as $delta => $info) {
           // Load migrate process plugin.
-          $plugin_id = $plugin_info['plugin_id'];
-          $plugin = $this->preparePlugin($plugin_id);
+          $plugin_id = $info['configuration']['plugin'];
+          $plugin = $this->loadMigratePlugin($plugin_id);
 
           // Find the plugin's form.
-          $form_plugin = $this->formFactory->createInstance($plugin, 'process', 'configuration', $this->migration);
           $subform = &$form['properties'][$property]['process']['plugins'][$delta]['configuration'];
           $subform_state = SubformState::createForSubform($subform, $form, $form_state);
           // Have the plugin save its configuration.
-          $form_plugin->submitConfigurationForm($subform, $subform_state);
+          $plugin->submitConfigurationForm($subform, $subform_state);
 
-          // Retrieve the plugin configuration and save on the migration entity.
-          $plugin_configuration = $form_plugin->getConfiguration();
-          $this->configuration[$destination_key]['process'][] = $plugin_configuration;
+          // Retrieve the plugin configuration.
+          $process_configuration = $plugin->getConfiguration();
+          $this->configuration[$destination_key]['process'][] = $process_configuration;
         }
       }
     }
     else {
-      $destination_key = $this->destinationKey;
+      $destination_key = $values['destination']['key'];
       $this->configuration[$destination_key]['source'] = $values['source'];
       $this->configuration[$destination_key]['is_unique'] = $values['is_unique'];
-      // @todo do the same for process plugins.
+
+      $process_plugins = $values['process']['plugins'];
+      foreach ($process_plugins as $delta => $info) {
+        // Load migrate process form plugin.
+        $plugin_id = $info['configuration']['plugin'];
+        $plugin = $this->loadMigratePlugin($plugin_id);
+
+        // Find the plugin's form.
+        $subform = &$form['process']['plugins'][$delta]['configuration'];
+        $subform_state = SubformState::createForSubform($subform, $form, $form_state);
+        // Have the plugin save its configuration.
+        $plugin->submitConfigurationForm($subform, $subform_state);
+
+        // Retrieve the plugin configuration.
+        $process_configuration = $plugin->getConfiguration();
+        $this->configuration[$destination_key]['process'][] = $process_configuration;
+      }
     }
   }
 
@@ -503,6 +608,7 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
    * Retrieve all field properties that are not calculated.
    *
    * @param \Drupal\Core\Field\FieldDefinitionInterface $field
+   *   The field definition to load the properties for.
    *
    * @return \Drupal\Core\TypedData\TypedDataInterface[]
    *   An array of property objects implementing the TypedDataInterface, keyed
@@ -521,14 +627,23 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
       $field_properties = $item_instance->getProperties();
     }
     catch (\Exception $e) {
-      // todo log error.
+      $this->messenger()->addError($this->t('Could not load properties for %field_name.', [
+        '%field_name' => $field->getName(),
+      ]));
     }
 
     return $field_properties;
   }
 
+  /****************************************************************************/
+  // Helper functions.
+  /****************************************************************************/
+
   /**
-   * Returns a list of migrate process plugins with a configuration form.
+   * Returns a list of available process plugins with a configuration form.
+   *
+   * @return array
+   *   List of process plugins, keyed by plugin id.
    */
   protected function getProcessPlugins() {
     $plugins = [];
@@ -540,6 +655,75 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
     }
 
     return $plugins;
+  }
+
+  /**
+   * Load the configured plugins from form_state or save configuration.
+   *
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   * @param string $property
+   *   The name of the field property, if any.
+   *
+   * @return array
+   *   List of process plugin form configuration.
+   */
+  protected function loadProcessPlugins(FormStateInterface $form_state, $property = NULL) {
+    $plugins = [];
+    $mapping = $property ? $this->configuration[$property] : $this->configuration;
+    $form_state_key = array_filter([
+      ($property ? 'properties' : ''),
+      $property,
+      'process',
+      'plugins',
+    ]);
+    $values = $form_state->getValue($form_state_key, $mapping['process']);
+    foreach ($values as $delta => $info) {
+      $plugins[] = $info['configuration'] ?? $info;
+    }
+
+    return $plugins;
+  }
+
+  /**
+   * Loads the process plugin.
+   *
+   * @param string $plugin_id
+   *   The id of the process plugin.
+   * @param array $configuration
+   *   The configuration for the process plugin.
+   *
+   * @return \Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface|null
+   *   The process plugin instance or null in case the process plugin could not
+   *   be instantiated.
+   */
+  protected function loadMigrateFormPlugin($plugin_id, array $configuration = []) {
+    try {
+      /** @var \Drupal\migrate\Plugin\MigrateProcessInterface $plugin */
+      $plugin = $this->processPluginManager->createInstance($plugin_id, $configuration);
+
+      // Mapping only happens during configuration.
+      $operation = MigrateFormPluginInterface::FORM_TYPE_CONFIGURATION;
+      if (!$this->formFactory->hasForm($plugin, $operation)) {
+        $this->messenger()->addError($this->t('Could not find form plugin for %plugin_id', [
+          '%plugin_id' => $plugin_id,
+        ]));
+
+        return NULL;
+      }
+
+      /** @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface $form_plugin */
+      $form_plugin = $this->formFactory->createInstance($plugin, $operation, $this->migration, $configuration);
+
+      return $form_plugin;
+    }
+    catch (PluginException $e) {
+      $this->messenger()->addError($this->t('The specified plugin %plugin_id is invalid.', [
+        '%plugin_id' => $plugin_id,
+      ]));
+    }
+
+    return NULL;
   }
 
 }
