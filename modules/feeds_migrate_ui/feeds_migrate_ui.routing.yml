@@ -14,7 +14,7 @@ entity.migration.mapping.list:
   path: '/admin/structure/migrate/sources/{migration}/mapping'
   defaults:
     _entity_form: 'migration.mapping-list'
-    _title: 'Mapping Configuration'
+    _title: 'Mapping'
   requirements:
     _permission: 'administer feeds migrate importers'
 
@@ -27,17 +27,17 @@ entity.migration.mapping.add_form:
     _permission: 'administer feeds migrate importers'
 
 entity.migration.mapping.edit_form:
-  path: '/admin/structure/migrate/sources/{migration}/mapping/{key}'
+  path: '/admin/structure/migrate/sources/{migration}/mapping/{destination}/edit'
   defaults:
-    _entity_form: 'migration.mapping-edit'
+    _controller: '\Drupal\feeds_migrate_ui\Controller\FeedsMigrateController::mappingEditForm'
     _title: 'Edit Mapping'
   requirements:
     _permission: 'administer feeds migrate importers'
 
 entity.migration.mapping.delete_form:
-  path: '/admin/structure/migrate/sources/{migration}/mapping/{key}/delete'
+  path: '/admin/structure/migrate/sources/{migration}/mapping/{destination}/delete'
   defaults:
-    _entity_form: 'migration.mapping-delete'
+    _controller: '\Drupal\feeds_migrate_ui\Controller\FeedsMigrateController::mappingDeleteForm'
     _title: 'Delete Mapping'
   requirements:
     _permission: 'administer feeds migrate importers'
