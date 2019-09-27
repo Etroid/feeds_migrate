@@ -3,7 +3,7 @@
 namespace Drupal\feeds_migrate;
 
 use Drupal\Component\Plugin\ConfigurableInterface;
-use Drupal\Core\Form\FormStateInterface;
+use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\PluginFormInterface;
 
@@ -12,53 +12,55 @@ use Drupal\Core\Plugin\PluginFormInterface;
  *
  * @package Drupal\feeds_migrate
  */
-interface MappingFieldFormInterface extends PluginFormInterface, ConfigurableInterface, ContainerFactoryPluginInterface {
+interface MappingFieldFormInterface extends PluginInspectionInterface, PluginFormInterface, ConfigurableInterface, ContainerFactoryPluginInterface {
 
   /**
-   * Get a mapping field's key.
+   * Gets this plugin's configuration.
    *
-   * @param array $mapping
-   *   A migration mapping configuration.
+   * @param string $property
+   *   The field property to get the configuraiton for.
    *
-   * @return string
-   *   A field's key/name.
+   * @return array
+   *   An array of this plugin's configuration.
    */
-  public function getKey(array $mapping);
+  public function getConfiguration($property = NULL);
 
   /**
-   * Get a mapping field's label.
-   *
-   * @param array $mapping
-   *   A migration mapping configuration.
+   * Get the destination key for a mapping field.
    *
    * @return string
-   *   A field's label.
+   *   Destination key of the mapping field.
    */
-  public function getLabel(array $mapping);
+  public function getDestinationKey();
+
+  /**
+   * Get the destination field instance for a mapping field.
+   *
+   * @return \Drupal\Core\Field\FieldDefinitionInterface|null
+   *   Destination field of the mapping.
+   */
+  public function getDestinationField();
+
+  /**
+   * Get the label about a mapping field.
+   *
+   * @param string $property
+   *   The field property to get the process plugin label for.
+   *
+   * @return string
+   *   Text representation of the destination.
+   */
+  public function getLabel($property = NULL);
 
   /**
    * Get the summary about a mapping field.
    *
-   * @param array $mapping
-   *   A migration mapping configuration.
    * @param string $property
    *   A field property to get the process plugin summary for.
    *
    * @return string
+   *   Text representation of the process.
    */
-  public function getSummary(array $mapping, $property = NULL);
-
-  /**
-   * Returns the mapping for this field based on the configuration form.
-   *
-   * @param array $form
-   *   An associative array containing the structure of the form.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The current state of the form.
-   *
-   * @return array
-   *   A migration mapping configuration.
-   */
-  public function getConfigurationFormMapping(array &$form, FormStateInterface $form_state);
+  public function getSummary($property = NULL);
 
 }
