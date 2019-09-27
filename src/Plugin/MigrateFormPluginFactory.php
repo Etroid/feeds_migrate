@@ -2,11 +2,19 @@
 
 namespace Drupal\feeds_migrate\Plugin;
 
+use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
+use Drupal\Component\Plugin\PluginAwareInterface;
 use Drupal\Component\Plugin\PluginInspectionInterface;
+use Drupal\Core\Plugin\PluginFormInterface;
 use Drupal\migrate_plus\Entity\MigrationInterface;
 
 /**
  * Provides form discovery capabilities for plugins.
+ *
+ * This is based on PluginFormFactoryInterface, but because migrate plugins in
+ * core don't implement the following interfaces, we need to work around it.
+ *   - PluginWithFormsInterface|PluginFormInterface.
+ *   - ConfigurableInterface.
  */
 class MigrateFormPluginFactory {
 
@@ -35,42 +43,54 @@ class MigrateFormPluginFactory {
   }
 
   /**
-   * Creates a form instance for the plugin.
+   * Creates a new migrate form plugin instance.
    *
    * @param \Drupal\Component\Plugin\PluginInspectionInterface $plugin
-   *   The Feeds plugin.
-   * @param string $plugin_type
-   *   The type of plugin (e.g. source, process, destination etc...).
+   *   The plugin the form plugin is for.
    * @param string $operation
-   *   The type of form to create. See ::hasForm above for possible types.
+   *   The name of the operation to use, e.g., 'configuration' or 'import'.
    * @param \Drupal\migrate_plus\Entity\MigrationInterface|null $migration
-   *   The migration context in which the plugin will run.
+   *   The migration entity.
+   * @param array $configuration
+   *   The form plugin configuration.
    *
-   * @return \Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface
-   *   A form for the plugin.
+   * @return \Drupal\Core\Plugin\PluginFormInterface
+   *   A plugin form instance.
    *
-   * @throws \LogicException
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
-  public function createInstance(PluginInspectionInterface $plugin, string $plugin_type, string $operation, MigrationInterface $migration) {
-    $definition = $plugin->getPluginDefinition();
-    $form_plugin_id = $definition['feeds_migrate']['form'][$operation];
+  public function createInstance(PluginInspectionInterface $plugin, $operation, MigrationInterface $migration = NULL, array $configuration = []) {
+    // @todo when migrate plugins implement PluginWithFormsInterface, we can
+    //   use $plugin->hasFormClass method instead.
+    if (!$this->hasForm($plugin, $operation)) {
+      throw new InvalidPluginDefinitionException($plugin->getPluginId(), sprintf('The "%s" plugin did not specify a "%s" form class', $plugin->getPluginId(), $operation));
+    }
 
+    $plugin_definition = $plugin->getPluginDefinition();
     // If the form specified is the plugin itself, use it directly.
-    if ($plugin->getPluginId() === $form_plugin_id) {
-      /** @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface $form_plugin */
+    $form_plugin_id = $plugin_definition['feeds_migrate']['form'][$operation];
+    if ($plugin instanceof PluginFormInterface && $plugin->getPluginId() === $form_plugin_id) {
       $form_plugin = $plugin;
     }
     else {
+      // Try and resolve the migrate plugin type.
+      $form_plugin_type = $plugin_definition['type'] ?? NULL;
+
+      if (empty($type)) {
+        $namespace_parts = explode('\\', $plugin_definition['class']);
+        $form_plugin_type = $namespace_parts[count($namespace_parts) - 2];
+      }
+
       /* @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginManager $manager */
-      $manager = \Drupal::service("plugin.manager.feeds_migrate.migrate.{$plugin_type}_form");
+      $manager = \Drupal::service("plugin.manager.feeds_migrate.migrate.{$form_plugin_type}_form");
       /** @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface $form_plugin */
-      $form_plugin = $manager->createInstance($form_plugin_id, [], $plugin, $migration);
+      $form_plugin = $manager->createInstance($form_plugin_id, $configuration, $plugin, $migration);
     }
 
-    // Ensure the resulting object is a migrate plugin form.
-    if (!$form_plugin instanceof MigrateFormPluginInterface) {
-      throw new \LogicException($plugin->getPluginId(), sprintf('The "%s" plugin did not specify a valid "%s" form class, must implement \Drupal\feeds_migrate\MigrateFormPluginInterface', $plugin->getPluginId(), $operation));
+    // Ensure the resulting object is a plugin form.
+    if (!$form_plugin instanceof PluginFormInterface) {
+      throw new InvalidPluginDefinitionException($plugin->getPluginId(), sprintf('The "%s" plugin did not specify a valid "%s" form class, must implement \Drupal\Core\Plugin\PluginFormInterface', $plugin->getPluginId(), $operation));
     }
 
     return $form_plugin;
