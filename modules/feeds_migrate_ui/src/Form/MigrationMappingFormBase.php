@@ -4,50 +4,21 @@ namespace Drupal\feeds_migrate_ui\Form;
 
 use Drupal\Core\Entity\EntityFieldManager;
 use Drupal\Core\Entity\EntityForm;
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
 use Drupal\Core\Url;
 use Drupal\feeds_migrate\MappingFieldFormManager;
-use Drupal\feeds_migrate\MigrationEntityHelperManager;
-use Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory;
-use Drupal\feeds_migrate\Plugin\PluginFormFactory;
-use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
-use Drupal\migrate_plus\Entity\MigrationInterface;
+use Drupal\feeds_migrate\MigrationHelper;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Provides a base form for migration mapping configuration.
  *
  * @package Drupal\feeds_migrate\Form
- *
- * @todo consider moving this UX into migrate_tools module to allow editors
- * to create simple migrations directly from the admin interface
  */
 class MigrationMappingFormBase extends EntityForm {
 
   const CUSTOM_DESTINATION_KEY = '_custom';
-
-  /**
-   * Migration Entity Helper Manager.
-   *
-   * @var \Drupal\feeds_migrate\MigrationEntityHelperManager
-   */
-  protected $migrationEntityHelperManager;
-
-  /**
-   * Plugin manager for migration plugins.
-   *
-   * @var \Drupal\migrate\Plugin\MigrationPluginManagerInterface
-   */
-  protected $migrationPluginManager;
-
-  /**
-   * The form factory.
-   *
-   * @var \Drupal\feeds_migrate\Plugin\PluginFormFactory
-   */
-  protected $formFactory;
 
   /**
    * Plugin manager for migration mapping plugins.
@@ -71,89 +42,97 @@ class MigrationMappingFormBase extends EntityForm {
   protected $fieldManager;
 
   /**
-   * Manager for entity bundles.
+   * Helper service for migration entity.
    *
-   * @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface
+   * @var \Drupal\feeds_migrate\MigrationHelper
    */
-  protected $bundleManager;
+  protected $migrationHelper;
 
   /**
-   * The key of the destination field.
+   * The destination field definition.
+   *
+   * @var \Drupal\Core\Field\FieldDefinitionInterface
+   */
+  protected $destinationField;
+
+  /**
+   * The destination key.
+   *
+   * This is filled out when we are not migrating into a standard Drupal field
+   * instance (e.g. table column name, virtual field etc...)
    *
    * @var string
    */
-  protected $key;
+  protected $destinationKey;
 
   /**
-   * Get the normalized process pipeline configuration describing the process
-   * plugins, keyed by the destination field.
+   * Field mapping for this migration.
    *
    * @var array
    */
-  protected $mapping;
+  protected $mapping = [];
 
   /**
-   * Get whether the field is a unique field used for migration IDs.
+   * Creates a new MigrationMappingFormBase.
    *
-   * @var bool
+   * @param \Drupal\feeds_migrate\MappingFieldFormManager $mapping_field_manager
+   *   Mapping field manager service.
+   * @param \Drupal\Core\Entity\EntityFieldManager $field_manager
+   *   Field manager service.
+   * @param \Drupal\feeds_migrate\MigrationHelper $migration_helper
+   *   Helper service for migration entity.
    */
-  protected $unique;
+  public function __construct(MappingFieldFormManager $mapping_field_manager, EntityFieldManager $field_manager, MigrationHelper $migration_helper) {
+    $this->mappingFieldManager = $mapping_field_manager;
+    $this->fieldManager = $field_manager;
+    $this->migrationHelper = $migration_helper;
+  }
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('plugin.manager.migration'),
-      $container->get('feeds_migrate.migrate_form_plugin_factory'),
       $container->get('plugin.manager.feeds_migrate.mapping_field_form'),
       $container->get('entity_field.manager'),
-      $container->get('feeds_migrate.migration_entity_helper')
+      $container->get('feeds_migrate.migration_helper')
     );
   }
 
   /**
-   * MigrationMappingFormBase constructor.
+   * Gets the label for the destination field - if any.
    *
-   * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_plugin_manager
-   * @param \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory $form_factory
-   * @param \Drupal\feeds_migrate\MappingFieldFormManager $mapping_field_manager
-   * @param \Drupal\Core\Entity\EntityFieldManager $field_manager
-   * @param \Drupal\feeds_migrate\MigrationEntityHelperManager $migration_entity_helper_manager
+   * @return \Drupal\Core\StringTranslation\TranslatableMarkup|string
+   *   The label of the field, or key if custom property.
    */
-  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, MigrateFormPluginFactory $form_factory, MappingFieldFormManager $mapping_field_manager, EntityFieldManager $field_manager, MigrationEntityHelperManager $migration_entity_helper_manager) {
-    $this->migrationPluginManager = $migration_plugin_manager;
-    $this->formFactory = $form_factory;
-    $this->mappingFieldManager = $mapping_field_manager;
-    $this->fieldManager = $field_manager;
-    $this->migrationEntityHelperManager = $migration_entity_helper_manager;
+  public function getDestinationFieldLabel() {
+    // Get field label.
+    if (isset($this->destinationField)) {
+      $label = $this->destinationField->getLabel();
+    }
+    else {
+      $label = $this->destinationKey;
+    }
+
+    return $label;
   }
 
   /**
-   * Returns the helper for a migration entity.
+   * Sets the mapping for this field.
+   *
+   * @param array $mapping
+   *   The field mapping for this migration.
    */
-  protected function migrationEntityHelper() {
-    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
-    $migration = $this->entity;
-
-    return $this->migrationEntityHelperManager->get($migration);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function afterBuild(array $element, FormStateInterface $form_state) {
-    // Overriding \Drupal\Core\Entity\EntityForm::afterBuild because
-    // it calls ::buildEntity(), which calls ::copyFormValuesToEntity, which
-    // attempts to populate the entity even though nothing has been validated.
-    // @see \Drupal\Core\Entity\EntityForm::afterBuild
-    return $element;
+  public function setMapping(array $mapping) {
+    $this->destinationKey = $mapping['destination']['key'];
+    $this->destinationField = $mapping['destination']['field'];
+    $this->mapping = $mapping;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, MigrationInterface $migration = NULL, string $key = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     // Support AJAX callback.
     $form['#tree'] = FALSE;
     $form['#parents'] = [];
@@ -169,21 +148,28 @@ class MigrationMappingFormBase extends EntityForm {
     ];
 
     // Retrieve a list of mapping field destinations.
-    $options = $this->getMappingOptions();
+    $options = $this->getMappingDestinationOptions();
     asort($options);
     // Allow custom destination keys.
     $options[self::CUSTOM_DESTINATION_KEY] = $this->t('Other...');
+
+    // Determine default value.
+    $default_value = NULL;
+    if (isset($this->destinationKey)) {
+      $default_value = array_key_exists($this->destinationKey, $options) ?
+        $this->destinationKey : self::CUSTOM_DESTINATION_KEY;
+    }
 
     $form['general']['destination_field'] = [
       '#type' => 'select',
       '#title' => $this->t('Destination Field'),
       '#options' => $options,
       '#empty_option' => $this->t('- Select a destination -'),
-      '#default_value' => ($this->key && !key_exists($this->key, $options)) ? self::CUSTOM_DESTINATION_KEY : $this->key,
+      '#default_value' => $default_value,
       '#disabled' => ($this->operation === 'mapping-edit'),
       '#required' => TRUE,
       '#ajax' => [
-        'callback' => [$this, 'ajaxCallback'],
+        'callback' => [get_called_class(), 'ajaxCallback'],
         'event' => 'change',
         'wrapper' => 'feeds-migration-mapping-ajax-wrapper',
         'effect' => 'fade',
@@ -194,7 +180,7 @@ class MigrationMappingFormBase extends EntityForm {
     $form['general']['destination_key'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Destination key'),
-      '#default_value' => $this->key,
+      '#default_value' => $this->destinationKey,
       '#disabled' => ($this->operation === 'mapping-edit'),
       '#states' => [
         'required' => [
@@ -207,24 +193,26 @@ class MigrationMappingFormBase extends EntityForm {
     ];
 
     // Mapping Field Plugin settings.
-    if ($this->key) {
+    if ($this->destinationKey) {
       // Field specific mapping settings.
       $form['mapping'] = [
         '#parents' => ['mapping'],
         '#type' => 'container',
         '#tree' => TRUE,
-        $this->key => [
-          '#parents' => ['mapping', $this->key],
+        $this->destinationKey => [
+          '#parents' => ['mapping', $this->destinationKey],
         ],
       ];
 
       /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
       $migration = $this->entity;
-      $plugin = $this->mappingFieldManager->getMappingFieldInstance($this->mapping, $migration);
-      $plugin_form_state = SubformState::createForSubform($form['mapping'][$this->key], $form, $form_state);
+      $destination_field = $this->mapping['destination']['field'];
+      $plugin_id = $this->mappingFieldManager->getPluginIdFromField($destination_field);
+      $plugin = $this->mappingFieldManager->createInstance($plugin_id, $this->mapping, $migration);
+      $plugin_form_state = SubformState::createForSubform($form['mapping'][$this->destinationKey], $form, $form_state);
 
       if ($plugin) {
-        $form['mapping'][$this->key] = $plugin->buildConfigurationForm([], $plugin_form_state);
+        $form['mapping'][$this->destinationKey] = $plugin->buildConfigurationForm([], $plugin_form_state);
       }
     }
 
@@ -252,12 +240,12 @@ class MigrationMappingFormBase extends EntityForm {
     $actions['submit']['#value'] = $this->t('Save');
 
     // Change delete url.
-    if ($this->operation === 'mapping-edit') {
+    if ($this->operation === 'mapping-edit' && isset($this->destinationKey)) {
       $actions['delete']['#url'] = new Url(
         'entity.migration.mapping.delete_form',
         [
           'migration' => $this->entity->id(),
-          'key' => rawurlencode($this->key),
+          'destination' => rawurlencode($this->destinationKey),
         ]
       );
     }
@@ -272,27 +260,59 @@ class MigrationMappingFormBase extends EntityForm {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state) {
+  public function save(array $form, FormStateInterface $form_state) {
     /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
-    $migration = $this->entity;
+    $migration = $this->getEntity();
 
-    // Mapping Field Plugin validation.
-    if ($this->key) {
-      $plugin = $this->mappingFieldManager->getMappingFieldInstance($this->mapping, $migration);
-      $plugin_form_state = SubformState::createForSubform($form['mapping'][$this->key], $form, $form_state);
+    // Save the migration.
+    $status = $migration->save();
 
-      if ($plugin) {
-        $plugin->validateConfigurationForm($form, $plugin_form_state);
-      }
+    if ($status == SAVED_UPDATED) {
+      // If we edited an existing mapping.
+      $this->messenger()->addMessage($this->t('Migration mapping for field 
+        @destination_field has been updated.', [
+          '@destination_field' => $this->getDestinationFieldLabel(),
+        ]
+      ));
+    }
+    else {
+      // If we created a new mapping.
+      $this->messenger()->addMessage($this->t('Migration mapping for field
+        @destination_field has been added.', [
+          '@destination_field' => $this->getDestinationFieldLabel(),
+        ]
+      ));
+    }
+
+    // Redirect the user to the mapping edit form.
+    $form_state->setRedirect('entity.migration.mapping.list', [
+      'migration' => $migration->id(),
+      'destination' => $this->destinationKey,
+    ]);
+  }
+
+  /****************************************************************************/
+  // Callbacks.
+  /****************************************************************************/
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    $form_plugin = $this->loadMappingFieldFormPlugin();
+    if ($this->destinationKey && $form_plugin) {
+      $subform = &$form['mapping'][$this->destinationKey];
+      $subform_state = SubformState::createForSubform($subform, $form, $form_state);
+      $form_plugin->validateConfigurationForm($subform, $subform_state);
 
       // Get plugin validation errors.
-      $plugin_errors = $plugin_form_state->getErrors();
+      $plugin_errors = $subform_state->getErrors();
       foreach ($plugin_errors as $plugin_error) {
         $form_state->setErrorByName(NULL, $plugin_error);
       }
 
       // Stop validation if the element's properties has any errors.
-      if ($plugin_form_state->hasAnyErrors()) {
+      if ($subform_state->hasAnyErrors()) {
         return;
       }
     }
@@ -311,9 +331,9 @@ class MigrationMappingFormBase extends EntityForm {
     $source_config = $migration->get('source') ?: [];
     $process_config = $migration->get('process') ?: [];
 
-    $form_plugin = $this->mappingFieldManager->getMappingFieldInstance($this->mapping, $migration);
-    if ($form_plugin) {
-      $subform = &$form['mapping'][$this->key];
+    $form_plugin = $this->loadMappingFieldFormPlugin();
+    if ($this->destinationKey && $form_plugin) {
+      $subform = &$form['mapping'][$this->destinationKey];
       $subform_state = SubformState::createForSubform($subform, $form, $form_state);
       $form_plugin->submitConfigurationForm($subform, $subform_state);
 
@@ -327,12 +347,12 @@ class MigrationMappingFormBase extends EntityForm {
 
         // We always start with the get plugin to obtain the source value.
         $source = $mapping['source'];
-        $process[$destination][] = [
+        $process_config[$destination][] = [
           'plugin' => 'get',
           'source' => $source,
         ];
         // Now merge in all process plugins.
-        $process[$destination] = array_merge($process[$destination], $mapping['process']);
+        $process_config[$destination] = array_merge($process_config[$destination], $mapping['process']);
 
         // Save off field properties in source.
         if (array_search($source, array_column($source_config['fields'], 'name')) === FALSE) {
@@ -358,67 +378,57 @@ class MigrationMappingFormBase extends EntityForm {
   }
 
   /**
-   * {@inheritdoc}
-   */
-  public function save(array $form, FormStateInterface $form_state) {
-    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
-    $migration = $this->getEntity();
-
-    // Save the migration.
-    $status = $migration->save();
-
-    if ($status == SAVED_UPDATED) {
-      // If we edited an existing mapping.
-      $this->messenger()->addMessage($this->t('Migration mapping for field 
-        @destination_field has been updated.', [
-        '@destination_field' => $this->migrationEntityHelper()
-          ->getMappingFieldLabel($this->key),
-      ]));
-    }
-    else {
-      // If we created a new mapping.
-      $this->messenger()->addMessage($this->t('Migration mapping for field
-        @destination_field has been added.', [
-        '@destination_field' => $this->migrationEntityHelper()
-          ->getMappingFieldLabel($this->key),
-      ]));
-    }
-
-    // Redirect the user to the mapping edit form.
-    $form_state->setRedirect('entity.migration.mapping.list', [
-      'migration' => $migration->id(),
-      'key' => $this->key,
-    ]);
-  }
-
-  /**
-   * Callback for ajax requests.
+   * The form ajax callback.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
    *
    * @return array
    *   The form element to return.
    */
-  public function ajaxCallback(array $form, FormStateInterface $form_state) {
+  public static function ajaxCallback(array $form, FormStateInterface $form_state) {
     return $form;
   }
 
-  /**
-   * ----------- .*/
+  /****************************************************************************/
+  // Helper functions.
+  /****************************************************************************/
 
   /**
    * Returns a list of all mapping destination options, keyed by field name.
    */
-  protected function getMappingOptions() {
+  protected function getMappingDestinationOptions() {
     $options = [];
+    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
+    $migration = $this->entity;
 
     /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $fields */
-    $fields = $this->fieldManager->getFieldDefinitions($this->migrationEntityHelper()
-      ->getEntityTypeIdFromDestination(), $this->migrationEntityHelper()
-      ->getEntityBundleFromDestination());
+    $fields = $this->migrationHelper->getDestinationFields($migration);
     foreach ($fields as $field_name => $field) {
       $options[$field->getName()] = $field->getLabel();
     }
 
     return $options;
+  }
+
+  /**
+   * Load mapping field form plugin.
+   *
+   * @return \Drupal\feeds_migrate\MappingFieldFormInterface
+   *   Mapping field form plugin instance.
+   */
+  protected function loadMappingFieldFormPlugin() {
+    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
+    $migration = $this->entity;
+    $mapping = $this->mapping;
+    $destination_field = $mapping['destination']['field'] ?? NULL;
+    $plugin_id = $this->mappingFieldManager->getPluginIdFromField($destination_field);
+
+    /** @var \Drupal\feeds_migrate\MappingFieldFormInterface $plugin */
+    $form_plugin = $this->mappingFieldManager->createInstance($plugin_id, $mapping, $migration);
+    return $form_plugin;
   }
 
 }

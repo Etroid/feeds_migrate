@@ -3,62 +3,69 @@
 namespace Drupal\feeds_migrate_ui\Form;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\migrate_plus\Entity\MigrationInterface;
 
 /**
  * Provides a form for adding mapping settings.
  *
  * @package Drupal\feeds_migrate\Form
- *
- * @todo consider moving this UX into migrate_tools module to allow editors
- * to create simple migrations directly from the admin interface
  */
 class MigrationMappingAddForm extends MigrationMappingFormBase {
 
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, MigrationInterface $migration = NULL, string $key = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     // Retrieve the destination key of the migration mapping.
-    if ($key = $form_state->getValue('destination_field', FALSE)) {
-      if ($key === self::CUSTOM_DESTINATION_KEY) {
-        $key = $form_state->getValue('destination_key');
+    $destination_field = $form_state->getValue('destination_field', NULL);
+
+    if (isset($destination_field)) {
+      $destination_key = $destination_field;
+      if ($destination_field === self::CUSTOM_DESTINATION_KEY) {
+        $destination_key = $form_state->getValue('destination_key');
       }
 
-      // Stub out a new mapping.
-      $mapping = $this->migrationEntityHelper()->getDefaultMapping($key);
-      if ($key !== self::CUSTOM_DESTINATION_KEY) {
-        $destination_field = $this->migrationEntityHelper()->getMappingField($key);
-        $mapping['#destination']['#type'] = $destination_field->getType();
-        $mapping['#destination']['#field'] = $destination_field;
-      }
-
-      $this->key = $key;
-      $this->mapping = $mapping;
+      /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
+      $migration = $this->entity;
+      $mapping = [
+        'destination' => [
+          'key' => $destination_key,
+          'field' => $this->migrationHelper->getDestinationField($migration, $destination_key),
+        ],
+      ];
+      $this->setMapping($mapping);
     }
 
-    return parent::buildForm($form, $form_state, $migration, $key);
+    return parent::buildForm($form, $form_state);
   }
 
   /**
-   * Validates the mapping before saving it to the migration entity.
-   *
-   * @param array $form
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
+    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
+    $migration = $this->entity;
+
+    // Retrieve the destination key of the migration mapping.
+    $destination_field = $form_state->getValue('destination_field', NULL);
+    $destination_key = $destination_field;
+    if ($destination_field === self::CUSTOM_DESTINATION_KEY) {
+      $destination_key = $form_state->getValue('destination_key');
+    }
+
     // Ensure the key does not already exist.
-    if ($this->migrationEntityHelper()->mappingExists($this->key)) {
-      if ($this->key === self::CUSTOM_DESTINATION_KEY) {
+    if (!empty($this->migrationHelper->getMapping($migration, $destination_key))) {
+      if ($destination_field === self::CUSTOM_DESTINATION_KEY) {
         $form_state->setErrorByName('destination_key', $this->t('A mapping for this field already exists.'));
         return;
       }
 
       $form_state->setErrorByName('destination_field', $this->t('A mapping with the destination key %destination_key already exists.', [
-        '%destination_key' => $this->key,
+        '%destination_key' => $this->destinationKey,
       ]));
       return;
     }
+
+    parent::validateForm($form, $form_state);
   }
 
 }
