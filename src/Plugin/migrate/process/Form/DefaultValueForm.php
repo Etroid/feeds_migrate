@@ -11,7 +11,7 @@ use Drupal\feeds_migrate\Plugin\MigrateFormPluginBase;
  *
  * @MigrateForm(
  *   id = "default_value_form",
- *   title = @Translation("Default Value Process Plugin Form"),
+ *   title = @Translation("Default Value"),
  *   form_type = "configuration",
  *   parent_id = "default_value",
  *   parent_type = "process"
@@ -29,6 +29,17 @@ class DefaultValueForm extends MigrateFormPluginBase {
       'default_value' => NULL,
       'strict' => FALSE,
     ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSummary() {
+    $summary = $this->t('Default value: %default_value', [
+      '%default_value' => $this->configuration['default_value'],
+    ]);
+
+    return $summary;
   }
 
   /**
