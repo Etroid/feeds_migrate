@@ -28,6 +28,7 @@ services:
   feeds_migrate.migrate_form_plugin_factory:
     class: Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory
 
-  feeds_migrate.migration_entity_helper:
-    class: Drupal\feeds_migrate\MigrationEntityHelperManager
-    parent: container.trait
+  # Helper services.
+  feeds_migrate.migration_helper:
+    class: Drupal\feeds_migrate\MigrationHelper
+    arguments: ['@entity_field.manager']
