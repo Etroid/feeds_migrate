@@ -9,7 +9,6 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
 use Drupal\Core\Render\Renderer;
 use Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory;
-use Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface;
 use Drupal\migrate\Plugin\MigratePluginManagerInterface;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
 use Drupal\migrate_plus\Entity\MigrationGroup;
@@ -126,6 +125,9 @@ class MigrationForm extends EntityForm {
    * {@inheritdoc}
    */
   public function form(array $form, FormStateInterface $form_state) {
+    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
+    $migration = $this->entity;
+
     $form['#tree'] = TRUE;
 
     // Core Migration Settings.
@@ -197,7 +199,7 @@ class MigrationForm extends EntityForm {
         '#title' => ucfirst($plugin_type),
         '#attributes' => [
           'id' => 'plugin_settings--' . $plugin_type,
-          'class' => ['feeds-plugin-inline']
+          'class' => ['feeds-plugin-inline'],
         ],
         '#weight' => $weight,
       ];
@@ -234,7 +236,7 @@ class MigrationForm extends EntityForm {
 
       if ($plugin && $this->formFactory->hasForm($plugin, 'option')) {
         $option_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['options'], $form, $form_state);
-        $option_form = $this->formFactory->createInstance($plugin, $plugin_type, 'option', $this->entity);
+        $option_form = $this->formFactory->createInstance($plugin, 'option', $migration);
         $form[$plugin_type . '_wrapper']['options'] += $option_form->buildConfigurationForm([], $option_form_state);
       }
 
@@ -247,7 +249,7 @@ class MigrationForm extends EntityForm {
 
       if ($plugin && $this->formFactory->hasForm($plugin, 'configuration')) {
         $config_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['configuration'], $form, $form_state);
-        $config_form = $this->formFactory->createInstance($plugin, $plugin_type, 'configuration', $this->entity);
+        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $migration);
         $form[$plugin_type . '_wrapper']['configuration'] += $config_form->buildConfigurationForm([], $config_form_state);
       }
 
@@ -264,30 +266,40 @@ class MigrationForm extends EntityForm {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
+    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
+    $migration = $this->entity;
+
     // Allow plugins to validate their settings.
     foreach ($this->getPlugins() as $plugin_type => $plugin_id) {
       $plugin = $this->loadMigratePlugin($plugin_type, $plugin_id);
 
       if ($plugin && isset($form[$plugin_type . '_wrapper']['options']) && $this->formFactory->hasForm($plugin, 'option')) {
         $option_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['options'], $form, $form_state);
-        $option_form = $this->formFactory->createInstance($plugin, $plugin_type, 'option', $this->entity);
+        $option_form = $this->formFactory->createInstance($plugin, 'option', $migration);
         $option_form->validateConfigurationForm($form[$plugin_type . '_wrapper']['options'], $option_form_state);
       }
 
       if ($plugin && isset($form[$plugin_type . '_wrapper']['configuration']) && $this->formFactory->hasForm($plugin, 'configuration')) {
         $config_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['configuration'], $form, $form_state);
-        $config_form = $this->formFactory->createInstance($plugin, $plugin_type, 'configuration', $this->entity);
+        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $migration);
         $config_form->validateConfigurationForm($form[$plugin_type . '_wrapper']['configuration'], $config_form_state);
       }
     }
   }
 
+  /**
+   * Get dummy migration plugin instance.
+   *
+   * Convert migration entity to array in order to create a dummy migration
+   * plugin instance. This dummy is needed in order to instantiate a
+   * destination plugin. We cannot call toArray() on the migration entity,
+   * because that may only be called on saved entities. And we really need an
+   * array representation for unsaved entities too.
+   *
+   * @return \Drupal\migrate\Plugin\Migration
+   *   The dummy migration plugin.
+   */
   protected function getMigration() {
-    // Convert migration entity to array in order to create a dummy migration
-    // plugin instance. This dummy is needed in order to instantiate a
-    // destination plugin. We cannot call toArray() on the migration entity,
-    // because that may only be called on saved entities. And we really need an
-    // array representation for unsaved entities too.
     $keys = [
       'source',
       'process',
@@ -346,7 +358,7 @@ class MigrationForm extends EntityForm {
    * @param string $plugin_id
    *   The plugin identifier.
    *
-   * @return object|null
+   * @return \Drupal\Component\Plugin\PluginInspectionInterface|null
    *   The plugin, or NULL if type is not supported.
    *
    * @throws \Drupal\Component\Plugin\Exception\PluginException
@@ -358,10 +370,12 @@ class MigrationForm extends EntityForm {
 
     switch ($type) {
       case 'source':
+        /** @var \Drupal\Component\Plugin\PluginInspectionInterface $plugin */
         $plugin = $this->sourcePluginManager->createInstance($plugin_id, $migration->get('source'), $migration);
         break;
 
       case 'destination':
+        /** @var \Drupal\Component\Plugin\PluginInspectionInterface $plugin */
         $plugin = $this->destinationPluginManager->createInstance($plugin_id, $migration->get('destination'), $migration);
         break;
     }
@@ -376,9 +390,7 @@ class MigrationForm extends EntityForm {
    *   The plugin type to return possible values for.
    *
    * @return array
-   *   A list of choosable plugins.
-   *
-   * @todo move to a service class.
+   *   A list of available plugins.
    */
   protected function getPluginOptionsList($plugin_type) {
     switch ($plugin_type) {
@@ -422,6 +434,11 @@ class MigrationForm extends EntityForm {
 
   /**
    * {@inheritdoc}
+   *
+   * @todo Don't have plugins save their values directly on the migration
+   *   entity. Instead, have each plugin save its own configuration. The
+   *   form submit handler on this form should retrieve all configuration and
+   *   save them on the entity.
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
     // Map values from form directly to migration entity where possible.
@@ -440,13 +457,13 @@ class MigrationForm extends EntityForm {
       $plugin = $this->loadMigratePlugin($plugin_type, $plugin_id);
       if ($plugin && isset($form[$plugin_type . '_wrapper']['options']) && $this->formFactory->hasForm($plugin, 'option')) {
         $option_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['options'], $form, $form_state);
-        $option_form = $this->formFactory->createInstance($plugin, $plugin_type, 'option', $this->entity);
+        $option_form = $this->formFactory->createInstance($plugin, 'option', $migration);
         $option_form->copyFormValuesToEntity($entity, $form[$plugin_type . '_wrapper']['options'], $option_form_state);
       }
 
       if ($plugin && isset($form[$plugin_type . '_wrapper']['configuration']) && $this->formFactory->hasForm($plugin, 'configuration')) {
         $config_form_state = SubformState::createForSubform($form[$plugin_type . '_wrapper']['configuration'], $form, $form_state);
-        $config_form = $this->formFactory->createInstance($plugin, $plugin_type, 'configuration', $this->entity);
+        $config_form = $this->formFactory->createInstance($plugin, 'configuration', $migration);
         $config_form->copyFormValuesToEntity($entity, $form[$plugin_type . '_wrapper']['configuration'], $config_form_state);
       }
     }
@@ -458,9 +475,16 @@ class MigrationForm extends EntityForm {
   public function save(array $form, FormStateInterface $form_state) {
     $status = parent::save($form, $form_state);
 
-    // Redirect the user back to the listing route after the save operation.
-    $form_state->setRedirect('entity.migration.list',
-      ['migration_group' => $this->entity->get('migration_group')]);
+    // Redirect the user to the mapping after the initial save operation.
+    if ($this->operation === 'add-form') {
+      $form_state->setRedirect('entity.migration.mapping.list',
+        ['migration_group' => $this->entity->get('migration_group')]);
+    }
+    else {
+      // Redirect the user back to the listing route after the save operation.
+      $form_state->setRedirect('entity.migration.list',
+        ['migration_group' => $this->entity->get('migration_group')]);
+    }
   }
 
 }
