@@ -3,6 +3,7 @@
 namespace Drupal\feeds_migrate\Plugin;
 
 use Drupal\Component\Plugin\ConfigurableInterface;
+use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -11,7 +12,7 @@ use Drupal\Core\Plugin\PluginFormInterface;
 /**
  * Interface for migrate plugins that have external configuration forms.
  */
-interface MigrateFormPluginInterface extends PluginFormInterface, ConfigurableInterface, ContainerFactoryPluginInterface {
+interface MigrateFormPluginInterface extends PluginInspectionInterface, PluginFormInterface, ConfigurableInterface, ContainerFactoryPluginInterface {
 
   /**
    * Indicates that the form is displayed in the context of a migration.
@@ -29,27 +30,12 @@ interface MigrateFormPluginInterface extends PluginFormInterface, ConfigurableIn
   const FORM_TYPE_IMPORTER = 'importer';
 
   /**
-   * Build the plugin configuration form.
+   * Get the summary about this plugin.
    *
-   * @param array $form
-   *   An associative array containing the structure of the form.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The current state of the form.
-   *
-   * @return array
-   *   The form structure.
+   * @return string
+   *   Text representation of the plugin.
    */
-  public function buildConfigurationForm(array $form, FormStateInterface $form_state);
-
-  /**
-   * Validation handler for the plugin configuration form.
-   *
-   * @param array $form
-   *   An associative array containing the structure of the form.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The current state of the form.
-   */
-  public function validateConfigurationForm(array &$form, FormStateInterface $form_state);
+  public function getSummary();
 
   /**
    * Copies top-level form values to entity properties.

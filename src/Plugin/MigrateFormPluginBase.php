@@ -74,7 +74,7 @@ abstract class MigrateFormPluginBase extends PluginBase implements MigrateFormPl
    * {@inheritdoc}
    */
   public function defaultConfiguration() {
-    return ['plugin' => $this->pluginId];
+    return ['plugin' => $this->migratePlugin->pluginId];
   }
 
   /**
@@ -89,6 +89,13 @@ abstract class MigrateFormPluginBase extends PluginBase implements MigrateFormPl
    */
   public function setConfiguration(array $configuration) {
     $this->configuration = $configuration;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSummary() {
+    // TODO: Implement getSummary() method.
   }
 
   /**
