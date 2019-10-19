@@ -55,8 +55,8 @@ class TamperForm extends MigrateFormPluginBase {
     ]);
 
     // Set additional definitions.
-    $this->pluginDefinition['title'] = $migrate_plugin_definition['label'] ?? 'tamper:' . $tamper_plugin_id;
-    $this->pluginDefinition['parent_id'] = 'tamper:' . $tamper_plugin_id;
+    $this->pluginDefinition['title'] = $migrate_plugin_definition['label'] ?? 'tamper:' . $migrate_plugin_definition['tamper_plugin_id'];
+    $this->pluginDefinition['parent_id'] = 'tamper:' . $migrate_plugin_definition['tamper_plugin_id'];
   }
 
   /**
@@ -83,14 +83,14 @@ class TamperForm extends MigrateFormPluginBase {
   /**
    * {@inheritdoc}
    */
-  public function validateConfigurationForm(array $form, FormStateInterface $form_state) {
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
     return $this->tamper->validateConfigurationForm($form, $form_state);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitConfigurationForm(array $form, FormStateInterface $form_state) {
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     return $this->tamper->submitConfigurationForm($form, $form_state);
   }
 
