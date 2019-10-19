@@ -2,10 +2,7 @@
 
 namespace Drupal\migrate_tamper\Plugin\migrate\process;
 
-use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\feeds_migrate\Plugin\MigrateFormPluginInterface;
 use Drupal\migrate\MigrateExecutableInterface;
 use Drupal\migrate\MigrateSkipProcessException;
 use Drupal\migrate\MigrateSkipRowException;
@@ -27,7 +24,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   deriver = "Drupal\migrate_tamper\Plugin\Derivative\TamperProcessPluginDeriver"
  * )
  */
-class Tamper extends ProcessPluginBase implements ContainerFactoryPluginInterface, MigrateFormPluginInterface {
+class Tamper extends ProcessPluginBase implements ContainerFactoryPluginInterface {
 
   /**
    * The tamper plugin manager.
@@ -52,7 +49,7 @@ class Tamper extends ProcessPluginBase implements ContainerFactoryPluginInterfac
    *   The plugin_id for the plugin instance.
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
-   * @param \Drupal\tamper\TamperManagerInterface $tamper
+   * @param \Drupal\tamper\TamperManagerInterface $tamper_manager
    *   The tamper plugin manager.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, TamperManagerInterface $tamper_manager) {
@@ -101,33 +98,6 @@ class Tamper extends ProcessPluginBase implements ContainerFactoryPluginInterfac
    */
   public function multiple() {
     return $this->multiple;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    // @todo replace with source definition from migration.
-    // @see ::getSourceDefinitionFromMigrateExecutable()
-    $tamper = $this->tamperManager->createInstance($this->pluginDefinition['tamper_plugin_id'], $this->configuration + [
-      'source_definition' => new SourceDefinition([]),
-    ]);
-
-    return $tamper->buildConfigurationForm($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
-    // @TODO
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
-    // @TODO
   }
 
   /**
