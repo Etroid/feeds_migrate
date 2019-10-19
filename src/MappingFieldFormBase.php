@@ -372,7 +372,9 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
       $plugin_id = $configuration['plugin'];
       $plugin = $this->loadMigrateFormPlugin($plugin_id, $configuration);
 
-      $form['process']['plugins'][$delta] = $this->buildProcessRow($form, $form_state, $plugin, $delta, $property);
+      if ($plugin) {
+        $form['process']['plugins'][$delta] = $this->buildProcessRow($form, $form_state, $plugin, $delta, $property);
+      }
     }
 
     return $form;
