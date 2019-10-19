@@ -650,10 +650,22 @@ abstract class MappingFieldFormBase extends PluginBase implements MappingFieldFo
   protected function getProcessPlugins() {
     $plugins = [];
     foreach ($this->processPluginManager->getDefinitions() as $id => $definition) {
-      // Only include process plugins which have a configuration form.
-      if (isset($definition['feeds_migrate']['form']['configuration'])) {
-        $plugins[$id] = isset($definition['label']) ? $definition['label'] : $id;
+      if (!isset($definition['feeds_migrate']['form']['configuration'])) {
+        // Only include process plugins which have a configuration form.
+        continue;
       }
+
+      $category = $definition['category'] ?? (string) t('Other');
+      $plugins[$category][$id] = $definition['label'] ?? $id;
+    }
+
+    // Don't display plugins in categories if there's only one.
+    if (count($plugins) === 1) {
+      $plugins = reset($plugins);
+    }
+    else {
+      // Sort categories.
+      ksort($plugins);
     }
 
     return $plugins;
