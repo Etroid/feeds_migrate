@@ -50,7 +50,7 @@ interface MigrateFormPluginInterface extends PluginInspectionInterface, PluginFo
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
    *
-   * @deprecated This will be removed in favor ::getConfiguration.
+   * @deprecated This will be removed in favor of ::getConfiguration.
    * Plugins should not save its configuration directly on the parent entity.
    */
   public function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state);

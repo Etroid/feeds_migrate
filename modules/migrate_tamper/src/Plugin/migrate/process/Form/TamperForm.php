@@ -97,7 +97,7 @@ class TamperForm extends MigrateFormPluginBase {
   /**
    * Creates a source definition based on the migrate entity.
    *
-   * @param \Drupal\migrate\MigrationInterface
+   * @param \Drupal\migrate\MigrationInterface $migration
    *   The migrate entity.
    *
    * @return \Drupal\tamper\SourceDefinition

@@ -43,7 +43,7 @@ class MigrationForm extends EntityForm {
   protected $destinationPluginManager;
 
   /**
-   * The form factory.
+   * The factory for generating forms for migrate plugins.
    *
    * @var \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory
    */
@@ -57,6 +57,28 @@ class MigrationForm extends EntityForm {
   protected $renderer;
 
   /**
+   * Constructs a new MigrationForm.
+   *
+   * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_plugin_manager
+   *   Plugin manager for migration plugins.
+   * @param \Drupal\migrate\Plugin\MigratePluginManagerInterface $source_plugin_manager
+   *   Plugin manager for source plugins.
+   * @param \Drupal\migrate\Plugin\MigratePluginManagerInterface $destination_plugin_manager
+   *   Plugin manager for destination plugins.
+   * @param \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory $form_factory
+   *   The factory for generating forms for migrate plugins.
+   * @param \Drupal\Core\Render\Renderer $renderer
+   *   The renderer service.
+   */
+  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, MigratePluginManagerInterface $source_plugin_manager, MigratePluginManagerInterface $destination_plugin_manager, MigrateFormPluginFactory $form_factory, Renderer $renderer) {
+    $this->migrationPluginManager = $migration_plugin_manager;
+    $this->sourcePluginManager = $source_plugin_manager;
+    $this->destinationPluginManager = $destination_plugin_manager;
+    $this->formFactory = $form_factory;
+    $this->renderer = $renderer;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
@@ -67,23 +89,6 @@ class MigrationForm extends EntityForm {
       $container->get('feeds_migrate.migrate_form_plugin_factory'),
       $container->get('renderer')
     );
-  }
-
-  /**
-   * MigrationForm constructor.
-   *
-   * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $migration_plugin_manager
-   * @param \Drupal\migrate\Plugin\MigratePluginManagerInterface $source_plugin_manager
-   * @param \Drupal\migrate\Plugin\MigratePluginManagerInterface $destination_plugin_manager
-   * @param \Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory $form_factory
-   * @param \Drupal\Core\Render\Renderer $renderer
-   */
-  public function __construct(MigrationPluginManagerInterface $migration_plugin_manager, MigratePluginManagerInterface $source_plugin_manager, MigratePluginManagerInterface $destination_plugin_manager, MigrateFormPluginFactory $form_factory, Renderer $renderer) {
-    $this->migrationPluginManager = $migration_plugin_manager;
-    $this->sourcePluginManager = $source_plugin_manager;
-    $this->destinationPluginManager = $destination_plugin_manager;
-    $this->formFactory = $form_factory;
-    $this->renderer = $renderer;
   }
 
   /**

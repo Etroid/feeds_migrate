@@ -3,7 +3,6 @@
 namespace Drupal\feeds_migrate\Plugin;
 
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
-use Drupal\Component\Plugin\PluginAwareInterface;
 use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Plugin\PluginFormInterface;
 use Drupal\migrate_plus\Entity\MigrationInterface;

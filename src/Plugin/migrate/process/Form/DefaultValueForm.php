@@ -2,7 +2,6 @@
 
 namespace Drupal\feeds_migrate\Plugin\migrate\process\Form;
 
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\feeds_migrate\Plugin\MigrateFormPluginBase;
 

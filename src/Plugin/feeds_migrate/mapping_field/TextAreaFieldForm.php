@@ -2,7 +2,6 @@
 
 namespace Drupal\feeds_migrate\Plugin\feeds_migrate\mapping_field;
 
-use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\feeds_migrate\MappingFieldFormBase;
 

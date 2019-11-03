@@ -103,7 +103,7 @@ class Tamper extends ProcessPluginBase implements ContainerFactoryPluginInterfac
   /**
    * Creates a tamper instance.
    *
-   * @param \Drupal\migrate\MigrateExecutableInterface
+   * @param \Drupal\migrate\MigrateExecutableInterface $migrate_executable
    *   The migrate executable.
    *
    * @return \Drupal\tamper\TamperInterface
@@ -118,7 +118,7 @@ class Tamper extends ProcessPluginBase implements ContainerFactoryPluginInterfac
   /**
    * Creates a source definition based on the migrate executable.
    *
-   * @param \Drupal\migrate\MigrateExecutableInterface
+   * @param \Drupal\migrate\MigrateExecutableInterface $migrate_executable
    *   The migrate executable.
    *
    * @return \Drupal\tamper\SourceDefinition

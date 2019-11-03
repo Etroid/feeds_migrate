@@ -6,10 +6,7 @@ use Drupal\Core\Entity\EntityConfirmFormBase;
 use Drupal\Core\Entity\EntityFieldManager;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\feeds_migrate\MappingFieldFormManager;
 use Drupal\feeds_migrate\MigrationHelper;
-use Drupal\migrate_plus\Entity\MigrationInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
