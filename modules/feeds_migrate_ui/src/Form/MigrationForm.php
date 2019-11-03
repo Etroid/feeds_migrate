@@ -447,6 +447,8 @@ class MigrationForm extends EntityForm {
     // $form_state as it is stripped by RequestSanitizer on AJAX callback:
     // @see /core/lib/Drupal/Core/Security/RequestSanitizer.php:92
     $values = $form_state->getValue('migration');
+    /** @var \Drupal\migrate_plus\Entity\MigrationInterface $migration */
+    $migration = $entity;
 
     foreach ($values as $key => $value) {
       $entity->set($key, $value);
