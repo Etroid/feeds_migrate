@@ -2,13 +2,15 @@
 
 namespace Drupal\Tests\feeds_migrate\Kernel\MigrationMappingForm;
 
+use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Core\Field\FieldTypePluginManager;
 use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\feeds_migrate\Plugin\feeds_migrate\mapping_field\DefaultFieldForm;
+use Drupal\feeds_migrate\Plugin\MigrateFormPluginFactory;
+use Drupal\feeds_migrate\MigrationHelper;
 use Drupal\KernelTests\KernelTestBase;
-use Drupal\migrate\Plugin\MigratePluginManagerInterface;
 use Drupal\migrate_plus\Entity\MigrationInterface;
 use Drupal\user\Entity\User;
 
@@ -130,6 +132,8 @@ class MigrationMappingFormTest extends KernelTestBase implements FormInterface {
 
   /**
    * Tests that unique fields are added to the ids source property.
+   *
+   * @todo method isUnique() no longer exist.
    */
   public function testUnique() {
     $form_state = (new FormState())
@@ -142,12 +146,15 @@ class MigrationMappingFormTest extends KernelTestBase implements FormInterface {
     $form_builder->submitForm($this, $form_state);
 
     $form = $this->buildForm([], $form_state);
+    $this->markTestIncomplete('isUnique() method no longer exists.');
     $actual = $this->defaultMappingForm->isUnique($form, $form_state);
     $this->assertTrue($actual, 'Should be unique');
   }
 
   /**
    * Tests that unique fields are added to the ids source property.
+   *
+   * @todo method isUnique() no longer exist.
    */
   public function testNotUnique() {
     $form_state = (new FormState())
@@ -160,12 +167,15 @@ class MigrationMappingFormTest extends KernelTestBase implements FormInterface {
     $form_builder->submitForm($this, $form_state);
 
     $form = $this->buildForm([], $form_state);
+    $this->markTestIncomplete('isUnique() method no longer exists.');
     $actual = $this->defaultMappingForm->isUnique($form, $form_state);
     $this->assertFalse($actual, 'Should be unique');
   }
 
   /**
    * Tests that a field maps without properties.
+   *
+   * @todo method getConfigurationFormMapping() no longer exist.
    */
   public function testMappingWithoutProperties() {
     $form_state = (new FormState())
@@ -178,6 +188,7 @@ class MigrationMappingFormTest extends KernelTestBase implements FormInterface {
     $form_builder->submitForm($this, $form_state);
 
     $form = $this->buildForm([], $form_state);
+    $this->markTestIncomplete('getConfigurationFormMapping() method no longer exists.');
     $actual = $this->defaultMappingForm->getConfigurationFormMapping($form, $form_state);
 
     $this->assertArrayNotHasKey('#properties', $actual, 'Should not have #properties');
@@ -187,7 +198,6 @@ class MigrationMappingFormTest extends KernelTestBase implements FormInterface {
     $this->assertEquals('sourcefield', $actual['source'], 'Should have source');
     $this->assertArrayHasKey('#process', $actual, 'Should have destination plugin');
     $this->assertEmpty($actual['#process'], 'Should have empty processes');
-
   }
 
   /**
@@ -200,15 +210,18 @@ class MigrationMappingFormTest extends KernelTestBase implements FormInterface {
     $configuration = [];
     $plugin_id = 'test';
     $plugin_definition = [];
-    $fieldTypePluginManager = $this->prophesize(FieldTypePluginManager::class)
-      ->reveal();
-    $migrationPluginManager = $this->prophesize(MigratePluginManagerInterface::class)
-      ->reveal();
     $migration = $this->prophesize(MigrationInterface::class)
       ->reveal();
+    $process_plugin_manager = $this->prophesize(PluginManagerInterface::class)
+      ->reveal();
+    $field_type_manager = $this->prophesize(FieldTypePluginManager::class)
+      ->reveal();
+    $form_factory = $this->prophesize(MigrateFormPluginFactory::class)
+      ->reveal();
+    $migration_helper = $this->prophesize(MigrationHelper::class)
+      ->reveal();
 
-    $mappingForm = new DefaultFieldForm($configuration, $plugin_id, $plugin_definition, $fieldTypePluginManager, $migrationPluginManager, $migration);
-    return $mappingForm;
+    return new DefaultFieldForm($configuration, $plugin_id, $plugin_definition, $migration, $process_plugin_manager, $field_type_manager, $form_factory, $migration_helper);
   }
 
 }

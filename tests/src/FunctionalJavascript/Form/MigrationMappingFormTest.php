@@ -62,7 +62,7 @@ class MigrationMappingFormTest extends FeedsMigrateJavascriptTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     // Set source for title field.
-    $source_field = $this->assertSession()->fieldExists('mapping[title][source]');
+    $source_field = $this->assertSession()->fieldExists('mapping[title][properties][value][source]');
     $source_field->setValue('source_a');
 
     // And submit the form.
@@ -80,7 +80,7 @@ class MigrationMappingFormTest extends FeedsMigrateJavascriptTestBase {
     $this->drupalGet('/admin/structure/migrate/sources/example_migration/mapping/title');
 
     // Set source for title field.
-    $source_field = $this->assertSession()->fieldExists('mapping[title][source]');
+    $source_field = $this->assertSession()->fieldExists('mapping[title][properties][value][source]');
     $source_field->setValue('source_b');
 
     // And submit the form.

@@ -18,7 +18,7 @@ use Drupal\migrate_plus\Entity\MigrationInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Class FeedsMigrateUiFieldProcessorBase.
+ * Base class for mapping fields.
  *
  * @package Drupal\feeds_migrate
  */
